@@ -1,0 +1,175 @@
+/* Emergency Page Layout - Robust Block Version */
+.emergency-container {
+    min-height: calc(100vh - 80px);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fee2e2;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.emergency-container .emergency-card {
+    display: block;
+    /* Force standard block layout */
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    padding: 3.5rem 2.5rem;
+    border-radius: 32px;
+    text-align: center;
+    max-width: 550px;
+    width: 100%;
+    box-shadow:
+        0 25px 50px -12px rgba(220, 38, 38, 0.25),
+        0 0 0 1px rgba(220, 38, 38, 0.1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    margin: 0 auto;
+    /* centering */
+}
+
+/* Subtle pulse animation for the border/glow */
+.emergency-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 32px;
+    box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.1);
+    animation: urgent-pulse 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes urgent-pulse {
+    0% {
+        box-shadow: inset 0 0 0px rgba(220, 38, 38, 0.1);
+    }
+
+    50% {
+        box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.2);
+    }
+
+    100% {
+        box-shadow: inset 0 0 0px rgba(220, 38, 38, 0.1);
+    }
+}
+
+.emergency-icon-wrapper {
+    width: 96px;
+    height: 96px;
+    background-color: #fef2f2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem auto;
+    /* Explicit centering */
+    color: #dc2626;
+    border: 4px solid #fee2e2;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.emergency-title {
+    color: #991b1b;
+    margin: 0 0 1rem 0;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    display: block;
+    width: 100%;
+}
+
+.emergency-description {
+    color: #7f1d1d;
+    margin: 0 auto 2.5rem auto;
+    /* Center with margin auto */
+    font-size: 1.15rem;
+    line-height: 1.6;
+    max-width: 440px;
+    display: block;
+}
+
+.emergency-actions {
+    display: flex;
+    flex-direction: column;
+    /* Stack vertically for safety */
+    gap: 1rem;
+    width: 100%;
+}
+
+.btn-emergency-primary {
+    width: 100%;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-emergency-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 20px -3px rgba(220, 38, 38, 0.4);
+}
+
+.btn-emergency-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-emergency-cancel {
+    width: 100%;
+    padding: 1rem;
+    background-color: transparent;
+    color: #7f1d1d;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-emergency-cancel:hover {
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .emergency-card {
+        padding: 2rem 1.5rem;
+        border-radius: 24px;
+    }
+
+    .emergency-title {
+        font-size: 2rem;
+    }
+
+    .emergency-description {
+        font-size: 1rem;
+    }
+
+    .btn-emergency-primary {
+        padding: 1rem;
+        font-size: 1.1rem;
+    }
+}

@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+groq
+chromadb
+langchain
+langchain-groq
+langchain-community
+langgraph
+pypdf
+httpx
+requests
+python-multipart
+scikit-learn
+firebase-admin

@@ -1,0 +1,350 @@
+/* Doctor Dashboard Core */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Stats Row */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Main Layout */
+.dashboard-main-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* Section Shell */
+.section-shell {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    height: 100%;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 1rem 0;
+}
+
+/* Patient Queue Card Container */
+.queue-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 1280px) {
+    .dashboard-main-grid {
+        grid-template-columns: 250px 1fr 300px;
+        /* Compress slightly */
+    }
+}
+
+@media (max-width: 1024px) {
+
+    /* Tablet: Stack Right Column (Alerts) below Main */
+    .dashboard-main-grid {
+        grid-template-columns: 250px 1fr;
+    }
+
+    .alerts-column {
+        grid-column: 1 / -1;
+        /* Span full width */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* Side by side alerts? or just list */
+        gap: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* 2x2 Grid */
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Mobile: Full Stack */
+    .dashboard-main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .alerts-column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stats-grid {
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-grid>div {
+        padding: 1rem;
+        /* Reduce padding on cards */
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* Force 2 columns on mobile */
+        gap: 0.8rem;
+        /* Slightly tighter gap */
+    }
+
+    .stats-grid>div {
+        padding: 0.8rem !important;
+        /* Compact padding */
+    }
+
+    /* Schedule Mobile Filtering: Show only Active and Next One */
+    .time-slot.status-completed {
+        display: none !important;
+    }
+
+    .time-slot.status-upcoming~.time-slot.status-upcoming {
+        display: none !important;
+        /* Hides all upcoming *after* the first upcoming */
+    }
+}
+
+/* --- Emergency Breaker Styles --- */
+.time-slot.status-emergency {
+    background-color: #fef2f2 !important;
+    border-left: 4px solid #dc2626 !important;
+    border: 1px solid #fee2e2;
+}
+
+.time-slot.status-emergency div {
+    color: #b91c1c !important;
+    font-weight: 700 !important;
+}
+
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+}
+
+.time-slot.status-emergency {
+    animation: pulse-red 2s infinite;
+}
+
+.time-slot.status-paused {
+    opacity: 0.5;
+    background-color: #f1f5f9 !important;
+    border-left: 4px solid #cbd5e1 !important;
+}
+
+.btn-squeeze-in {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-squeeze-in:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.btn-squeeze-in.active {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fecaca;
+    animation: pulse-border 2s infinite;
+}
+
+/* --- Patient Queue Card Styles --- */
+.queue-patient-card {
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.queue-patient-card.emergency {
+    background: #fffcfc;
+    border-color: #fca5a5;
+}
+
+/* Header Row */
+.patient-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.patient-profile {
+    display: flex;
+    gap: 10px;
+}
+
+.patient-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #475569;
+    flex-shrink: 0;
+}
+
+.patient-name {
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.patient-demographics {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.patient-time-status {
+    text-align: right;
+}
+
+.patient-time {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.patient-mode {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.patient-mode.video {
+    color: #6366f1;
+}
+
+.patient-mode.person {
+    color: #0f766e;
+}
+
+/* Badges */
+.patient-reason {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.patient-reason.emergency {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.patient-ai-flag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #7e22ce;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Actions */
+.patient-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.btn-start-consult {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #0f766e;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-view-notes {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+/* --- Mobile Queue Overrides (< 480px) --- */
+@media (max-width: 480px) {
+    .patient-header-row {
+        align-items: center;
+        /* Align avatar with text better */
+    }
+
+    .patient-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .patient-name {
+        font-size: 1rem;
+    }
+
+    /* Make Reason font smaller */
+    .patient-reason {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+        line-height: 1.4;
+    }
+
+    /* Stack buttons properly if needed, or keep row but ensure height */
+    .btn-start-consult,
+    .btn-view-notes {
+        padding: 12px;
+        /* Easier touch target */
+    }
+
+    .patient-time {
+        font-size: 1.1rem;
+        /* More prominent time */
+    }
+}

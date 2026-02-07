@@ -1,0 +1,129 @@
+:root {
+  --color-primary: #00879e;
+  --color-secondary: #299ab0;
+  --color-bg: #f8f9fa;
+  /* Clean White/Grey */
+  --color-text: #1a1a1a;
+  --color-text-muted: #666;
+  --color-white: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(at 0% 0%, hsla(189, 100%, 31%, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(189, 45%, 55%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(189, 100%, 31%, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Reset basics */
+* {
+  box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 600;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+/* Utility classes if needed */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+/* Navbar Responsive Padding */
+.main-navbar {
+  padding: 1rem 2rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+
+  .main-navbar {
+    padding: 0.8rem 1rem !important;
+  }
+
+  /* Hide Desktop Nav */
+  .desktop-nav {
+    display: none !important;
+  }
+
+  /* Show Mobile Nav */
+  .mobile-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    /* Reduced padding */
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+  }
+
+  /* Mobile Nav Links */
+  .mobile-nav a {
+    flex-direction: column;
+    gap: 0.1rem !important;
+    /* Tighter gap */
+    font-size: 0.75rem !important;
+    /* Slightly smaller text */
+  }
+
+  /* Adjust padding for bottom nav */
+  body {
+    padding-bottom: 60px;
+    /* Reduced from 80px */
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-nav {
+    display: none !important;
+  }
+}

@@ -1,0 +1,51 @@
+/* Shared Container Styles */
+.home-section-container {
+    padding: 0 1rem;
+    max-width: 1100px;
+    margin: 0 auto 4rem;
+}
+
+.home-section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Responsive Grid for DocTools */
+.doctools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Responsive Grid for HealthInsights */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .home-section-container {
+        margin-bottom: 2rem;
+        padding: 0 1.5rem;
+        /* Match HealthHero padding */
+    }
+
+    .doctools-grid {
+        grid-template-columns: 1fr;
+        /* Stack vertically on mobile */
+        gap: 1rem;
+    }
+
+    .insights-grid {
+        grid-template-columns: 1fr;
+        /* Stack vertically on mobile */
+        gap: 1rem;
+    }
+}

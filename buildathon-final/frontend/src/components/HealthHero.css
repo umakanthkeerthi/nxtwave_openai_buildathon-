@@ -1,0 +1,582 @@
+.health-hero-container {
+    background: linear-gradient(225deg, #2dd4bf 0%, #0d9488 45%, #115e59 100%);
+    border-radius: 30px;
+    padding: 2rem 2rem 3.5rem 2rem;
+    /* Reduced bottom padding */
+    color: white;
+    position: relative;
+    margin: 1.5rem auto 2rem auto;
+    max-width: 1100px;
+    /* Align with DocTools */
+    /* Space for the overlapping card */
+    box-shadow: 0 10px 30px -10px rgba(13, 148, 136, 0.3);
+    overflow: hidden;
+    /* Vital for containing the shine */
+}
+
+/* Subtle Shiny Strip Animation */
+.health-hero-container::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 250%;
+    height: 250%;
+    background: linear-gradient(135deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.1) 40%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0.1) 60%,
+            transparent 70%);
+    mix-blend-mode: overlay;
+    /* Creates the glass/transparent lighting effect */
+    transform: translate(-50%, -50%);
+    animation: shine-diagonal 4s linear infinite;
+    pointer-events: none;
+    /* Let clicks pass through */
+}
+
+/* Pause on Hover */
+.health-hero-container:hover::after {
+    animation-play-state: paused;
+}
+
+@keyframes shine-diagonal {
+    0% {
+        transform: translate(-50%, -50%);
+    }
+
+    100% {
+        transform: translate(20%, 20%);
+    }
+}
+
+.hero-header {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.hero-greeting {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero-subtitle {
+    opacity: 0.9;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Glass Summary Cards */
+.hero-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.glass-stat-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s;
+}
+
+.glass-stat-card:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.stat-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.stat-details h4 {
+    margin: 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.stat-details p {
+    margin: 4px 0 0 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Main Action Card (Overlapping) */
+.hero-action-card-wrapper {
+    max-width: 1100px;
+    margin: -4.5rem auto 0;
+    /*  Negative margin for overlap */
+    padding: 0 1rem;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-action-card {
+    background: white;
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f1f5f9;
+}
+
+.action-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ai-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3);
+}
+
+.action-title h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.action-title p {
+    margin: 4px 0 0 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+/* Search Bar Layout */
+.search-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.mic-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    /* Prepare for hover border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.mic-btn:hover {
+    background: #f0fdfa;
+    border-color: #0d9488;
+    /* Teal border */
+    color: #0d9488;
+    /* Teal icon */
+    box-shadow: 0 10px 20px -5px rgba(13, 148, 136, 0.4);
+    /* Teal Glow */
+    transform: translateY(-2px);
+}
+
+.hero-search-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 99px;
+    /* Pill shape */
+    border: 1px solid #e2e8f0;
+    font-size: 1rem;
+    background: white;
+    transition: all 0.2s;
+    outline: none;
+    color: #334155;
+    height: 48px;
+    /* Match button height */
+}
+
+.hero-search-input:hover {
+    border-color: #0d9488;
+    /* Teal green highlight */
+    box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.3);
+    /* Teal Glow */
+    transform: translateY(-1px);
+}
+
+.hero-search-input:focus {
+    border-color: #2dd4bf;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+}
+
+.send-btn-solid {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    /* Rounded square */
+    background: #0d9488;
+    /* Teal */
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.send-btn-solid:hover {
+    background: #0f766e;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(13, 148, 136, 0.5);
+    /* Strong Teal Glow */
+}
+
+/* Chips */
+.quick-chips {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.chip.fever {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.chip.chest {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fda4af;
+}
+
+.chip.report {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.chip.meds {
+    background: #f0fdfa;
+    color: #0f766e;
+    border-color: #99f6e4;
+}
+
+.chip:hover {
+    transform: translateY(-2px);
+}
+
+.chip.fever:hover {
+    box-shadow: 0 8px 15px -3px rgba(220, 38, 38, 0.4);
+    /* Red Glow */
+}
+
+.chip.chest:hover {
+    box-shadow: 0 8px 15px -3px rgba(225, 29, 72, 0.4);
+    /* Rose Glow */
+}
+
+.chip.report:hover {
+    box-shadow: 0 8px 15px -3px rgba(37, 99, 235, 0.4);
+    /* Blue Glow */
+}
+
+.chip.meds:hover {
+    box-shadow: 0 8px 15px -3px rgba(13, 148, 136, 0.4);
+    /* Teal Glow */
+}
+
+/* Layout Split */
+.hero-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.hero-main-content {
+    flex: 1;
+}
+
+.hero-greeting {
+    font-size: 2rem;
+    /* Slightly larger */
+}
+
+/* Did You Know Card (Side Content) */
+.hero-side-content {
+    flex-shrink: 0;
+    width: 280px;
+}
+
+.did-you-know-card {
+    background: #fff7ed;
+    /* Warm Cream to match image */
+    border: 1px solid #fed7aa;
+    /* Orange-200 */
+    border-radius: 20px;
+    padding: 1.5rem;
+    color: #1e293b;
+    /* Dark text for contrast */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dyk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.dyk-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9a3412;
+    /* Dark Orange/Brown */
+}
+
+.dyk-icon {
+    color: #ea580c;
+    /* Orange-600 */
+}
+
+.dyk-nav {
+    display: flex;
+    gap: 8px;
+    color: #9a3412;
+    cursor: pointer;
+}
+
+.dyk-heading {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+    /* Slate 900 */
+}
+
+.dyk-text {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #334155;
+    /* Slate 700 */
+    font-weight: 500;
+}
+
+.dyk-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dyk-helpful {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+}
+
+.dyk-helpful:hover {
+    color: #ea580c;
+    /* Orange on hover */
+}
+
+.dyk-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #e2e8f0;
+}
+
+.dot.active {
+    background: #ea580c;
+    /* Orange active dot */
+    width: 18px;
+    border-radius: 10px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+    .hero-header-content {
+        flex-direction: column;
+    }
+
+    .hero-side-content {
+        width: 100%;
+        margin-top: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .health-hero-container {
+        padding: 1.5rem 1.5rem 5rem 1.5rem;
+        border-bottom-left-radius: 30px;
+        border-bottom-right-radius: 30px;
+    }
+
+    .hero-greeting {
+        font-size: 1.5rem;
+    }
+
+    .hero-stats-row {
+        grid-template-columns: 1fr;
+        /* Stack cards on mobile */
+    }
+
+    .hero-action-card-wrapper {
+        margin-top: -4rem;
+    }
+
+    .hero-action-card {
+        padding: 1.5rem;
+    }
+
+    .quick-chips {
+        gap: 0.5rem;
+    }
+
+    .chip {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .ai-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Hide secondary content on mobile to match sketch */
+    .hero-stats-row,
+    .hero-side-content {
+        display: none;
+    }
+
+    /* Adjust container for tighter overlap */
+    /* Adjust container for tighter overlap */
+    .health-hero-container {
+        padding: 1.5rem 1rem 5rem 1rem;
+        /* Reduced side padding to 1rem */
+        min-height: auto;
+        border-radius: 0 0 30px 30px;
+        /* Only bottom rounded */
+    }
+
+    .hero-greeting {
+        font-size: 1.5rem;
+        flex-direction: column;
+        /* Stack wave icon if needed */
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .hero-action-card-wrapper {
+        margin-top: -4rem;
+        /* Less negative margin */
+        padding: 0 1rem;
+    }
+
+    .hero-action-card {
+        padding: 1.25rem;
+        /* Reduce internal padding */
+    }
+
+    /* Compact DYK on Mobile - Preserved if we decide to show it elsewhere, but hidden for now in header */
+    .did-you-know-card {
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Mobile Vitals */
+    .mobile-vitals-container {
+        display: block;
+        /* Visible on mobile */
+        padding: 0 1rem;
+        /* Match hero container padding */
+        margin-top: 1rem;
+    }
+
+    .hero-stats-row.mobile-view {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        /* 3 in a row */
+        gap: 0.5rem;
+    }
+
+    .glass-stat-card {
+        padding: 0.75rem;
+        flex-direction: column;
+        /* Stack icon and text */
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .stat-icon-wrapper {
+        margin: 0 auto;
+    }
+
+    .dyk-heading {
+        font-size: 1rem;
+    }
+
+    .dyk-text {
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+}

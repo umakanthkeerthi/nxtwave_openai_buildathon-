@@ -1,0 +1,84 @@
+/* DoctorCard.css */
+.doctor-card-container {
+    background-color: white;
+    border-radius: 16px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 100%;
+    /* Let grid control width */
+}
+
+.doctor-card-header {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.doctor-card-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.doctor-card-name {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.doctor-card-degree {
+    margin: 4px 0 0;
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.2;
+}
+
+.doctor-card-specialty {
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+/* Mobile Tweak (Narrow Screens) */
+/* Mobile Tweak (Narrow Screens) */
+@media (max-width: 480px) {
+    .doctor-card-container {
+        padding: 0.8rem;
+        border-radius: 12px;
+        min-width: 260px;
+        /* Ensure decent width in carousel */
+        gap: 0.8rem;
+    }
+
+    .doctor-card-header {
+        flex-direction: row;
+        /* Keep it horizontal */
+        text-align: left;
+        gap: 0.8rem;
+        align-items: flex-start;
+    }
+
+    .doctor-card-img {
+        width: 48px;
+        height: 48px;
+        margin: 0;
+    }
+
+    .doctor-card-name {
+        font-size: 0.9rem;
+    }
+
+    .doctor-card-container button {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+    }
+}

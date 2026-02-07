@@ -1,0 +1,170 @@
+.my-appointments-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.appointments-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+}
+
+.appointments-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.appointment-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s;
+}
+
+.appointment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.appointment-info-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.appointment-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.appointment-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.doctor-name {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.doctor-specialty {
+    margin: 4px 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.appointment-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.appointment-status-wrapper {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Tracking View Styles */
+.tracking-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: white;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tracking-title {
+    font-size: 1.4rem;
+    margin: 0;
+    color: #1a1a1a;
+}
+
+.tracking-id {
+    margin: 2px 0 0 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    .appointment-card {
+        padding: 1rem;
+        /* Reduced from 1.5rem */
+    }
+
+    .appointment-info-wrapper {
+        gap: 0.75rem;
+        /* Reduced from 1.5rem */
+    }
+
+    .appointment-avatar {
+        width: 48px;
+        /* Reduced from 60px */
+        height: 48px;
+    }
+
+    .doctor-name {
+        font-size: 1rem;
+        /* Reduced from 1.1rem */
+    }
+
+    .doctor-specialty {
+        font-size: 0.8rem;
+        /* Reduced */
+    }
+
+    .appointment-meta {
+        font-size: 0.75rem;
+        flex-direction: column;
+        /* Stack date/time if needed or keep row */
+        gap: 4px;
+        margin-top: 4px;
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+    }
+}

@@ -1,0 +1,11 @@
+/* DoctorGridCarousel.css */
+.doctor-carousel-wrapper {
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 480px) {
+    .doctor-carousel-wrapper {
+        margin-bottom: 1.5rem;
+        /* Reduced gap on mobile */
+    }
+}

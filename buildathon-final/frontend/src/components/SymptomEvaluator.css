@@ -1,0 +1,175 @@
+/* Container */
+.symptom-evaluator-container {
+    padding: 0 1rem;
+    max-width: 800px;
+    margin: 0 auto 2rem;
+}
+
+/* Consult Page Variant Adjustments */
+.symptom-evaluator-container.consult {
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    max-width: 100%;
+}
+
+/* Home Variant Title */
+.symptom-title {
+    margin-bottom: 1.5rem;
+    color: var(--color-text);
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.symptom-subtitle {
+    color: var(--color-secondary);
+    font-size: 1.2rem;
+    font-weight: 400;
+}
+
+/* Card */
+.symptom-card {
+    background-color: var(--color-white);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(7, 118, 89, 0.1);
+    position: relative;
+}
+
+/* Header */
+.symptom-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.symptom-header-title {
+    font-size: 1.1rem;
+    color: var(--color-primary);
+    margin: 0;
+}
+
+.language-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.language-select-input {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+    color: #555;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Input Group */
+.symptom-input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 1rem;
+}
+
+.mic-btn {
+    color: #555;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mic-btn:hover {
+    background-color: #e4e6eb;
+}
+
+.text-input-wrapper {
+    flex: 1;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 50px;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    height: 48px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.text-input-wrapper:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0, 135, 158, 0.1);
+}
+
+.text-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    outline: none;
+    color: var(--color-text);
+}
+
+.send-btn {
+    background-color: var(--color-primary);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.send-btn:active {
+    transform: scale(0.95);
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+    .symptom-card {
+        padding: 1.5rem;
+    }
+
+    .symptom-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .symptom-header-title {
+        width: 100%;
+    }
+
+    .language-selector-wrapper {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .language-select-input {
+        flex: 1;
+    }
+
+    /* Reverting size reduction on mobile to match desktop "premium" feel */
+    .symptom-input-group {
+        gap: 8px;
+    }
+}

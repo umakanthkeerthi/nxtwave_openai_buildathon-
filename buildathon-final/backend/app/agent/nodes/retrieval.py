@@ -1,0 +1,48 @@
+
+import os
+import chromadb
+from typing import Dict, Any, List
+from langchain_groq import ChatGroq
+from app.core.config import settings
+
+# Initialize Clients
+chroma_client = chromadb.PersistentClient(path=settings.DB_PATH)
+llm = ChatGroq(
+    model="llama-3.2-90b-vision-preview", # Using a powerful model for reasoning
+    api_key=settings.GROQ_API_KEY,
+    temperature=0
+)
+
+# Collections
+col_rules = chroma_client.get_collection("decision_rules")
+col_summaries = chroma_client.get_collection("protocol_summaries")
+
+def retrieval_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Intelligent Retrieval:
+    1. Checks if we need new data (Context Persistence).
+    2. Retrieves Protocol Summaries (Context).
+    3. Retrieves Decision Rules (Actionable Logic).
+    """
+    messages = state.get("messages", [])
+    last_msg = messages[-1].content
+    
+
+        
+    print(f"🔎 Retrieving for: {last_msg}")
+    
+    # 2. Retrieve Decision Rules (The most important part)
+    # We query for the user's symptoms
+    results = col_rules.query(
+        query_texts=[last_msg],
+        n_results=3
+    )
+    
+    # Format for LLM
+    docs = []
+    if results['documents']:
+        for i, doc in enumerate(results['documents'][0]):
+            meta = results['metadatas'][0][i]
+            docs.append(f"[PROTOCOL: {meta['protocol']}] [SECTION: {meta['section']}]\n{doc}")
+            
+    return {"retrieved_protocols": docs}
