@@ -1,5 +1,5 @@
-
 from typing import Dict, Any
+from langchain_core.messages import AIMessage
 
 def strategist_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -12,9 +12,12 @@ def strategist_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if not checklist:
         # Assessment complete - generate summary
         diagnosis_text = ", ".join(diagnosis[:3]) if diagnosis else "routine condition"
+        response_text = f"I have completed the assessment. Based on your answers, this appears to be: {diagnosis_text}. Please consult a healthcare provider for proper diagnosis and treatment."
+        
         return {
             "triage_decision": "COMPLETE", 
-            "final_response": f"I have completed the assessment. Based on your answers, this appears to be: {diagnosis_text}. Please consult a healthcare provider for proper diagnosis and treatment."
+            "final_response": response_text,
+            "messages": [AIMessage(content=response_text)] # [FIX] Add to history
         }
     
     # Pick top item
@@ -28,6 +31,6 @@ def strategist_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # but for now, we just pass it to the bot to ask.
     return {
         "final_response": next_task,
-        "investigated_symptoms": current_investigated
+        "investigated_symptoms": current_investigated,
+        "messages": [AIMessage(content=next_task)] # [FIX] Add to history
     }
-

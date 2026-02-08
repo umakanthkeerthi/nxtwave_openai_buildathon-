@@ -50,7 +50,7 @@ async def chat_endpoint(req: ChatRequest):
         detected_lang_out = None
         
         # logic for Auto-detect: Detect language from input message if not specified
-        if target_lang == "Auto":
+        if target_lang == "Auto" or target_lang == "English":  # [MODIFIED] Check even if English
             try:
                 detect_prompt = f"""
                 Detect the language of this text. Return JSON with key 'language'.
@@ -68,7 +68,7 @@ async def chat_endpoint(req: ChatRequest):
                     detected_lang_out = detected
             except Exception as e:
                 print(f"Auto-detect Error: {e}")
-                target_lang = "English"
+                # Keep target_lang as is (English/Auto) on error
 
         # Perform Translation if needed
         if target_lang and target_lang != "English" and target_lang != "Auto":
@@ -380,6 +380,7 @@ async def book_appointment_endpoint(booking_req: dict):
     try:
         fake_state: TriageState = {
             "session_id": booking_req.get("patient_id", "anon_patient"),
+            "case_id": booking_req.get("session_id"), # [FIX] Map session_id (case_id from frontend) to state
             "triage_decision": booking_req.get("triage_decision", "PENDING"),
             "doctor_id": booking_req.get("doctor_id"),
             "appointment_time": booking_req.get("appointment_time"),

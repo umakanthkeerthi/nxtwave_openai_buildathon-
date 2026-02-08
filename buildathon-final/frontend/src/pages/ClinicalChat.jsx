@@ -163,7 +163,7 @@ const ClinicalChat = () => {
                 body: JSON.stringify({
                     message: text,
                     session_id: sessionId,
-                    target_language: language === 'Auto-detect' ? 'Auto' : language
+                    target_language: language === 'Auto-detect' ? 'English' : language
                 })
             });
 

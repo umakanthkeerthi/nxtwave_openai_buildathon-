@@ -24,6 +24,7 @@ class TriageState(TypedDict):
     differential_diagnosis: List[str] # Hypotheses ["Migraine", "Meningitis"]
     safety_checklist: List[str] # The "Plan" ["Ask about fever", "Ask about stiffness"]
     investigated_symptoms: List[str] # Memory of what has been asked ["fever", "vomiting"]
+    investigated_facts: Dict[str, Any] # [New] Structured memory of known facts {"fever_duration": "2 days"}
     
 
     # Decisions
@@ -33,6 +34,7 @@ class TriageState(TypedDict):
     
     # Medical Records & Booking (Phase 1.5)
     saved_record_id: Optional[str]
+    case_id: Optional[str] # The golden thread ID linking chat, summary, and booking
     booking_status: Optional[str] # "pending", "confirmed"
     appointment_id: Optional[str]
     consultation_mode: Optional[str]

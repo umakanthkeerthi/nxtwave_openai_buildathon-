@@ -48,7 +48,14 @@ class DoctorConsultationSubgraph:
                 severity = "RED"
             
             appt_id = str(uuid.uuid4())
-            case_id = str(uuid.uuid4())
+            appt_id = str(uuid.uuid4())
+            # [FIX] Use existing case_id if available (preserve the Golden Thread)
+            case_id = state.get("case_id")
+            if not case_id:
+                print("DEBUG: No case_id found in state, generating new one.")
+                case_id = str(uuid.uuid4())
+            else:
+                print(f"DEBUG: Linking Appointment to Existing Case ID: {case_id}")
             # Use doctor_id from state if available (from Frontend selection)
             doctor_id = state.get("doctor_id", "doc_mock_001") 
             

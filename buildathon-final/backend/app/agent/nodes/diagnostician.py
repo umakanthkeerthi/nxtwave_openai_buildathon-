@@ -1,4 +1,3 @@
-
 from typing import Dict, Any
 from app.core.config import settings
 from langchain_groq import ChatGroq
@@ -7,6 +6,8 @@ from langchain_core.output_parsers import JsonOutputParser
 
 # Using OpenAI Client for GPT-OSS-120b (as per original successful config)
 from groq import Groq
+import json # [FIX] Add global import
+
 client = Groq(api_key=settings.GROQ_API_KEY)
 
 def simple_invoke(prompt):
@@ -37,7 +38,10 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Structured Memory
     investigated = state.get("investigated_symptoms", [])
+    investigated_facts = state.get("investigated_facts", {})
+    
     investigated_str = ", ".join(investigated)
+    facts_str = json.dumps(investigated_facts, indent=2) if investigated_facts else "None"
     
     # --- LOGIC SPLIT ---
     if not current_checklist:
@@ -47,6 +51,9 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         PATIENT HISTORY:
         {history_str}
+        
+        KNOWN CLINICAL FACTS (DO NOT ASK ABOUT THESE):
+        {facts_str}
         
         MEDICAL KNOWLEDGE (Guidelines):
         {knowledge}
@@ -58,8 +65,9 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         3. Ask questions that help rule out serious conditions.
         
         CRITICAL RULES:
-        - CHECK HISTORY: Do NOT ask about questions already mentioned in HISTORY.
-        - ONE SYMPTOM PER QUESTION: Do not group symptoms.
+        - CHECK HISTORY & FACTS: Do NOT ask about questions already mentioned in HISTORY or EXISTING FACTS.
+        - ONE SYMPTOM PER QUESTION: Do not group symptoms unless necessary.
+        - PARTIAL KNOWLEDGE: If you want to ask "Do you have X or Y?", check if X is already known. If X is "Denied", ask ONLY "Do you have Y?".
         
         OUTPUT JSON:
         {{
@@ -68,7 +76,7 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         }}
         """
         try:
-            import json
+            # [FIX] Removed redundant local import
             result_str = simple_invoke(prompt)
             print(f"DEBUG: Initial Diagnosis Output:\n{result_str}")
             result = json.loads(result_str.replace("```json", "").replace("```", "").strip())
@@ -98,6 +106,9 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         PATIENT HISTORY:
         {history_str}
+
+        KNOWN CLINICAL FACTS (DO NOT ASK ABOUT THESE):
+        {facts_str}
         
         MEDICAL KNOWLEDGE:
         {knowledge}
@@ -112,8 +123,10 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         The user answered the last question.
         1. Review the HISTORY above carefully.
         2. Do you need to add CRITICAL questions to narrow the diagnosis? (Max 2-3).
-        3. CRITICAL: DO NOT ASK ANY QUESTION THAT HAS ALREADY BEEN ASKED IN THE HISTORY.
+        3. CRITICAL: DO NOT ASK ANY QUESTION THAT HAS ALREADY BEEN ASKED IN THE HISTORY OR FACTS.
            - Example: If history says "User: No neck stiffness", DO NOT ask "Do you have neck stiffness?".
+        4. PARTIAL KNOWLEDGE: If you want to ask "Do you have X or Y?", check if X is already known. 
+           - If X is "Denied", ask ONLY "Do you have Y?".
         
         OUTPUT JSON:
         {{
@@ -124,7 +137,7 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         """
         
         try:
-            import json
+            # [FIX] Removed redundant local import
             result_str = simple_invoke(prompt)
             print(f"DEBUG: Follow-up Output:\n{result_str}")
             result = json.loads(result_str.replace("```json", "").replace("```", "").strip())
@@ -193,4 +206,3 @@ def diagnostician_node(state: Dict[str, Any]) -> Dict[str, Any]:
         except Exception as e:
             print(f"Error in Follow-up: {e}")
             return {"safety_checklist": remaining_checklist} 
-

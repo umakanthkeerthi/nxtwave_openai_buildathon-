@@ -6,6 +6,7 @@ from app.agent.state import TriageState
 from app.agent.nodes.retrieval import retrieval_node
 from app.agent.nodes.diagnostician import diagnostician_node
 from app.agent.nodes.strategist import strategist_node
+from app.agent.nodes.fact_extraction import fact_extraction_node
 
 from app.agent.nodes.emergency import emergency_scan_node
 
@@ -18,24 +19,26 @@ def build_graph():
     workflow.add_node("diagnostician", diagnostician_node)
     workflow.add_node("strategist", strategist_node)
     
+    workflow.add_node("fact_extraction", fact_extraction_node)
+    
     # Define Edges
     workflow.set_entry_point("emergency_scan")
     
     def decide_after_scan(state):
         if state.get("triage_decision") == "EMERGENCY":
             return END
-        return "retrieval"
+        return "fact_extraction"
 
     workflow.add_conditional_edges(
         "emergency_scan",
         decide_after_scan,
         {
             END: END,
-            "retrieval": "retrieval"
+            "fact_extraction": "fact_extraction"
         }
     )
     
-    
+    workflow.add_edge("fact_extraction", "retrieval")
     workflow.add_edge("retrieval", "diagnostician")
     workflow.add_edge("diagnostician", "strategist")
     workflow.add_edge("strategist", END)
