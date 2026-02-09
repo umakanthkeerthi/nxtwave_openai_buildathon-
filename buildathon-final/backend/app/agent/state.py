@@ -33,21 +33,26 @@ class TriageState(TypedDict):
     final_response: str # The actual message sent to the user
     
     # Medical Records & Booking (Phase 1.5)
+    # V1.0 Schema Additions
+    case_id: Optional[str] # Golden Spine
+    profile_id: Optional[str] # Linked to 'profiles' collection
+    slot_id: Optional[str] # Linked to 'doctor_slots' collection
+    
+    # Legacy / Compatibility
     saved_record_id: Optional[str]
-    case_id: Optional[str] # The golden thread ID linking chat, summary, and booking
-    booking_status: Optional[str] # "pending", "confirmed"
+    booking_status: Optional[str]
     appointment_id: Optional[str]
     consultation_mode: Optional[str]
     recommended_doctors: List[dict]
-    full_summary_payload: Optional[Dict[str, Any]] # Holds the complete rich summary content
+    full_summary_payload: Optional[Dict[str, Any]]
     
     # Booking Specific
     patient_name: Optional[str]
-    patient_age: Optional[str] # Keeping as str to handle "45" or "45 yrs"
+    patient_age: Optional[str]
     patient_gender: Optional[str]
     doctor_id: Optional[str]
     appointment_time: Optional[str]
-    record_type: Optional[str] # "AI_SUMMARY_DOCTOR", "PRESCRIPTION", etc.
-    
+    record_type: Optional[str]
+
     # Meta
     session_id: str

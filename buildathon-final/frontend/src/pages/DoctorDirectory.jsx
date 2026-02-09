@@ -21,19 +21,22 @@ const DoctorDirectory = () => {
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch Doctors from Firebase
+    // Fetch Doctors from Firebase (V1.0 API)
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
-                const q = query(collection(db, "users"), where("role", "==", "doctor"));
-                const querySnapshot = await getDocs(q);
-                const docsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setDoctors(docsData);
+                // Use Backend API instead of direct Firestore query
+                const response = await fetch('/get_doctors');
+                const data = await response.json();
+
+                if (data.doctors) {
+                    setDoctors(data.doctors);
+                } else {
+                    setDoctors([]);
+                }
             } catch (error) {
                 console.error("Error fetching doctors:", error);
+                // Fallback (or handle empty state)
             } finally {
                 setLoading(false);
             }
@@ -61,6 +64,13 @@ const DoctorDirectory = () => {
     };
 
     const handleBook = (doctor) => {
+        // [POLICY] Direct booking is not allowed. Must have AI Triage Summary.
+        if (!location.state?.summary) {
+            if (window.confirm("Per hospital policy, you must complete a quick AI Symptom Check before booking.\\n\\nClick OK to start the AI Chat.")) {
+                navigate('/patient/consult'); // Redirect to AI Chat
+            }
+            return;
+        }
         console.log("Opening booking for:", doctor.name);
         setSelectedDoctor(doctor);
         setIsBookingOpen(true);
@@ -79,6 +89,7 @@ const DoctorDirectory = () => {
                     patient_age: currentUser?.profile?.age || "??",
                     patient_gender: currentUser?.profile?.gender || "??",
                     doctor_id: details.doctor.id,
+                    slot_id: details.slot_id, // [V1.0] Critical
                     appointment_time: details.date + " " + details.time,
                     consultation_mode: details.mode.toUpperCase(),
                     triage_decision: location.state?.summary?.triage === "Emergency" ? "EMERGENCY" : "SAFE"
@@ -103,7 +114,7 @@ const DoctorDirectory = () => {
             {/* Header */}
             <div style={{ marginBottom: '2rem' }}>
                 <button
-                    onClick={() => navigate('/patient/consult')}
+                    onClick={() => navigate('/patient/consult', { state: location.state })}
                     style={{
                         background: 'none', border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: '8px',

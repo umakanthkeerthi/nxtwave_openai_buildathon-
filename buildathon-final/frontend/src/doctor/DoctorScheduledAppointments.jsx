@@ -109,10 +109,12 @@ const DoctorScheduledAppointments = () => {
                     }}>
                         Sync Calendar
                     </button>
-                    <button style={{
-                        padding: '10px 16px', background: '#0f766e', border: 'none',
-                        borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer'
-                    }}>
+                    <button
+                        onClick={() => navigate('/doctor/my-slots')}
+                        style={{
+                            padding: '10px 16px', background: '#0f766e', border: 'none',
+                            borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer'
+                        }}>
                         + Add Slot
                     </button>
                 </div>

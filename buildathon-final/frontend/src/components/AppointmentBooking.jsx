@@ -7,38 +7,83 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [step, setStep] = useState('selection'); // 'selection' | 'success'
 
+    const [availableDates, setAvailableDates] = useState([]);
+    const [slotsByDate, setSlotsByDate] = useState({});
+    const [loadingSlots, setLoadingSlots] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Fix undefined setIsLoading
+
+    // Fetch Slots when doctor changes
+    React.useEffect(() => {
+        if (isOpen && doctor?.id) {
+            setLoadingSlots(true);
+            fetch(`http://localhost:8003/get_slots?doctor_id=${doctor.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.slots) {
+                        // Group by Date
+                        const grouped = {};
+                        data.slots.forEach(slot => {
+                            // Backend returns separate 'date' (YYYY-MM-DD) and 'start_time' (HH:MM) fields
+                            // Combine them to create a proper Date object
+                            const dateTimeString = `${slot.date}T${slot.start_time}`;
+                            const dateObj = new Date(dateTimeString);
+
+                            // Fallback if Date is invalid
+                            if (isNaN(dateObj.getTime())) {
+                                console.warn("Invalid slot date:", slot);
+                                return;
+                            }
+
+                            const dateKey = slot.date; // Use YYYY-MM-DD as key
+                            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+                            const displayDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                            if (!grouped[dateKey]) {
+                                grouped[dateKey] = {
+                                    day: dayName,
+                                    date: dateObj.getDate(),
+                                    fullDate: dateKey,
+                                    displayDate: displayDate,
+                                    slots: []
+                                };
+                            }
+
+                            grouped[dateKey].slots.push({
+                                ...slot,
+                                slot_id: slot.id, // Ensure slot_id is set
+                                label: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                            });
+                        });
+
+                        const datesArr = Object.values(grouped).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+                        setAvailableDates(datesArr);
+                        setSlotsByDate(grouped);
+
+                        // Default select first date
+                        if (datesArr.length > 0) setSelectedDate(0);
+                    }
+                })
+                .catch(err => console.error("Error fetching slots:", err))
+                .finally(() => setLoadingSlots(false));
+        }
+    }, [isOpen, doctor]);
+
     if (!isOpen || !doctor) return null;
-
-    // Mock Date Generation (Today + Next 2 days)
-    const dates = Array.from({ length: 3 }).map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        return {
-            day: d.toLocaleDateString('en-US', { weekday: 'short' }),
-            date: d.getDate(),
-            fullDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        };
-    });
-
-    // Mock Slots
-    const slots = [
-        "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-        "02:00 PM", "02:30 PM", "03:00 PM", "04:30 PM"
-    ];
-
-    const [isLoading, setIsLoading] = useState(false);
 
     const handleConfirm = async () => {
         setIsLoading(true);
         try {
+            const dateKey = availableDates[selectedDate]?.fullDate;
+            const slotObj = selectedSlot; // Full slot object from API
+
             await onConfirm({
                 doctor,
-                date: dates[selectedDate].fullDate,
-                time: selectedSlot || slots[0],
+                date: dateKey,
+                time: slotObj.label,
+                slot_id: slotObj.slot_id, // [V1.0] Critical for backend
                 mode
             });
             setStep('success');
-            // Auto close after showing success
             setTimeout(() => {
                 setStep('selection');
                 onClose();
@@ -50,6 +95,15 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
             setIsLoading(false);
         }
     };
+
+    // If loading
+    if (loadingSlots && isOpen) {
+        return (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px' }}>Loading Available Slots...</div>
+            </div>
+        );
+    }
 
     return (
         <AnimatePresence>
@@ -105,48 +159,55 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                 <div style={{ padding: '1.5rem' }}>
                                     {mode === 'standard' && (
                                         <>
-                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Date</p>
-                                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-                                                {dates.map((d, i) => (
-                                                    <button
-                                                        key={i}
-                                                        onClick={() => setSelectedDate(i)}
-                                                        style={{
-                                                            flex: 1,
-                                                            padding: '0.8rem',
-                                                            borderRadius: '12px',
-                                                            border: selectedDate === i ? '2px solid var(--color-primary)' : '1px solid #eee',
-                                                            backgroundColor: selectedDate === i ? 'rgba(7, 118, 89, 0.05)' : 'white',
-                                                            textAlign: 'center',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        <span style={{ display: 'block', fontSize: '0.85rem', color: '#666' }}>{d.day}</span>
-                                                        <span style={{ display: 'block', fontWeight: 'bold', fontSize: '1.2rem' }}>{d.date}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
+                                            {availableDates.length === 0 ? (
+                                                <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>No available slots found.</div>
+                                            ) : (
+                                                <>
+                                                    <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Date</p>
+                                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '4px' }}>
+                                                        {availableDates.map((d, i) => (
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => { setSelectedDate(i); setSelectedSlot(null); }}
+                                                                style={{
+                                                                    minWidth: '80px',
+                                                                    flex: 1,
+                                                                    padding: '0.8rem',
+                                                                    borderRadius: '12px',
+                                                                    border: selectedDate === i ? '2px solid var(--color-primary)' : '1px solid #eee',
+                                                                    backgroundColor: selectedDate === i ? 'rgba(7, 118, 89, 0.05)' : 'white',
+                                                                    textAlign: 'center',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                <span style={{ display: 'block', fontSize: '0.85rem', color: '#666' }}>{d.day}</span>
+                                                                <span style={{ display: 'block', fontWeight: 'bold', fontSize: '1.2rem' }}>{d.date}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
 
-                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Time</p>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem' }}>
-                                                {slots.map((s, i) => (
-                                                    <button
-                                                        key={i}
-                                                        onClick={() => setSelectedSlot(s)}
-                                                        style={{
-                                                            padding: '0.6rem',
-                                                            borderRadius: '8px',
-                                                            border: selectedSlot === s ? '1px solid var(--color-primary)' : '1px solid #ddd',
-                                                            backgroundColor: selectedSlot === s ? 'var(--color-primary)' : 'white',
-                                                            color: selectedSlot === s ? 'white' : '#333',
-                                                            fontSize: '0.9rem',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        {s}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                                    <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Time</p>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
+                                                        {slotsByDate[availableDates[selectedDate].fullDate]?.slots.map((s, i) => (
+                                                            <button
+                                                                key={s.slot_id}
+                                                                onClick={() => setSelectedSlot(s)}
+                                                                style={{
+                                                                    padding: '0.6rem',
+                                                                    borderRadius: '8px',
+                                                                    border: selectedSlot?.slot_id === s.slot_id ? '1px solid var(--color-primary)' : '1px solid #ddd',
+                                                                    backgroundColor: selectedSlot?.slot_id === s.slot_id ? 'var(--color-primary)' : 'white',
+                                                                    color: selectedSlot?.slot_id === s.slot_id ? 'white' : '#333',
+                                                                    fontSize: '0.9rem',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                {s.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
                                         </>
                                     )}
 

@@ -17,7 +17,16 @@ export default defineConfig({
       '/translate_text': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
       '/get_records': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
       '/upload_record': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
-      '/get_location': { target: 'http://localhost:8003', changeOrigin: true, secure: false }
+      '/get_location': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_doctor': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/create_slot': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/create_slots_batch': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_slots': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_appointments': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_patients': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_emergencies': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_doctors': { target: 'http://localhost:8003', changeOrigin: true, secure: false },
+      '/get_case': { target: 'http://localhost:8003', changeOrigin: true, secure: false }
     }
   }
 })

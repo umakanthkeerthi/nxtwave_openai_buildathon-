@@ -1,20 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
     LayoutDashboard, Users, Calendar, MessageSquare, FileText,
-    Settings, LogOut, Bell, Siren, Menu, X
+    Settings, LogOut, Bell, Siren, Menu, X, Clock
 } from 'lucide-react';
 import './DoctorLayout.css';
 
 const DoctorLayout = () => {
+    const { currentUser, logout } = useAuth(); // Get currentUser
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [doctorProfile, setDoctorProfile] = useState(null);
 
     // Close menu when route changes (mobile convenience)
-    React.useEffect(() => {
+    useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [location.pathname]);
+
+    // Fetch Doctor Profile
+    useEffect(() => {
+        const fetchDoctorProfile = async () => {
+            if (currentUser && currentUser.doctor_id) {
+                try {
+                    const response = await fetch(`http://localhost:8003/get_doctor?doctor_id=${currentUser.doctor_id}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setDoctorProfile(data);
+                    }
+                } catch (error) {
+                    console.error("Error fetching doctor profile:", error);
+                }
+            }
+        };
+        fetchDoctorProfile();
+    }, [currentUser]);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/doctor/login');
+        } catch (error) {
+            console.error("Logout failed", error);
+        }
+    };
 
     return (
         <div className="doctor-layout">
@@ -52,6 +82,7 @@ const DoctorLayout = () => {
                         <NavItem to="/doctor/emergency" icon={<Siren size={20} />} label="Emergency Queue" isCritical />
                         <NavItem to="/doctor/patients" icon={<Users size={20} />} label="My Patients" />
                         <NavItem to="/doctor/scheduled-appointments" icon={<Calendar size={20} />} label="Scheduled Appointments" />
+                        <NavItem to="/doctor/my-slots" icon={<Clock size={20} />} label="Manage Slots" />
                         <NavItem to="/doctor/messages" icon={<MessageSquare size={20} />} label="Messages" />
                         <NavItem to="/doctor/reports" icon={<FileText size={20} />} label="Reports" />
                         <div style={{ height: '1px', background: '#e2e8f0', margin: '8px 0' }}></div>
@@ -60,15 +91,21 @@ const DoctorLayout = () => {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="switch-patient-btn" onClick={() => navigate('/patient')}>
+                    <button className="switch-patient-btn" onClick={handleLogout}>
                         <LogOut size={18} />
-                        Switch to Patient
+                        Sign Out
                     </button>
                     <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0' }}></div>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#555' }}>
+                            {doctorProfile?.name ? doctorProfile.name.charAt(0) : "D"}
+                        </div>
                         <div>
-                            <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0f172a' }}>Dr. A. Sharma</div>
-                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Cardiologist</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0f172a' }}>
+                                {doctorProfile?.name || "Dr. Loading..."}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                {doctorProfile?.specialization || "Specialist"}
+                            </div>
                         </div>
                     </div>
                 </div>

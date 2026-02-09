@@ -163,6 +163,8 @@ const ClinicalChat = () => {
                 body: JSON.stringify({
                     message: text,
                     session_id: sessionId,
+                    case_id: sessionId, // [V1.0] Explicit Case ID
+                    profile_id: selectedProfile?.id || currentUser?.uid, // [V1.0] Explicit Profile ID
                     target_language: language === 'Auto-detect' ? 'English' : language
                 })
             });

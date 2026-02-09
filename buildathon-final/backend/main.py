@@ -273,7 +273,7 @@ async def generate_summary(req: SummaryRequest):
              - "clinical_guidelines": str (The reassuring advice text)
              - "symptoms_reported": [str] (List of symptoms acknowledged)
              - "symptoms_denied": [str] (List of symptoms denied)
-             - "red_flags": [str] (Warning signs to watch for)
+             - "red_flags_to_watch_out_for": [str] (Warning signs to watch for)
              - "triage_level": "Green" | "Yellow" | "Red" (Simple color badge)
         
         2. "pre_doctor_consultation_summary": A structured clinical note FOR THE DOCTOR.
@@ -287,7 +287,7 @@ async def generate_summary(req: SummaryRequest):
                   "severity_level": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
                   "severity_score": int (0-100) 
                }}
-             - "red_flags": [str]
+
              - "plan": {{ "immediate_actions": [], "referral_needed": bool }}
         
         SEVERITY SCORING (0-100):
@@ -313,7 +313,7 @@ async def generate_summary(req: SummaryRequest):
                 "clinical_guidelines": "...",
                 "symptoms_reported": [...],
                 "symptoms_denied": [...],
-                "red_flags": [...],
+                "red_flags_to_watch_out_for": [...],
                 "triage_level": "..."
             }},
             "pre_doctor_consultation_summary": {{ ... }}
@@ -351,17 +351,21 @@ from app.agent.subgraphs.doctor_consultation import doctor_consultation_graph
 async def save_summary_endpoint(summary_data: dict):
     """
     Saves the summary using the Medical Records Subgraph.
-    Input: { "patient_id": "...", "patient_summary": "...", "pre_doctor_consultation_summary": ... }
+    Input: { "patient_id": "...", "profile_id": "...", "patient_summary": "...", ... }
     """
     try:
-        patient_id = summary_data.get("patient_id", "anon_patient")
+        # V1.0: Use profile_id as primary, fallback to patient_id/session_id
+        profile_id = summary_data.get("profile_id") or summary_data.get("patient_id", "anon_profile")
+        
         fake_state: TriageState = {
+            "profile_id": profile_id, # [NEW]
             "patient_profile": summary_data.get("patient_profile", {}),
             "triage_decision": summary_data.get("pre_doctor_consultation_summary", {}).get("assessment", {}).get("severity", "GREEN"),
             "final_advice": summary_data.get("patient_summary", ""),
             "investigated_symptoms": [],
-            "session_id": patient_id,
-            "full_summary_payload": summary_data # Pass the exact rich data for saving
+            "session_id": profile_id, # keeping session_id aligned for now
+            "case_id": summary_data.get("case_id"),
+            "full_summary_payload": summary_data
         }
         
         # Invoke Subgraph
@@ -375,14 +379,16 @@ async def save_summary_endpoint(summary_data: dict):
 async def book_appointment_endpoint(booking_req: dict):
     """
     Books an appointment using the Doctor Consultation Subgraph.
-    Input: { "patient_id": "...", "doctor_id": "...", "slot_time": "..." }
+    Input: { "profile_id": "...", "doctor_id": "...", "slot_id": "..." }
     """
     try:
         fake_state: TriageState = {
             "session_id": booking_req.get("patient_id", "anon_patient"),
-            "case_id": booking_req.get("session_id"), # [FIX] Map session_id (case_id from frontend) to state
+            "profile_id": booking_req.get("profile_id"), # [NEW]
+            "case_id": booking_req.get("session_id"), # Case ID from frontend
             "triage_decision": booking_req.get("triage_decision", "PENDING"),
             "doctor_id": booking_req.get("doctor_id"),
+            "slot_id": booking_req.get("slot_id"), # [NEW]
             "appointment_time": booking_req.get("appointment_time"),
             "consultation_mode": booking_req.get("consultation_mode"),
             "patient_name": booking_req.get("patient_name"),
@@ -400,14 +406,28 @@ async def book_appointment_endpoint(booking_req: dict):
 from app.core.firebase import firebase_service
 
 @app.get("/get_records")
-async def get_records_endpoint(patient_id: Optional[str] = None):
+async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Optional[str] = None):
     """
-    Retrieves medical records for a specific patient.
+    Retrieves medical records for a specific profile (V1.0).
+    Aggregates from: Summaries, Prescriptions, Lab Reports.
     """
     try:
-        # Fetch from Firebase (Live or Mock)
-        records = firebase_service.get_records("medical_records", patient_id)
-        return {"records": records}
+        target_id = profile_id or patient_id
+        
+        # Fetch from multiple V1.0 collections
+        summaries = firebase_service.get_records("case_ai_patient_summaries", target_id)
+        prescriptions = firebase_service.get_records("prescriptions", target_id)
+        lab_reports = firebase_service.get_records("lab_reports", target_id)
+        
+        # Compatibility: Allow fetching old 'medical_records' too if needed, or just merge
+        # For V1.0 migration, we prioritize the new ones.
+        
+        all_records = summaries + prescriptions + lab_reports
+        
+        # Sort by created_at desc
+        all_records.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        
+        return {"records": all_records}
     except Exception as e:
         print(f"Get Records Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -466,10 +486,21 @@ async def get_location_endpoint(lat: float, lon: float):
 @app.get("/get_appointments")
 async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id: Optional[str] = None):
     try:
-        return firebase_service.get_appointments(doctor_id, patient_id)
+        print(f"DEBUG get_appointments: doctor_id={doctor_id}, patient_id={patient_id}")
+        result = firebase_service.get_appointments(doctor_id, patient_id)
+        print(f"DEBUG get_appointments: returning {len(result)} appointments")
+        return result
     except Exception as e:
         print(f"Get Appointments Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/debug/firebase_status")
+async def debug_firebase_status():
+    """Debug endpoint to check Firebase initialization status"""
+    return {
+        "mock_mode": firebase_service.mock_mode,
+        "db_initialized": firebase_service.db is not None
+    }
 
 @app.get("/get_patients")
 async def get_patients_endpoint(doctor_id: str):
@@ -485,6 +516,176 @@ async def get_emergencies_endpoint():
         return firebase_service.get_emergencies()
     except Exception as e:
         print(f"Get Emergencies Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_doctors")
+async def get_doctors_endpoint():
+    """
+    Returns list of all doctors.
+    """
+    try:
+        doctors = firebase_service.get_doctors()
+        return {"doctors": doctors}
+    except Exception as e:
+        print(f"Get Doctors Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_doctor")
+async def get_doctor_endpoint(doctor_id: str):
+    """
+    Returns a single doctor by ID.
+    """
+    try:
+        doctor = firebase_service.get_doctor(doctor_id)
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+        return doctor
+    except Exception as e:
+        print(f"Get Doctor Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/create_slot")
+async def create_slot_endpoint(slot_data: dict):
+    """
+    Creates a new doctor slot.
+    Input: { "doctor_id": "...", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "status": "AVAILABLE" }
+    """
+    try:
+        slot_id = firebase_service.create_slot(slot_data)
+        if slot_id:
+            return {"status": "success", "slot_id": slot_id}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create slot")
+    except Exception as e:
+        print(f"Create Slot Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/delete_slot")
+async def delete_slot_endpoint(slot_id: str):
+    """
+    Deletes a doctor slot by ID.
+    Query Param: ?slot_id=...
+    """
+    try:
+        success = firebase_service.delete_slot(slot_id)
+        if success:
+            return {"status": "success", "message": "Slot deleted"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete slot")
+    except Exception as e:
+        print(f"Delete Slot Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/delete_slots_for_day")
+async def delete_slots_for_day_endpoint(doctor_id: str, date: str):
+    """
+    Deletes all slots for a doctor on a specific date.
+    Query Params: ?doctor_id=...&date=YYYY-MM-DD
+    """
+    try:
+        success = firebase_service.delete_slots_for_day(doctor_id, date)
+        if success:
+            return {"status": "success", "message": f"All slots for {date} deleted"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete slots")
+    except Exception as e:
+        print(f"Batch Delete Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/delete_all_slots_globally")
+async def delete_all_slots_globally_endpoint():
+    """
+    Deletes ALL slots for ALL doctors in the database.
+    WARNING: Destructive.
+    """
+    try:
+        success = firebase_service.delete_all_slots_globally()
+        if success:
+            return {"status": "success", "message": "All slots in database deleted"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete slots")
+    except Exception as e:
+        print(f"Global Delete Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class BatchSlotRequest(BaseModel):
+    doctor_id: str
+    start_date: str # YYYY-MM-DD
+    end_date: str # YYYY-MM-DD
+    selected_days: List[str] # ["Mon", "Fri"]
+    start_time: str # HH:MM
+    end_time: str # HH:MM
+    break_start: str # HH:MM
+    break_end: str # HH:MM
+    slot_duration_minutes: int = 30
+    time_gap_minutes: int = 0  # NEW
+
+@app.get("/get_case")
+async def get_case_endpoint(case_id: str):
+    try:
+        print(f"DEBUG: /get_case called with case_id={case_id}")
+        case_data = firebase_service.get_case(case_id)
+        if not case_data:
+             print(f"DEBUG: Case {case_id} not found")
+             raise HTTPException(status_code=404, detail="Case not found")
+        print(f"DEBUG: Found case data: {case_data}")
+        return case_data
+    except HTTPException as he:
+        # Re-raise HTTP exceptions (e.g. 404)
+        raise he
+    except Exception as e:
+        import traceback
+        with open("backend_error.log", "w") as f:
+            f.write(f"Error for case_id {case_id}: {str(e)}\n")
+            traceback.print_exc(file=f)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/create_slots_batch")
+async def create_slots_batch_endpoint(req: BatchSlotRequest):
+    """
+    Creates multiple slots based on a schedule.
+    """
+    try:
+        count = firebase_service.create_batch_slots(
+            req.doctor_id, 
+            req.start_date, 
+            req.end_date, 
+            req.selected_days, 
+            req.start_time, 
+            req.end_time, 
+            req.break_start, 
+            req.break_end, 
+            req.slot_duration_minutes,
+            req.time_gap_minutes # NEW
+        )
+        return {"status": "success", "slots_created": count}
+    except Exception as e:
+        print(f"Batch Slot Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_slots")
+async def get_slots_endpoint(doctor_id: str):
+    """
+    Returns available slots for a doctor.
+    """
+    try:
+        slots = firebase_service.get_doctor_slots(doctor_id)
+        return {"slots": slots}
+    except Exception as e:
+        print(f"Get Slots Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_appointments")
+async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id: Optional[str] = None):
+    """
+    Returns list of appointments.
+    - If doctor_id provided: Returns appointments for that doctor (with patient details).
+    - If patient_id provided: Returns appointments for that patient (with doctor details).
+    """
+    try:
+        return firebase_service.get_appointments(doctor_id=doctor_id, patient_id=patient_id)
+    except Exception as e:
+        print(f"Get Appointments Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

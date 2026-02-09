@@ -32,9 +32,10 @@ const MedicalFiles = () => {
 
     // Fetch Records
     const fetchRecords = () => {
-        const targetId = selectedProfile?.id || currentUser?.uid;
+        const targetId = selectedProfile?.id || currentUser?.uid || selectedProfile?.profile_id;
         if (targetId) {
-            fetch(`/get_records?patient_id=${targetId}`)
+            // V1.0: Use profile_id param explicitly if available, or fall back to patient_id logic
+            fetch(`/get_records?profile_id=${targetId}&patient_id=${targetId}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.records) {
@@ -46,56 +47,84 @@ const MedicalFiles = () => {
                         const newSummaries = [];
 
                         data.records.forEach(r => {
+                            // Normalize Data (Handle V1.0 Flat vs Legacy Nested)
+                            const isV1 = !r.data || (r.type === 'AI_SUMMARY' || r.type === 'DOCTOR_SUMMARY');
+                            const recordData = isV1 ? r : r.data;
+
                             const item = {
-                                id: r.record_id,
-                                title: r.data.title || "Untitled Record",
-                                date: r.data.date || new Date(r.created_at).toLocaleDateString(),
-                                doctor: r.data.doctor || "Unknown Doctor",
+                                id: r.record_id || r.summary_id || r.id,
+                                title: recordData.title || "Untitled Record",
+                                date: recordData.date || new Date(r.created_at || r.generated_at).toLocaleDateString(),
+                                doctor: recordData.doctor || "Unknown Doctor",
                                 type: r.type,
                                 caseId: r.case_id,
-                                diagnosis: r.data.title, // Map title to diagnosis for prescriptions
-                                issuer: r.data.doctor, // Map doctor to issuer for certificates
-                                labName: r.data.doctor, // Map doctor to labName for reports
+                                diagnosis: recordData.title,
+                                issuer: recordData.doctor,
+                                labName: recordData.doctor,
                                 status: "Issued",
-                                fullData: r.data,
-                                fileContent: r.data.fileContent,
-                                fileName: r.data.fileName,
-                                fileType: r.data.fileType
+                                fullData: recordData,
+                                fileContent: recordData.fileContent,
+                                fileName: recordData.fileName,
+                                fileType: recordData.fileType
                             };
 
-                            // Add ALL files to main 'Medical Records' list
-                            if (r.type !== 'summary') {
+                            // Add ALL files to main 'Medical Records' list (Legacy view)
+                            if (r.type !== 'summary' && r.type !== 'AI_SUMMARY' && r.type !== 'DOCTOR_SUMMARY') {
                                 newFiles.push(item);
                             }
 
-                            // Also categorize into specific tabs
+                            // Categorize
                             if (r.type === 'Prescription') newPrescriptions.push(item);
                             else if (r.type === 'Lab Report' || r.type === 'X-Ray') newReports.push(item);
                             else if (r.type === 'Certificate') newCertificates.push(item);
-                            else if (r.type === 'summary' || r.type === 'AI_SUMMARY_DOCTOR') {
-                                // Extract nested data for easier mapping
-                                const doctorSummary = r.data.pre_doctor_consultation_summary || {};
-                                const history = doctorSummary.history || {};
-                                const assessment = doctorSummary.assessment || {};
 
-                                newSummaries.push({
-                                    id: r.record_id,
-                                    title: "AI Health Summary",
-                                    date: new Date(r.created_at).toLocaleDateString(),
-                                    caseId: r.case_id,
-                                    fullData: r.data,
-                                    // Map nested fields to flat structure expected by Client
-                                    color: assessment.severity || "Green",
-                                    triage: assessment.severity === "RED" ? "Emergency" : "Non-Emergency",
-                                    chiefComplaints: doctorSummary.chief_complaint ? [doctorSummary.chief_complaint] : [],
-                                    reportedSymptoms: history.symptoms || [],
-                                    deniedSymptoms: history.negatives || [],
-                                    redFlags: doctorSummary.red_flags || [],
-                                    guidelines: r.data.patient_summary || "No specific guidelines.",
-                                    followUp: doctorSummary.plan?.referral_needed ? "Consult Doctor immediately" : "Monitor for 24 hours",
-                                    raw_patient_summary: r.data.patient_summary,
-                                    raw_doctor_summary: doctorSummary
-                                });
+                            // Handle AI Summaries (V1.0 & Legacy)
+                            else if (r.type === 'summary' || r.type === 'AI_SUMMARY_DOCTOR' || r.type === 'AI_SUMMARY') {
+                                let summaryObj = {};
+
+                                if (r.type === 'AI_SUMMARY') {
+                                    // V1.0 Flat Schema (Patient Summary)
+                                    summaryObj = {
+                                        id: r.summary_id || r.id,
+                                        title: "AI Patient Summary",
+                                        date: new Date(r.generated_at).toLocaleDateString(),
+                                        caseId: r.case_id,
+                                        fullData: r,
+                                        color: r.triage_level || "Green",
+                                        triage: (r.triage_level === "Red" || r.triage_level === "RED") ? "Emergency" : "Non-Emergency",
+                                        chiefComplaints: [], // Usually in doctor summary
+                                        reportedSymptoms: r.symptoms_reported || [],
+                                        deniedSymptoms: r.symptoms_denied || [],
+                                        redFlags: r.red_flags_to_watch || [],
+                                        guidelines: r.guidelines?.actions?.[0] || "No specific guidelines.",
+                                        followUp: "Check doctor instructions",
+                                        raw_patient_summary: r
+                                    };
+                                } else {
+                                    // Legacy Nested Schema
+                                    const doctorSummary = r.data.pre_doctor_consultation_summary || {};
+                                    const history = doctorSummary.history || {};
+                                    const assessment = doctorSummary.assessment || {};
+
+                                    summaryObj = {
+                                        id: r.record_id,
+                                        title: "AI Health Summary",
+                                        date: new Date(r.created_at).toLocaleDateString(),
+                                        caseId: r.case_id,
+                                        fullData: r.data,
+                                        color: assessment.severity || "Green",
+                                        triage: assessment.severity === "RED" ? "Emergency" : "Non-Emergency",
+                                        chiefComplaints: doctorSummary.chief_complaint ? [doctorSummary.chief_complaint] : [],
+                                        reportedSymptoms: history.symptoms || [],
+                                        deniedSymptoms: history.negatives || [],
+                                        redFlags: doctorSummary.red_flags || [],
+                                        guidelines: r.data.patient_summary || "No specific guidelines.",
+                                        followUp: doctorSummary.plan?.referral_needed ? "Consult Doctor immediately" : "Monitor for 24 hours",
+                                        raw_patient_summary: r.data.patient_summary,
+                                        raw_doctor_summary: doctorSummary
+                                    };
+                                }
+                                newSummaries.push(summaryObj);
                             }
                         });
 

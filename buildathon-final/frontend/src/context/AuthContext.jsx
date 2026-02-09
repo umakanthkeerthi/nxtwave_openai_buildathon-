@@ -6,7 +6,7 @@ import {
     onAuthStateChanged,
     signInWithPopup
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'; // [UPDATED]
 import { auth, googleProvider, db } from '../firebase';
 
 const AuthContext = createContext();
@@ -39,11 +39,11 @@ export function AuthProvider({ children }) {
     }
 
     function selectProfile(profileId) {
-        if (!currentUser?.profile?.profiles) return;
-        const profile = currentUser.profile.profiles.find(p => p.id === profileId);
+        if (!currentUser?.profiles) return; // [UPDATED] Check profiles array attached to user
+        const profile = currentUser.profiles.find(p => p.profile_id === profileId || p.id === profileId);
         if (profile) {
             setSelectedProfile(profile);
-            localStorage.setItem('selectedProfileId', profileId);
+            localStorage.setItem('selectedProfileId', profile.profile_id || profile.id);
         }
     }
 
@@ -59,35 +59,44 @@ export function AuthProvider({ children }) {
                     return;
                 }
 
-                // Fetch user doc with timeout
                 try {
-                    const fetchDoc = async () => {
-                        const docRef = doc(db, "users", user.uid);
-                        const docSnap = await getDoc(docRef);
-                        if (docSnap.exists()) {
-                            return docSnap.data();
+                    // 1. Fetch User Doc (Role, etc.)
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+
+                    // 2. Fetch Profiles Collection (V1.0 Schema)
+                    const profilesRef = collection(db, "profiles");
+                    const q = query(profilesRef, where("owner_uid", "==", user.uid));
+                    const querySnapshot = await getDocs(q);
+
+                    const profiles = [];
+                    querySnapshot.forEach((doc) => {
+                        profiles.push({ ...doc.data(), id: doc.id });
+                    });
+
+                    // Attach profiles to currentUser object for easy access
+                    const userWithProfiles = { ...user, ...userData, profiles: profiles };
+                    setCurrentUser(userWithProfiles);
+
+                    // 3. Auto-restore selected profile
+                    const savedProfileId = localStorage.getItem('selectedProfileId');
+                    if (savedProfileId && profiles.length > 0) {
+                        const found = profiles.find(p => p.profile_id === savedProfileId || p.id === savedProfileId);
+                        if (found) {
+                            setSelectedProfile(found);
+                        } else {
+                            // Default to first profile if saved one not found
+                            setSelectedProfile(profiles[0]);
                         }
-                        return null;
-                    };
-
-                    const docData = await fetchDoc();
-
-                    if (docData) {
-                        setCurrentUser({ ...user, profile: docData }); // docData contains 'profiles' array
-
-                        // Auto-restore selected profile from localStorage if valid
-                        const savedProfileId = localStorage.getItem('selectedProfileId');
-                        if (savedProfileId && docData.profiles) {
-                            const found = docData.profiles.find(p => p.id === savedProfileId);
-                            if (found) setSelectedProfile(found);
-                        }
-                    } else {
-                        setCurrentUser({ ...user, profile: null });
+                    } else if (profiles.length > 0) {
+                        // Default to first profile
+                        setSelectedProfile(profiles[0]);
                     }
 
                 } catch (err) {
-                    console.error("AuthContext: Error fetching user doc:", err);
-                    setCurrentUser({ ...user, profile: null });
+                    console.error("AuthContext: Error fetching user/profiles:", err);
+                    setCurrentUser(user);
                 }
             } else {
                 setCurrentUser(null);

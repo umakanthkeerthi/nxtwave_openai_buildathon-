@@ -9,8 +9,15 @@ const ProfileSelection = () => {
     const { currentUser, selectProfile, logout } = useAuth();
     const navigate = useNavigate();
 
-    // Safety check: ensure profiles array exists
-    const profiles = currentUser?.profile?.profiles || [];
+    // V1.0 Schema: Profiles are attached directly to currentUser by AuthContext
+    const profiles = currentUser?.profiles || [];
+
+    // Auto-redirect to setup if no profiles exist (New User Flow)
+    React.useEffect(() => {
+        if (profiles.length === 0) {
+            navigate('/profile-setup');
+        }
+    }, [profiles, navigate]);
 
     const handleProfileClick = (profileId) => {
         selectProfile(profileId);

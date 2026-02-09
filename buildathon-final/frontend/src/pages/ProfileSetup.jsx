@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Calendar, Activity, Droplet, Users, Heart } from 'lucide-react';
-import { doc, setDoc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, getDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import './Auth.css'; // Reuse Auth styles
 
@@ -32,30 +32,30 @@ const ProfileSetup = () => {
 
         try {
             setLoading(true);
-            const userRef = doc(db, "users", currentUser.uid);
-            const userSnap = await getDoc(userRef);
 
-            const newProfileId = "profile_" + Date.now();
+            // V1.0 Schema: Create Profile Document
+            const profilesRef = doc(collection(db, "profiles")); // Auto-ID
+            const newProfileId = profilesRef.id;
+
             const newProfile = {
-                id: newProfileId,
+                profile_id: newProfileId,
+                owner_uid: currentUser.uid, // Link to User
                 ...formData,
                 role: 'patient',
-                createdAt: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                is_active: true
             };
 
-            if (userSnap.exists()) {
-                // User exists, append to profiles array
-                await updateDoc(userRef, {
-                    profiles: arrayUnion(newProfile)
-                });
-            } else {
-                // First time user, create doc with profiles array
-                await setDoc(userRef, {
-                    email: currentUser.email,
-                    createdAt: new Date().toISOString(),
-                    profiles: [newProfile]
-                });
-            }
+            await setDoc(profilesRef, newProfile);
+            console.log("Profile Created:", newProfileId);
+
+            // Update User Onboarding Status & Role
+            const userRef = doc(db, "users", currentUser.uid);
+            await setDoc(userRef, {
+                onboarding_completed: true,
+                role: 'patient', // Explicitly set role
+                updated_at: new Date().toISOString()
+            }, { merge: true });
 
             // Redirect to profile selection
             window.location.href = "/profiles";

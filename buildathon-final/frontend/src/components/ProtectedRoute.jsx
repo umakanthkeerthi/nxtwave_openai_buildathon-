@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children, requireProfile = true, requiredRole = null }) => {
-    const { currentUser } = useAuth();
+    const { currentUser, selectedProfile } = useAuth();
     const location = useLocation();
 
     // 1. Authentication Check (Must be logged in)
@@ -15,21 +15,26 @@ const ProtectedRoute = ({ children, requireProfile = true, requiredRole = null }
         return <Navigate to="/login" />;
     }
 
-    // 2. Profile Check (Must have profile setup)
-    if (requireProfile && currentUser.profile === null) {
-        return <Navigate to="/profile-setup" />;
-    }
+    // 2. Role Check
+    // Check 'role' from 'users' collection (set by init_v1_db.py)
+    const userRole = currentUser.role || 'patient';
 
-    // 3. Role Check (RESTORED)
-    const userRole = currentUser.profile?.role || 'patient'; // Default to patient if missing
     if (requiredRole && userRole !== requiredRole) {
         if (requiredRole === 'doctor') {
+            // User is Patient, trying to access Doctor
             return <Navigate to="/patient" replace />;
         }
-        // If a Doctor tries to access Patient pages, send them to their dashboard
         if (requiredRole === 'patient') {
+            // User is Doctor, trying to access Patient
             return <Navigate to="/doctor/dashboard" replace />;
         }
+    }
+
+    // 3. Profile Check (Only for Patients)
+    // Doctors do not need "Patient Profiles"
+    if (userRole === 'patient' && requireProfile && !selectedProfile) {
+        console.log("ProtectedRoute: No profile selected, redirecting to /profiles");
+        return <Navigate to="/profiles" />;
     }
 
     return children;

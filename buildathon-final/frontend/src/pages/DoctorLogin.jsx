@@ -14,7 +14,7 @@ const DoctorLogin = () => {
 
     // Redirect if already logged in and verification passed
     useEffect(() => {
-        if (currentUser && currentUser.profile?.role === 'doctor') {
+        if (currentUser && currentUser.role === 'doctor') {
             navigate('/doctor/dashboard');
         }
     }, [currentUser, navigate]);

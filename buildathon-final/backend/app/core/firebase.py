@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 try:
     import firebase_admin
     from firebase_admin import credentials, firestore
@@ -56,21 +57,70 @@ class FirebaseService:
                 return []
 
     def get_appointments(self, doctor_id=None, patient_id=None):
+        """
+        Fetch appointments with V1.0 enrichment.
+        - If patient_id: Enrich with Doctor details.
+        - If doctor_id: Enrich with Patient details (from snapshot).
+        """
         if self.mock_mode:
             print(f"[MOCK FIREBASE] Fetching appointments for doc={doctor_id} pat={patient_id}")
             return []
-        else:
-            try:
-                query = self.db.collection("appointments")
+        
+        try:
+            query = self.db.collection("appointments")
+            
+            if doctor_id:
+                query = query.where("doctor_id", "==", doctor_id)
+            if patient_id:
+                # Support both profile_id and older patient_id field if needed
+                # Ideally V1.0 uses profile_id, but legacy might use patient_id
+                # Let's try profile_id first as it's the V1.0 standard
+                query = query.where("profile_id", "==", patient_id)
+                
+            docs = query.stream()
+            appointments = [{**doc.to_dict(), "id": doc.id} for doc in docs]
+            print(f"DEBUG: Found {len(appointments)} raw appointments")
+            
+            # Helper to fetch all doctors only if needed
+            doctors_map = {}
+            if patient_id and appointments:
+                 try:
+                     doctors_list = self.get_doctors()
+                     doctors_map = {d["id"]: d for d in doctors_list}
+                     print(f"DEBUG: Loaded {len(doctors_map)} doctors for enrichment")
+                 except Exception as e:
+                     print(f"DEBUG: Failed to load doctors: {e}")
+                     pass
+
+            enriched = []
+            for apt in appointments:
+                # 1. Enlighten Patient Info (for Doctors)
                 if doctor_id:
-                    query = query.where("doctor_id", "==", doctor_id)
+                    snapshot = apt.get("patient_snapshot", {})
+                    apt["patient_name"] = snapshot.get("name") or apt.get("patient_name") or "Unknown"
+                    apt["patient_age"] = snapshot.get("age") or apt.get("patient_age")
+                    apt["patient_gender"] = snapshot.get("gender") or apt.get("patient_gender")
+
+                # 2. Enlighten Doctor Info (for Patients)
                 if patient_id:
-                    query = query.where("patient_id", "==", patient_id)
-                docs = query.stream()
-                return [{**doc.to_dict(), "id": doc.id} for doc in docs]
-            except Exception as e:
-                print(f"Firebase Appointment Error: {e}")
-                return []
+                    doc_id = apt.get("doctor_id")
+                    doctor = doctors_map.get(doc_id, {})
+                    apt["doctorName"] = doctor.get("name", "Unknown Doctor")
+                    apt["specialty"] = doctor.get("specialization", "General")
+                    apt["doctorImage"] = doctor.get("image", "")
+
+                enriched.append(apt)
+            
+            print(f"DEBUG: Returning {len(enriched)} enriched appointments")
+            # Sort by time info (descending)
+            enriched.sort(key=lambda x: x.get("slot_time", "") or x.get("created_at", ""), reverse=True)
+            return enriched
+
+        except Exception as e:
+            print(f"Firebase Appointment Error: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
 
     def get_patients(self, doctor_id):
         # In a real app, this might be a separate relationship collection.
@@ -125,6 +175,290 @@ class FirebaseService:
             except Exception as e:
                 print(f"Firebase Emergency Error: {e}")
                 return []
+
+    # --- GENERIC HELPERS (V1.0) ---
+    def get_document(self, collection: str, doc_id: str):
+        """
+        Generic fetch by ID. Very useful for V1.0 schema (slots, profiles, cases).
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Fetching doc '{doc_id}' from '{collection}'.")
+            return {"id": doc_id, "mock_data": True}
+        else:
+            try:
+                doc_ref = self.db.collection(collection).document(doc_id)
+                doc = doc_ref.get()
+                if doc.exists:
+                    return {**doc.to_dict(), "id": doc.id}
+                else:
+                    return None
+            except Exception as e:
+                print(f"Firebase Get Doc Error ({collection}/{doc_id}): {e}")
+                return None
+
+    def get_case(self, case_id: str):
+        """
+        Fetch a single case by ID.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Fetching case {case_id}.")
+            return {
+                "id": case_id,
+                "status": "DOCTOR_ASSIGNED", 
+                "triage_decision": "PENDING",
+                "mock_data": True
+            }
+        else:
+            return self.get_document("cases", case_id)
+
+    def update_document(self, collection: str, doc_id: str, data: dict):
+        """
+        Generic update by ID.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Updating doc '{doc_id}' in '{collection}': {data}")
+            return True
+        else:
+            try:
+                doc_ref = self.db.collection(collection).document(doc_id)
+                doc_ref.update(data)
+                return True
+            except Exception as e:
+                print(f"Firebase Update Doc Error ({collection}/{doc_id}): {e}")
+                return False
+
+    def upsert_document(self, collection: str, doc_id: str, data: dict):
+        """
+        Create or Update a document with a specific ID.
+        Uses set(..., merge=True).
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Upserting doc '{doc_id}' in '{collection}': {data}")
+            return True
+        else:
+            try:
+                doc_ref = self.db.collection(collection).document(doc_id)
+                doc_ref.set(data, merge=True)
+                return True
+            except Exception as e:
+                print(f"Firebase Upsert Doc Error ({collection}/{doc_id}): {e}")
+                return False
+
+    def get_doctors(self):
+        """
+        Fetch all available doctors.
+        """
+        if self.mock_mode:
+            print("[MOCK FIREBASE] Fetching all doctors.")
+            return []
+        else:
+            try:
+                docs = self.db.collection("doctors").stream()
+                return [{**doc.to_dict(), "id": doc.id} for doc in docs]
+            except Exception as e:
+                print(f"Firebase Doctors Error: {e}")
+                return []
+
+    def get_doctor(self, doctor_id: str):
+        """
+        Fetch a single doctor by ID.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Fetching doctor {doctor_id}.")
+            return {"name": "Mock Doctor", "specialization": "General", "id": doctor_id}
+        else:
+            return self.get_document("doctors", doctor_id)
+
+    def get_doctor_slots(self, doctor_id: str):
+        """
+        Fetch available slots for a specific doctor.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Fetching slots for {doctor_id}.")
+            return []
+        else:
+            try:
+                # Only show AVAILABLE slots
+                query = self.db.collection("doctor_slots")\
+                    .where("doctor_id", "==", doctor_id)\
+                    .where("status", "==", "AVAILABLE")
+                
+                docs = query.stream()
+                slots = [{**doc.to_dict(), "id": doc.id} for doc in docs]
+                
+                # Client-side sort by start_time just in case
+                slots.sort(key=lambda x: x.get("start_time", ""))
+                return slots
+            except Exception as e:
+                print(f"Firebase Slots Error: {e}")
+                return []
+
+    def create_slot(self, slot_data: dict):
+        """
+        Creates a new slot in 'doctor_slots' collection.
+        Input: { "doctor_id": "...", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "status": "AVAILABLE" }
+        """
+        # Add timestamp
+        if "created_at" not in slot_data:
+            slot_data["created_at"] = datetime.utcnow().isoformat()
+
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Creating slot: {slot_data}")
+            return "mock_slot_id"
+        else:
+            try:
+                # Basic validation: Check for overlap? (Skipping for MVP)
+                doc_ref = self.db.collection("doctor_slots").add(slot_data)
+                return doc_ref[1].id
+            except Exception as e:
+                print(f"Firebase Create Slot Error: {e}")
+                return None
+
+    def delete_slot(self, slot_id: str):
+        """
+        Deletes a slot by ID.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Deleting slot: {slot_id}")
+            return True
+        else:
+            try:
+                self.db.collection("doctor_slots").document(slot_id).delete()
+                return True
+            except Exception as e:
+                print(f"Firebase Delete Slot Error: {e}")
+                return False
+
+    def delete_slots_for_day(self, doctor_id: str, date: str):
+        """
+        Deletes all slots for a doctor on a specific date.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Deleting slots for {doctor_id} on {date}")
+            return True
+        else:
+            try:
+                # Query all slots for this doctor and date
+                slots_ref = self.db.collection("doctor_slots")
+                query = slots_ref.where("doctor_id", "==", doctor_id).where("date", "==", date)
+                docs = query.stream()
+
+                # Batch delete
+                batch = self.db.batch()
+                count = 0
+                for doc in docs:
+                    batch.delete(doc.reference)
+                    count += 1
+                
+                if count > 0:
+                    batch.commit()
+                
+                print(f"Deleted {count} slots for {date}")
+                return True
+            except Exception as e:
+                print(f"Firebase Batch Delete Error: {e}")
+                return False
+
+    def delete_all_slots_globally(self):
+        """
+        Deletes ALL slots for ALL doctors. Use with caution.
+        """
+        if self.mock_mode:
+            print("[MOCK FIREBASE] Deleting ALL slots globally")
+            return self.delete_all_mock_data() # Assuming we might want to clear mock data too
+        else:
+            try:
+                # Get all documents in collection
+                docs = self.db.collection("doctor_slots").stream()
+                
+                batch = self.db.batch()
+                count = 0
+                total_deleted = 0
+                
+                for doc in docs:
+                    batch.delete(doc.reference)
+                    count += 1
+                    
+                    # Firebase batch limit is 500
+                    if count >= 400:
+                        batch.commit()
+                        total_deleted += count
+                        batch = self.db.batch()
+                        count = 0
+                
+                if count > 0:
+                    batch.commit()
+                    total_deleted += count
+                    
+                print(f"Globally deleted {total_deleted} slots")
+                return True
+            except Exception as e:
+                print(f"Global Delete Error: {e}")
+                return False
+
+    def create_batch_slots(self, doctor_id, start_date, end_date, selected_days, start_time, end_time, break_start, break_end, slot_duration=30, time_gap=0):
+        """
+        Creates slots in batch for a date range.
+        Inputs: strings "YYYY-MM-DD", "HH:MM", list ["Mon", "Tue"]
+        """
+        created_count = 0
+        try:
+            curr_date = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            
+            # Parse times
+            start_tm = datetime.strptime(start_time, "%H:%M")
+            end_tm = datetime.strptime(end_time, "%H:%M")
+            break_start_tm = datetime.strptime(break_start, "%H:%M")
+            break_end_tm = datetime.strptime(break_end, "%H:%M")
+            
+            # Extract time components for slot generation logic
+            start_h, start_m = start_tm.hour, start_tm.minute
+            end_h, end_m = end_tm.hour, end_tm.minute
+            break_s_h, break_s_m = break_start_tm.hour, break_start_tm.minute
+            break_e_h, break_e_m = break_end_tm.hour, break_end_tm.minute
+            
+            while curr_date <= end_dt:
+                day_name = curr_date.strftime("%a") # Mon, Tue...
+                if day_name in selected_days:
+                    # Current Day Start/End as full datetime
+                    day_start_dt = curr_date.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
+                    day_end_dt = curr_date.replace(hour=end_h, minute=end_m, second=0, microsecond=0)
+                    
+                    # Current Day Break
+                    day_break_start = curr_date.replace(hour=break_s_h, minute=break_s_m, second=0, microsecond=0)
+                    day_break_end = curr_date.replace(hour=break_e_h, minute=break_e_m, second=0, microsecond=0)
+                    
+                    # Generate Slots
+                    slot_start = day_start_dt
+                    while slot_start + timedelta(minutes=slot_duration) <= day_end_dt:
+                        slot_end = slot_start + timedelta(minutes=slot_duration)
+                        
+                        # Check Overlap: (SlotEnd > BreakStart) AND (SlotStart < BreakEnd)
+                        is_overlap = (slot_end > day_break_start) and (slot_start < day_break_end)
+                        
+                        if not is_overlap:
+                            slot_data = {
+                                "doctor_id": doctor_id,
+                                "date": curr_date.strftime("%Y-%m-%d"),
+                                "start_time": slot_start.strftime("%H:%M"),
+                                "end_time": slot_end.strftime("%H:%M"),
+                                "status": "AVAILABLE"
+                            }
+                            self.create_slot(slot_data)
+                            created_count += 1
+                        
+                        # Add Duration + GAP for next start
+                        slot_start = slot_end + timedelta(minutes=time_gap)
+
+                curr_date += timedelta(days=1)
+                
+            return created_count
+        except Exception as e:
+            print(f"Batch Create Error: {e}")
+            return 0
+
+
 
 # Singleton Instance
 firebase_service = FirebaseService()

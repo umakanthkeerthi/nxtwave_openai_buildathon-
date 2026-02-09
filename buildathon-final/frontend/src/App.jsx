@@ -16,9 +16,12 @@ import NotFound from './pages/NotFound';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import ProfileRedirect from './components/ProfileRedirect';
 import Signup from './pages/Signup';
 import ProfileSetup from './pages/ProfileSetup';
 import ProfileSelection from './pages/ProfileSelection';
+
+
 
 // Doctor Module
 import DoctorLayout from './doctor/DoctorLayout';
@@ -32,6 +35,7 @@ import DoctorMessages from './doctor/DoctorMessages';
 import DoctorReports from './doctor/DoctorReports';
 import DoctorEmergencyDetail from './doctor/DoctorEmergencyDetail';
 import DoctorEmergencyQueue from './doctor/DoctorEmergencyQueue';
+import DoctorSlotManager from './doctor/DoctorSlotManager';
 import DoctorLogin from './pages/DoctorLogin';
 
 // Patient Layout Wrapper
@@ -55,10 +59,13 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
 
+                    {/* PROFILE REDIRECT (Handle /profile 404) */}
+                    <Route path="/profile" element={<ProfileRedirect />} />
+
 
                     {/* PROFILE SELECTION */}
                     <Route path="/profiles" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requireProfile={false}>
                             <ProfileSelection />
                         </ProtectedRoute>
                     } />
@@ -89,6 +96,7 @@ function App() {
                         <Route path="messages" element={<DoctorMessages />} />
                         <Route path="reports" element={<DoctorReports />} />
                         <Route path="patients" element={<DoctorPatients />} />
+                        <Route path="my-slots" element={<DoctorSlotManager />} />
                         <Route path="patients/:id" element={<PatientDetail />} />
                     </Route>
 

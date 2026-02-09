@@ -5,93 +5,122 @@ import uuid
 from datetime import datetime
 
 class MedicalRecordsSubgraph:
-    def format_summary_node(self, state: TriageState) -> dict:
+    def create_case_node(self, state: TriageState) -> dict:
         """
-        Node 1: Format Data
-        Ensures we have a valid summary structure before saving.
-        If 'final_advice' is missing, it mimics a default summary.
+        Node 1: Create/Link Case (The Golden Spine)
+        Ensures a 'cases' document exists for this interaction.
         """
-        print("DEBUG: Executing format_summary_node")
-        summary_data = {
-            "profile": state.get("patient_profile", {}),
-            "triage_decision": state.get("triage_decision"),
-            "final_advice": state.get("final_advice", "No specific advice generated."),
-            "symptoms": state.get("investigated_symptoms", [])
-        }
-        
-        # We return this to be available for the next node (via state update)
-        # Note: In TriageState, we might not have a 'formatted_summary' field, 
-        # so we'll just pass it internally or rely on the next node reconstructing it 
-        # if we don't want to change state schema again.
-        # For this implementation, let's pass it as a temporary key if LangGraph allows, 
-        # or just re-construct it in the saver for simplicity, 
-        # BUT the user asked for a specific "generation" step. 
-        # Let's assume we update the state with 'last_generated_summary' if we added it,
-        # or we just rely on the node logic flow.
-        
-        return {"final_advice": summary_data["final_advice"]} # Ensure advice is set
-
-    def save_to_firebase_node(self, state: TriageState) -> dict:
-        """
-        Node 2: Save to Firebase
-        """
-        print("DEBUG: Executing save_to_firebase_node")
+        print("DEBUG: Executing create_case_node")
         try:
-            patient_id = state.get("session_id", "anon_patient")
-            print(f"DEBUG: Processing save_to_firebase_node for Patient: {patient_id}")
+            # 1. Identity Resolution
+            profile_id = state.get("profile_id")
+            if not profile_id:
+                # Fallback for now, though V1.0 assumes strict profiles
+                profile_id = state.get("session_id", "anon_profile")
             
-            # Re-construct or pull from state
-            # IMPROVEMENT: Use the full payload if available to preserve all details
-            summary_data = {}
-            existing_case_id = None
-
-            if state.get("full_summary_payload"):
-                print("DEBUG: Using full_summary_payload")
-                summary_data = state.get("full_summary_payload")
-                existing_case_id = summary_data.get("case_id") # Extract if passed from frontend
-            else:
-                print("DEBUG: Constructing summary from partial state")
-                summary_data = {
-                    "profile": state.get("patient_profile", {}),
-                    "triage_decision": state.get("triage_decision"),
-                    "final_advice": state.get("final_advice"),
-                    "symptoms": state.get("investigated_symptoms", [])
+            # 2. Case Resolution
+            case_id = state.get("case_id")
+            if not case_id:
+                # New Case (e.g. starting a chat)
+                case_id = f"case_{uuid.uuid4()}"
+                print(f"DEBUG: Creating NEW Case ID: {case_id}")
+                
+                case_data = {
+                    "case_id": case_id,
+                    "profile_id": profile_id,
+                    "status": "AI_TRIAGE",
+                    "is_emergency": state.get("triage_decision") == "EMERGENCY",
+                    "created_at": datetime.utcnow().isoformat(),
+                    "last_updated_at": datetime.utcnow().isoformat()
                 }
-
-            record_id = str(uuid.uuid4())
-            # Use existing case_id (from chat session) if available, else new one
-            case_id = existing_case_id if existing_case_id else str(uuid.uuid4())
-            print(f"DEBUG: Generated/Used Case ID: {case_id}")
-
-            # Determine Record Type
-            record_type = state.get("record_type", "summary")
-
-            record = {
-                "record_id": record_id,
-                "patient_id": patient_id,
-                "case_id": case_id,
-                "type": record_type,
-                "data": summary_data,
-                "created_at": datetime.utcnow().isoformat()
-            }
+                # Save to 'cases' collection
+                firebase_service.save_record("cases", case_data)
+            else:
+                print(f"DEBUG: Using EXISTING Case ID: {case_id}")
+                # Optional: Update 'last_updated_at' here
             
-            print(f"DEBUG: Saving record to Firebase... Type: {record_type}")
-            firebase_service.save_record("medical_records", record)
-            print("DEBUG: Record saved successfully.")
-            return {"saved_record_id": record_id}
+            return {"case_id": case_id, "profile_id": profile_id}
+            
         except Exception as e:
-            print(f"Medical Records Subgraph Error: {e}")
+            print(f"Create Case Error: {e}")
+            return {"case_id": None}
+
+    def save_summaries_node(self, state: TriageState) -> dict:
+        """
+        Node 2: Save AI Summaries
+        Splits the payload into 'case_ai_patient_summaries' and 'case_pre_doctor_summaries'.
+        """
+        print("DEBUG: Executing save_summaries_node")
+        try:
+            case_id = state.get("case_id")
+            profile_id = state.get("profile_id")
+            payload = state.get("full_summary_payload", {})
+            
+            if not case_id:
+                print("ERROR: No case_id found for saving summaries.")
+                return {}
+
+            # --- A. Patient Summary ---
+            patient_summary_data = payload.get("patient_summary")
+            # If payload is just raw text/dict from simple chat, standardize it
+            if not isinstance(patient_summary_data, dict):
+                 # Handling legacy or simple structure
+                 patient_summary_data = {
+                     "clinical_guidelines": state.get("final_advice", "No advice"),
+                     "triage_level": state.get("triage_decision", "Green")
+                 }
+
+            patient_summary_record = {
+                "summary_id": f"sum_{uuid.uuid4()}",
+                "case_id": case_id,
+                "profile_id": profile_id,
+                "type": "AI_SUMMARY", # Standardized Type
+                "triage_level": patient_summary_data.get("triage_level", "Green"),
+                "symptoms_reported": patient_summary_data.get("symptoms_reported", []),
+                "symptoms_denied": patient_summary_data.get("symptoms_denied", []),
+                "red_flags_to_watch": patient_summary_data.get("red_flags", []),
+                "guidelines": {
+                    "actions": [patient_summary_data.get("clinical_guidelines", "")],
+                    "source": "AI_GENERATED"
+                },
+                "generated_at": datetime.utcnow().isoformat()
+            }
+            firebase_service.save_record("case_ai_patient_summaries", patient_summary_record)
+            print("DEBUG: Saved Patient Summary")
+
+            # --- B. Doctor Summary (If Available) ---
+            doctor_summary_data = payload.get("pre_doctor_consultation_summary")
+            if doctor_summary_data:
+                doctor_summary_record = {
+                    "summary_id": f"pre_doc_{uuid.uuid4()}",
+                    "case_id": case_id,
+                    "profile_id": profile_id,
+                    "type": "DOCTOR_SUMMARY", # Standardized Type
+                    **doctor_summary_data, # Spread the technical fields (assessment, history, etc)
+                    "generated_at": datetime.utcnow().isoformat()
+                }
+                firebase_service.save_record("case_pre_doctor_summaries", doctor_summary_record)
+                print("DEBUG: Saved Doctor Summary")
+                
+                # Update Case Status
+                # In real app, we'd do a patch update. Here we rely on the service.
+                # firebase_service.update_status("cases", case_id, "SUMMARY_READY") 
+
+            return {"saved_record_id": patient_summary_record["summary_id"]} # Legacy return
+            
+        except Exception as e:
+            print(f"Save Summaries Error: {e}")
             return {"saved_record_id": None}
 
     def build(self):
         workflow = StateGraph(TriageState)
         
-        workflow.add_node("format_summary", self.format_summary_node)
-        workflow.add_node("save_to_firebase", self.save_to_firebase_node)
+        workflow.add_node("create_case", self.create_case_node)
+        workflow.add_node("save_summaries", self.save_summaries_node)
         
-        workflow.set_entry_point("format_summary")
-        workflow.add_edge("format_summary", "save_to_firebase")
-        workflow.add_edge("save_to_firebase", END)
+        workflow.set_entry_point("create_case")
+        workflow.add_edge("create_case", "save_summaries")
+        workflow.add_edge("save_summaries", END)
         
         return workflow.compile()
 

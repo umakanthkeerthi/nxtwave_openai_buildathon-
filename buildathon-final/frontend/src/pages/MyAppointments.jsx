@@ -13,26 +13,65 @@ const MyAppointments = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        console.log("DEBUG: MyAppointments mounted/updated. currentUser:", currentUser);
+        console.log("DEBUG: selectedProfile:", selectedProfile);
+
         const fetchAppointments = async () => {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.log("DEBUG: No currentUser yet, skipping fetch. Waiting for Auth...");
+                setLoading(false); // Stop loading if no user
+                return;
+            }
 
             try {
                 // Use the Selected Profile ID
-                const targetId = selectedProfile?.id || currentUser.uid;
+                // If the selected profile is strict "Self", we might want to use the owner_uid (currentUser.uid) 
+                // because that's how appointments are often saved initially.
+                let targetId = selectedProfile?.id || currentUser.uid;
+
+                if (selectedProfile?.relation === 'Self' && selectedProfile?.owner_uid) {
+                    console.log("DEBUG: strictly using owner_uid for Self profile");
+                    targetId = selectedProfile.owner_uid;
+                } else if (!selectedProfile && currentUser) {
+                    targetId = currentUser.uid;
+                }
+
+                console.log("DEBUG: Fetching appointments for patient_id:", targetId);
+                console.log("DEBUG: currentUser.uid:", currentUser?.uid);
+                console.log("DEBUG: selectedProfile:", selectedProfile);
+
+
                 const response = await fetch(`/get_appointments?patient_id=${targetId}`);
+                console.log("DEBUG: Response status:", response.status, response.ok);
+
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
+                console.log("DEBUG: Response data:", data);
+                console.log("DEBUG: Data length:", data.length);
 
-                const formatted = data.map(apt => ({
-                    id: apt.id,
-                    doctorName: apt.doctorName || "Dr. Assigned", // Fallback if not saved
-                    specialty: apt.specialty || "General Physician",
-                    date: new Date(apt.appointment_time).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
-                    time: new Date(apt.appointment_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    status: apt.status || "Scheduled",
-                    statusColor: (apt.status === "Completed") ? "green" : "blue",
-                    image: "https://randomuser.me/api/portraits/legos/1.jpg" // Placeholder
-                }));
+                const formatted = data.map(apt => {
+                    // Backend returns slot_time as "YYYY-MM-DD HH:MM AM/PM"
+                    const slotTime = apt.slot_time || apt.appointment_time || "";
+                    let date = "N/A";
+                    let time = "N/A";
+
+                    // Parse date and time
+                    const dateObj = new Date(apt.slot_time);
+                    const dateFormatted = isNaN(dateObj.getTime()) ? apt.slot_time.split(' ')[0] : dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const timeFormatted = isNaN(dateObj.getTime()) ? apt.slot_time.split(' ').slice(1).join(' ') : dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                    return {
+                        id: apt.id,
+                        caseId: apt.case_id, // Pass case_id for tracking
+                        doctorName: apt.doctorName || "Dr. Assigned",
+                        specialty: apt.specialty || "General Physician",
+                        date: dateFormatted,
+                        time: timeFormatted,
+                        status: apt.status || "Scheduled",
+                        statusColor: (apt.status === "Completed") ? "green" : "blue",
+                        image: apt.doctorImage || "https://randomuser.me/api/portraits/legos/1.jpg"
+                    };
+                });
                 setAppointments(formatted);
             } catch (error) {
                 console.error("Error fetching appointments:", error);
@@ -54,48 +93,67 @@ const MyAppointments = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                     >
-                        <h2 className="appointments-title">Your Appointments</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 className="appointments-title">Your Appointments</h2>
+                            <button
+                                onClick={() => window.location.reload()}
+                                style={{ padding: '8px 16px', background: '#077659', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                                Force Refresh
+                            </button>
+                        </div>
 
-                        <div className="appointments-grid">
-                            {appointments.map((apt) => (
-                                <div
-                                    key={apt.id}
-                                    onClick={() => setSelectedId(apt.id)}
-                                    className="appointment-card"
-                                >
-                                    <div className="appointment-info-wrapper">
-                                        {/* Avatar */}
-                                        <div className="appointment-avatar">
-                                            <img src={apt.image} alt={apt.doctorName} />
-                                        </div>
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+                                Loading your appointments...
+                            </div>
+                        ) : appointments.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No appointments yet</p>
+                                <p style={{ fontSize: '0.9rem' }}>Book your first appointment to get started!</p>
+                            </div>
+                        ) : (
+                            <div className="appointments-grid">
+                                {appointments.map((apt) => (
+                                    <div
+                                        key={apt.id}
+                                        onClick={() => setSelectedId(apt.id)}
+                                        className="appointment-card"
+                                    >
+                                        <div className="appointment-info-wrapper">
+                                            {/* Avatar */}
+                                            <div className="appointment-avatar">
+                                                <img src={apt.image} alt={apt.doctorName} />
+                                            </div>
 
-                                        {/* Info */}
-                                        <div>
-                                            <h3 className="doctor-name">{apt.doctorName}</h3>
-                                            <p className="doctor-specialty">{apt.specialty}</p>
-                                            <div className="appointment-meta">
-                                                <span className="meta-item"><Calendar size={14} /> {apt.date}</span>
-                                                <span className="meta-item"><Clock size={14} /> {apt.time}</span>
+                                            {/* Info */}
+                                            <div>
+                                                <h3 className="doctor-name">{apt.doctorName}</h3>
+                                                <p className="doctor-specialty">{apt.specialty}</p>
+                                                <div className="appointment-meta">
+                                                    <span className="meta-item"><Calendar size={14} /> {apt.date}</span>
+                                                    <span className="meta-item"><Clock size={14} /> {apt.time}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Status & Action */}
-                                    <div className="appointment-status-wrapper">
-                                        <span
-                                            className="status-badge"
-                                            style={{
-                                                backgroundColor: apt.status === 'In Progress' ? 'rgba(0, 135, 158, 0.1)' : 'rgba(7, 118, 89, 0.1)',
-                                                color: apt.status === 'In Progress' ? 'var(--color-primary)' : '#077659'
-                                            }}
-                                        >
-                                            {apt.status}
-                                        </span>
-                                        <ChevronRight size={20} color="#ccc" />
+                                        {/* Status & Action */}
+                                        <div className="appointment-status-wrapper">
+                                            <span
+                                                className="status-badge"
+                                                style={{
+                                                    backgroundColor: apt.status === 'In Progress' ? 'rgba(0, 135, 158, 0.1)' : 'rgba(7, 118, 89, 0.1)',
+                                                    color: apt.status === 'In Progress' ? 'var(--color-primary)' : '#077659'
+                                                }}
+                                            >
+                                                {apt.status}
+                                            </span>
+                                            <ChevronRight size={20} color="#ccc" />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
                 ) : (
                     <motion.div
@@ -119,7 +177,11 @@ const MyAppointments = () => {
                         </div>
 
                         {/* The Step Tracker Component */}
-                        <AppointmentTracker />
+                        <AppointmentTracker
+                            caseId={selectedId}
+                            doctorName={appointments.find(a => a.id === selectedId)?.doctorName}
+                            specialty={appointments.find(a => a.id === selectedId)?.specialty}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
