@@ -74,6 +74,7 @@ class MedicalRecordsSubgraph:
                 "summary_id": f"sum_{uuid.uuid4()}",
                 "case_id": case_id,
                 "profile_id": profile_id,
+                "patient_id": profile_id, # [FIX] Added for get_records compatibility
                 "type": "AI_SUMMARY", # Standardized Type
                 "triage_level": patient_summary_data.get("triage_level", "Green"),
                 "symptoms_reported": patient_summary_data.get("symptoms_reported", []),
@@ -95,6 +96,7 @@ class MedicalRecordsSubgraph:
                     "summary_id": f"pre_doc_{uuid.uuid4()}",
                     "case_id": case_id,
                     "profile_id": profile_id,
+                    "patient_id": profile_id, # [FIX] Added for get_records compatibility
                     "type": "DOCTOR_SUMMARY", # Standardized Type
                     **doctor_summary_data, # Spread the technical fields (assessment, history, etc)
                     "generated_at": datetime.utcnow().isoformat()
