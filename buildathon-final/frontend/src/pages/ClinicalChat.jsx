@@ -27,7 +27,7 @@ const ClinicalChat = () => {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    const [sessionId] = useState("session_" + Date.now());
+    const [sessionId] = useState(`CASE-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -55,6 +55,7 @@ class DoctorConsultationSubgraph:
         Node 3: Book Appointment
         Creates 'appointments' doc and updates 'doctor_slots' & 'cases'.
         """
+        try:
             print("DEBUG: Executing book_appointment_node")
             # inputs
             case_id = state.get("case_id")

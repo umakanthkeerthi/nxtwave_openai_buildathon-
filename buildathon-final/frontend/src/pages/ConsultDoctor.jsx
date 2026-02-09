@@ -44,9 +44,14 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
         const fetchDoctors = async () => {
             try {
                 setLoading(true);
-                const response = await fetch('http://localhost:8003/get_doctors');
+                console.log("DEBUG: Fetching doctors...");
+                const response = await fetch('/get_doctors');
+                console.log("DEBUG: Fetch response status:", response.status);
+
                 if (!response.ok) throw new Error('Failed to fetch doctors');
+
                 const data = await response.json();
+                console.log("DEBUG: Fetch data:", data);
 
                 const docs = data.doctors || [];
 

@@ -20,9 +20,20 @@ const PatientDetail = () => {
     React.useEffect(() => {
         const fetchRecords = async () => {
             try {
-                const response = await fetch(`http://localhost:8003/get_records?patient_id=${id}`);
+                // Use caseId if available for context-specific records
+                const caseId = location.state?.patientData?.caseId;
+                let url = `http://localhost:8003/get_records?patient_id=${id || ''}`;
+                if (caseId) {
+                    url += `&case_id=${caseId}`;
+                }
+
+                console.log("Fetching records from:", url);
+                const response = await fetch(url);
                 const data = await response.json();
-                if (data.records) setMedicalRecords(data.records);
+                if (data.records) {
+                    setMedicalRecords(data.records);
+                    console.log("Loaded records:", data.records.length);
+                }
             } catch (error) {
                 console.error("Error fetching records:", error);
             } finally {
@@ -30,7 +41,7 @@ const PatientDetail = () => {
             }
         };
         fetchRecords();
-    }, [id]);
+    }, [id, location.state]);
 
     const handleSubmitConsultation = async (consultationData) => {
         setSubmitting(true);
@@ -110,8 +121,25 @@ const PatientDetail = () => {
         }
     };
 
-    // Get patient data based on ID, fallback to default
-    const patient = patientDatabase[id] || patientDatabase['P-101'];
+    // Use passed patient data or fallback to a default structure
+    const patientData = location.state?.patientData || {};
+
+    // Default / Fallback Data
+    const patient = {
+        name: patientData.name || "Unknown Patient",
+        id: id || "Unknown",
+        age: patientData.age || "?",
+        gender: patientData.gender || "?",
+        bloodGroup: "O+", // Placeholder
+        allergies: [], // Placeholder
+        vitals: {
+            bp: "120/80", // Placeholder
+            heartRate: "72 bpm", // Placeholder
+            temp: "98.6°F", // Placeholder
+            weight: "70 kg" // Placeholder
+        },
+        emergency: location.state?.type === 'emergency'
+    };
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '4rem' }}>

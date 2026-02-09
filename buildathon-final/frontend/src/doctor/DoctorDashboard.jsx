@@ -89,7 +89,7 @@ const TimeSlot = ({ time, event, type, status }) => {
 
 import { useNavigate } from 'react-router-dom';
 
-const PatientCard = ({ name, age, gender, reason, time, mode, type, aiFlag }) => {
+const PatientCard = ({ id, caseId, name, age, gender, reason, time, mode, type, aiFlag }) => {
     const isEmergency = type === 'emergency';
     const navigate = useNavigate();
 
@@ -132,7 +132,13 @@ const PatientCard = ({ name, age, gender, reason, time, mode, type, aiFlag }) =>
             {/* Actions */}
             <div className="patient-actions">
                 <button
-                    onClick={() => navigate('/doctor/patients/P-101')}
+                    onClick={() => navigate(`/doctor/patients/${id}?caseId=${caseId}`, {
+                        state: {
+                            patientData: {
+                                name, age, gender, id, caseId, reason, time, mode, type, aiFlag
+                            }
+                        }
+                    })}
                     className="btn-start-consult">
                     Start Consult
                 </button>
@@ -175,9 +181,14 @@ const DoctorDashboard = () => {
         if (!currentUser) return;
 
         // Query appointments for this doctor
+        // Use mapped doctor_id if available (from users collection), otherwise fallback to UID
+        const doctorIdToQuery = currentUser.doctor_id || currentUser.uid;
+
+        console.log("DEBUG: DoctorDashboard querying appointments for:", doctorIdToQuery);
+
         const q = query(
             collection(db, "appointments"),
-            where("doctor_id", "==", currentUser.uid)
+            where("doctor_id", "==", doctorIdToQuery)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -294,6 +305,8 @@ const DoctorDashboard = () => {
                                 appointments.map(appt => (
                                     <PatientCard
                                         key={appt.id}
+                                        id={appt.patient_id || appt.profile_id}
+                                        caseId={appt.case_id}
                                         name={appt.patient_name || "Unknown Patient"}
                                         age={appt.patient_age || "?"}
                                         gender={appt.patient_gender || "?"}

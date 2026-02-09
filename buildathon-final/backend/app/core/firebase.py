@@ -41,7 +41,7 @@ class FirebaseService:
                 print(f"Firebase Error: {e}")
                 return None
 
-    def get_records(self, collection, patient_id=None):
+    def get_records(self, collection, patient_id=None, case_id=None):
         if self.mock_mode:
             print(f"[MOCK FIREBASE] Fetching from '{collection}'.")
             return []
@@ -50,6 +50,9 @@ class FirebaseService:
                 query = self.db.collection(collection)
                 if patient_id:
                     query = query.where("patient_id", "==", patient_id)
+                if case_id:
+                    query = query.where("case_id", "==", case_id)
+                    
                 docs = query.stream()
                 return [{**doc.to_dict(), "id": doc.id} for doc in docs]
             except Exception as e:

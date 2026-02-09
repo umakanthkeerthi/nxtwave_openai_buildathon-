@@ -406,7 +406,7 @@ async def book_appointment_endpoint(booking_req: dict):
 from app.core.firebase import firebase_service
 
 @app.get("/get_records")
-async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Optional[str] = None):
+async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Optional[str] = None, case_id: Optional[str] = None):
     """
     Retrieves medical records for a specific profile (V1.0).
     Aggregates from: Summaries, Prescriptions, Lab Reports.
@@ -415,9 +415,9 @@ async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Opt
         target_id = profile_id or patient_id
         
         # Fetch from multiple V1.0 collections
-        summaries = firebase_service.get_records("case_ai_patient_summaries", target_id)
-        prescriptions = firebase_service.get_records("prescriptions", target_id)
-        lab_reports = firebase_service.get_records("lab_reports", target_id)
+        summaries = firebase_service.get_records("case_ai_patient_summaries", target_id, case_id)
+        prescriptions = firebase_service.get_records("prescriptions", target_id, case_id)
+        lab_reports = firebase_service.get_records("lab_reports", target_id, case_id)
         
         # Compatibility: Allow fetching old 'medical_records' too if needed, or just merge
         # For V1.0 migration, we prioritize the new ones.
@@ -524,7 +524,9 @@ async def get_doctors_endpoint():
     Returns list of all doctors.
     """
     try:
+        print("DEBUG: /get_doctors endpoints called")
         doctors = firebase_service.get_doctors()
+        print(f"DEBUG: /get_doctors returning {len(doctors)} doctors")
         return {"doctors": doctors}
     except Exception as e:
         print(f"Get Doctors Error: {e}")
@@ -687,6 +689,7 @@ async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id:
     except Exception as e:
         print(f"Get Appointments Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -178,7 +178,7 @@ const MyAppointments = () => {
 
                         {/* The Step Tracker Component */}
                         <AppointmentTracker
-                            caseId={selectedId}
+                            caseId={appointments.find(a => a.id === selectedId)?.caseId} // [FIX] ID Mismatch
                             doctorName={appointments.find(a => a.id === selectedId)?.doctorName}
                             specialty={appointments.find(a => a.id === selectedId)?.specialty}
                         />
