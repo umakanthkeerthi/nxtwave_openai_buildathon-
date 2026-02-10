@@ -39,15 +39,22 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
         }
     }, [location.state]);
 
+
     // FETCH REAL DOCTORS
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
                 setLoading(true);
-                console.log("DEBUG: Fetching doctors...");
-                const response = await fetch('/get_doctors');
-                console.log("DEBUG: Fetch response status:", response.status);
+                let url = '/get_doctors';
 
+                // [MODIFIED] Emergency Logic
+                if (location.state?.type === 'emergency' && location.state?.userLocation) {
+                    const { lat, lon } = location.state.userLocation;
+                    url = `/get_emergency_doctors?lat=${lat}&lon=${lon}`;
+                    console.log(`DEBUG: Fetching Emergency Doctors from ${url}`);
+                }
+
+                const response = await fetch(url);
                 if (!response.ok) throw new Error('Failed to fetch doctors');
 
                 const data = await response.json();
@@ -55,15 +62,15 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
 
                 const docs = data.doctors || [];
 
-                // Transform backend data to match UI component expectations if needed
-                // Assuming backend returns needed fields: id, name, specialty, image, location, etc.
-                // We might need to add mock 'distance' and 'availableTime' if backend doesn't provide them yet.
+                // Transform backend data
+                // Backend now provides 'distance' and 'availableTime' for emergency endpoint
                 const enrichedDocs = docs.map(d => ({
                     ...d,
                     id: d.id || d.doctor_id,
-                    image: d.image || 'https://via.placeholder.com/150', // Fallback image
-                    distance: d.distance || (Math.random() * 10).toFixed(1), // Mock distance for now
-                    availableTime: d.availableTime || "Available Now" // Mock availability
+                    image: d.image || 'https://via.placeholder.com/150',
+                    // Use backend data if available, else defaults
+                    distance: d.distance !== undefined ? d.distance : (Math.random() * 10).toFixed(1),
+                    availableTime: d.availableTime || "Check Availability"
                 }));
 
                 setAllDoctors(enrichedDocs);
@@ -82,7 +89,8 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
         };
 
         fetchDoctors();
-    }, []);
+    }, [location.state]); // Added dependency on location.state
+
 
     const handleBookAppointment = () => {
         // [POLICY] Direct booking is not allowed. Must have AI Triage Summary.
@@ -142,15 +150,21 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
     if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading specialists...</div>;
     if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>Error: {error}</div>;
 
+
     // Emergency Data Preparation
-    const emergencyDoctors = allDoctors
-        .filter(d => d.distance < 10)
-        .sort((a, b) => {
-            if (a.availableTime === "Available Now" && b.availableTime !== "Available Now") return -1;
-            if (a.availableTime !== "Available Now" && b.availableTime === "Available Now") return 1;
-            return a.distance - b.distance;
-        })
-        .slice(0, 10);
+    // [MODIFIED] Backend now returns sorted list, so we just take it or slice it.
+    // If getting from generic /get_doctors, we still filter.
+    // But if mode is emergency, allDoctors is already the sorted list from backend.
+
+    let emergencyDoctors = [];
+    if (mode === 'emergency') {
+        emergencyDoctors = allDoctors; // Already sorted by backend
+    } else {
+        emergencyDoctors = allDoctors
+            .filter(d => d.distance < 10)
+            .slice(0, 10);
+    }
+
 
     // Animation Variants
     const container = {

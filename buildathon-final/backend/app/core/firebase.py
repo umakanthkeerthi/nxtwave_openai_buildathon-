@@ -457,11 +457,128 @@ class FirebaseService:
                 curr_date += timedelta(days=1)
                 
             return created_count
+
+            return created_count
         except Exception as e:
             print(f"Batch Create Error: {e}")
             return 0
+
+    def get_doctors_with_availability(self, lat: float, lon: float):
+        """
+        Fetches all doctors, calculates distance, and checks immediate availability.
+        Returns list sorted by: Available Now (Priority) -> Distance (Ascending).
+        """
+        if self.mock_mode:
+            print("[MOCK FIREBASE] returning mock emergency doctors")
+            return []
+
+        try:
+            # 1. Fetch all doctors
+            doctors = self.get_doctors()
+            
+            # 2. Fetch ALL slots for TODAY for ALL doctors (Optimization: Query all slots for today date)
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            
+            # In a huge DB, we'd query by doctor. For MVP, one query for today's slots is efficient enough.
+            slots_ref = self.db.collection("doctor_slots")
+            slots_query = slots_ref.where("date", "==", today_str).where("status", "==", "AVAILABLE")
+            slots_docs = slots_query.stream()
+            
+            # Organize slots by doctor_id
+            doctor_slots_map = {}
+            current_time = datetime.now()
+            
+            for doc in slots_docs:
+                data = doc.to_dict()
+                doc_id = data.get("doctor_id")
+                if doc_id not in doctor_slots_map:
+                    doctor_slots_map[doc_id] = []
+                
+                # Check if slot is in the future (or strictly "now" if we want immediate)
+                # For "Available Now", allow slots that started within last 15 mins or start in next 30 mins
+                # For simplicity MVP: If slot.end_time > current_time AND slot.start_time <= current_time + buffer
+                doctor_slots_map[doc_id].append(data)
+
+            # 3. Process Doctors
+            enriched_doctors = []
+            
+            for doc in doctors:
+                # Calculate Distance
+                # Default doc location if missing (Seed data might not have it)
+                doc_lat = doc.get("latitude", 28.6139) # Default Connaught Place
+                doc_lon = doc.get("longitude", 77.2090)
+                
+                dist = self._calculate_distance(lat, lon, doc_lat, doc_lon)
+                doc["distance"] = round(dist, 1) # km
+                
+                # Check Availability
+                is_available = False
+                doc_slots = doctor_slots_map.get(doc["id"], [])
+                
+                current_time_str = current_time.strftime("%H:%M")
+                
+                for slot in doc_slots:
+                    # Simple check: Is current time within slot start/end?
+                    # OR is there a slot starting very soon?
+                    
+                    # Using string comparison for "HH:MM" works for same day
+                    if slot["start_time"] <= current_time_str < slot["end_time"]:
+                        is_available = True
+                        break
+                    
+                    # Also consider "Available" if slot starts in next 20 mins
+                    # (Skipping complex time math for MVP, just strict "Now" or "Future today")
+                    if slot["start_time"] > current_time_str:
+                         # It's available later today
+                         pass
+
+                doc["availableTime"] = "Available Now" if is_available else "Next Available: Tomorrow" 
+                # If not available now but has slots later today?
+                if not is_available and doc_slots:
+                     # Find next slot
+                     doc_slots.sort(key=lambda x: x["start_time"])
+                     next_slot = None
+                     for s in doc_slots:
+                         if s["start_time"] > current_time_str:
+                             next_slot = s
+                             break
+                     if next_slot:
+                         doc["availableTime"] = f"Today, {next_slot['start_time']}"
+
+                # Prioritize Available Now
+                doc["is_available_now"] = is_available
+                
+                enriched_doctors.append(doc)
+            
+            # 4. Sort
+            # Primary: Available Now (True first)
+            # Secondary: Distance (Low first)
+            enriched_doctors.sort(key=lambda x: (not x["is_available_now"], x["distance"]))
+            
+            return enriched_doctors
+
+        except Exception as e:
+            print(f"Emergency Doctor Fetch Error: {e}")
+            return []
+
+    def _calculate_distance(self, lat1, lon1, lat2, lon2):
+        # Haversine formula
+        import math
+        R = 6371  # Earth radius in km
+
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat / 2) * math.sin(dlat / 2) + \
+            math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * \
+            math.sin(dlon / 2) * math.sin(dlon / 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = R * c
+        return distance
+
+
 
 
 
 # Singleton Instance
 firebase_service = FirebaseService()
+

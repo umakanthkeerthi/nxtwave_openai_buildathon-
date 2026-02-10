@@ -39,9 +39,17 @@ const EmergencyPage = () => {
                                 });
                             } catch (e) { console.error("Emergency Save Failed", e); }
 
+
                             // 2. Trigger Doctor Consultation Agent (Offline/Immediate Mode)
+                            // Hardcoded location for MVP: New Delhi (Connaught Place/India Gate area)
+                            // This matches the default location in ProfileModal (28.6129, 77.2295)
+                            const MVP_LAT = 28.6129;
+                            const MVP_LON = 77.2295;
+
                             navigate('/patient/consult/directory', {
                                 state: {
+                                    type: 'emergency',
+                                    userLocation: { lat: MVP_LAT, lon: MVP_LON },
                                     summary: {
                                         caseId: "CASE-EMERGENCY-" + Date.now().toString().slice(-4),
                                         triage: "Emergency",
@@ -51,6 +59,7 @@ const EmergencyPage = () => {
                                     }
                                 }
                             });
+
                         }}
                         className="btn-emergency-primary"
                     >

@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const ProfileModal = ({ isOpen, onClose }) => {
-    const { currentUser, logout } = useAuth();
+
+    const { currentUser, selectedProfile, logout } = useAuth();
     const navigate = useNavigate();
     const [address, setAddress] = useState("Fetching location...");
     const [loadingLocation, setLoadingLocation] = useState(true);
@@ -13,8 +14,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
     useEffect(() => {
         if (isOpen) {
             setLoadingLocation(true);
-            setLoadingLocation(true);
-
             // [MVP] Hardcoded Location: Bharat Mandapam, New Delhi
             // This ensures "Near You" logic always finds our seeded doctors.
             const MVP_LAT = 28.6129;
@@ -45,7 +44,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const profile = currentUser?.profile || {};
+    const profile = selectedProfile || currentUser?.profile || {};
 
     return (
         <AnimatePresence>

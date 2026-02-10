@@ -518,6 +518,7 @@ async def get_emergencies_endpoint():
         print(f"Get Emergencies Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/get_doctors")
 async def get_doctors_endpoint():
     """
@@ -531,6 +532,20 @@ async def get_doctors_endpoint():
     except Exception as e:
         print(f"Get Doctors Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_emergency_doctors")
+async def get_emergency_doctors_endpoint(lat: float, lon: float):
+    """
+    Returns list of doctors sorted by availability and distance.
+    """
+    try:
+        print(f"DEBUG: /get_emergency_doctors called with lat={lat}, lon={lon}")
+        doctors = firebase_service.get_doctors_with_availability(lat, lon)
+        return {"doctors": doctors}
+    except Exception as e:
+        print(f"Get Emergency Doctors Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/get_doctor")
 async def get_doctor_endpoint(doctor_id: str):
