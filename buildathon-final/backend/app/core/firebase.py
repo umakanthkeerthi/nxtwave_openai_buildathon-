@@ -712,6 +712,113 @@ class FirebaseService:
 
 
 
+    # --- PHARMACY MODULE ---
+    def get_medicines(self):
+        """
+        Fetch all medicines from 'medicines' collection.
+        """
+        if self.mock_mode:
+            print("[MOCK FIREBASE] Fetching all medicines.")
+            return [
+                {"id": "m1", "name": "Amoxicillin 500mg", "price": 12.50, "category": "Prescription", "in_stock": True, "description": "Antibiotic for bacterial infections."},
+                {"id": "m2", "name": "Cetirizine 10mg", "price": 5.00, "category": "OTC", "in_stock": True, "description": "Antihistamine for allergies."},
+                {"id": "m3", "name": "Vitamin C 1000mg", "price": 8.00, "category": "Wellness", "in_stock": True, "description": "Immunity booster supplement."},
+                {"id": "m4", "name": "Ibuprofen 400mg", "price": 6.50, "category": "OTC", "in_stock": True, "description": "Pain reliever and anti-inflammatory."},
+                {"id": "m5", "name": "Paracetamol 500mg", "price": 3.00, "category": "OTC", "in_stock": True, "description": "Fever reducer and mild pain reliever."},
+                {"id": "m6", "name": "Baby Diapers (Pack of 12)", "price": 15.00, "category": "Baby Care", "in_stock": True, "description": "Soft and absorbent diapers."}
+            ]
+        else:
+            try:
+                docs = self.db.collection("medicines").stream()
+                return [{**doc.to_dict(), "id": doc.id} for doc in docs]
+            except Exception as e:
+                print(f"Firebase Medicines Error: {e}")
+                return []
+
+    def create_pharmacy_order(self, order_data: dict):
+        """
+        Creates a new pharmacy order.
+        Input: { "patient_id": "...", "items": [...], "total": 12.50, "status": "PENDING" }
+        """
+        # Add metadata
+        if "created_at" not in order_data:
+            order_data["created_at"] = datetime.utcnow().isoformat()
+        if "status" not in order_data:
+            order_data["status"] = "PENDING" # PENDING, PREPARING, READY, COMPLETED, CANCELLED
+
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Creating pharmacy order: {order_data}")
+            return f"mock_order_{uuid.uuid4().hex[:6]}"
+        else:
+            try:
+                doc_ref = self.db.collection("pharmacy_orders").add(order_data)
+                return doc_ref[1].id
+            except Exception as e:
+                print(f"Firebase Create Order Error: {e}")
+                return None
+
+    def get_pharmacy_orders(self, patient_id=None, status=None):
+        """
+        Fetch pharmacy orders with optional filtering.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Fetching orders pat={patient_id} stat={status}")
+            # Return some mock orders
+            mock_orders = [
+                {
+                    "id": "ord_001", "patient_id": "P-101", "patient_name": "Rahul Verma",
+                    "items": [{"name": "Amoxicillin", "info": "500mg", "qty": 1, "price": 12.50}],
+                    "total": 12.50, "status": "PENDING", "created_at": (datetime.now() - timedelta(hours=1)).isoformat()
+                },
+                {
+                    "id": "ord_002", "patient_id": "P-104", "patient_name": "Priya Sharma",
+                    "items": [{"name": "Vitamin C", "info": "1000mg", "qty": 2, "price": 16.00}],
+                    "total": 16.00, "status": "READY", "created_at": (datetime.now() - timedelta(hours=4)).isoformat()
+                }
+            ]
+            
+            # Simple in-memory filter for mock
+            filtered = mock_orders
+            if patient_id:
+                filtered = [o for o in filtered if o["patient_id"] == patient_id]
+            if status:
+                filtered = [o for o in filtered if o["status"] == status]
+            return filtered
+
+        else:
+            try:
+                query = self.db.collection("pharmacy_orders")
+                
+                if patient_id:
+                    query = query.where("patient_id", "==", patient_id)
+                if status:
+                    query = query.where("status", "==", status)
+                    
+                docs = query.stream()
+                orders = [{**doc.to_dict(), "id": doc.id} for doc in docs]
+                
+                # Sort by created_at desc
+                orders.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+                return orders
+            except Exception as e:
+                print(f"Firebase Get Orders Error: {e}")
+                return []
+
+    def update_order_status(self, order_id: str, status: str):
+        """
+        Update status of a pharmacy order.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Updating order {order_id} to {status}")
+            return True
+        else:
+            try:
+                self.db.collection("pharmacy_orders").document(order_id).update({"status": status})
+                return True
+            except Exception as e:
+                print(f"Firebase Update Order Error: {e}")
+                return False
+
 # Singleton Instance
 firebase_service = FirebaseService()
 

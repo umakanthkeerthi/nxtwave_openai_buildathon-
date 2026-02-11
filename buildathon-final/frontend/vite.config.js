@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // Listen on all local IPs
-    port: 5173, // Force port 5173
+    port: 3000, // Force port 3000
     proxy: {
       '/chat': { target: 'http://127.0.0.1:8003', changeOrigin: true, secure: false },
       '/triage': { target: 'http://127.0.0.1:8003', changeOrigin: true, secure: false },

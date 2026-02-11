@@ -706,6 +706,74 @@ async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# --- PHARMACY ENDPOINTS ---
+
+@app.get("/pharmacy/inventory")
+async def get_pharmacy_inventory():
+    """
+    Get all available medicines.
+    """
+    try:
+        medicines = firebase_service.get_medicines()
+        return {"medicines": medicines}
+    except Exception as e:
+        print(f"Inventory Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class OrderRequest(BaseModel):
+    patient_id: str
+    patient_name: Optional[str] = "Guest"
+    items: List[dict] # [{ "id": "...", "name": "...", "price": 10, "qty": 1 }]
+    total: float
+    delivery_address: Optional[str] = None
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+@app.post("/pharmacy/orders")
+async def create_pharmacy_order(order: OrderRequest):
+    """
+    Place a new order.
+    """
+    try:
+        order_data = order.dict()
+        order_id = firebase_service.create_pharmacy_order(order_data)
+        if order_id:
+            return {"status": "success", "order_id": order_id}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create order")
+    except Exception as e:
+        print(f"Create Order Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/pharmacy/orders")
+async def get_pharmacy_orders(patient_id: Optional[str] = None, status: Optional[str] = None):
+    """
+    Get orders (filterable by patient or status).
+    """
+    try:
+        orders = firebase_service.get_pharmacy_orders(patient_id, status)
+        return {"orders": orders}
+    except Exception as e:
+        print(f"Get Orders Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/pharmacy/orders/{order_id}")
+async def update_order_status(order_id: str, update: OrderStatusUpdate):
+    """
+    Update order status (e.g. PENDING -> READY).
+    """
+    try:
+        success = firebase_service.update_order_status(order_id, update.status)
+        if success:
+            return {"status": "success", "message": "Order updated"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update order")
+    except Exception as e:
+        print(f"Update Order Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8003, reload=True)
