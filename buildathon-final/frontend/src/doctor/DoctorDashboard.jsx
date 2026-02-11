@@ -62,26 +62,39 @@ const StatCard = ({ title, value, subtext, icon, color, isCritical }) => {
     );
 };
 
-const TimeSlot = ({ time, event, type, status }) => {
+const TimeSlot = ({ time, event, type, status, isBlinking }) => {
     const isCompleted = status === 'completed';
     const isActive = status === 'active';
+    const isEmergency = type === 'emergency';
 
     return (
-        <div className={`time-slot status-${status}`} style={{ display: 'flex', gap: '12px', opacity: isCompleted ? 0.6 : 1 }}>
+        <div className={`time-slot status-${status}`} style={{ display: 'flex', gap: '12px', opacity: isCompleted ? 0.6 : 1, alignItems: 'center' }}>
             <div style={{
-                minWidth: '65px', fontSize: '0.85rem', color: isActive ? '#0f766e' : '#64748b',
-                fontWeight: isActive ? '700' : '500', paddingTop: '2px', textAlign: 'right'
+                minWidth: '65px', fontSize: '0.85rem', color: isActive || isEmergency ? '#0f766e' : '#64748b',
+                fontWeight: isActive || isEmergency ? '700' : '500', paddingTop: '2px', textAlign: 'right'
             }}>
                 {time}
             </div>
             <div style={{
                 flex: 1, padding: '10px',
-                background: isActive ? '#f0fdfa' : '#f8fafc',
+                background: isActive ? '#f0fdfa' : (isEmergency ? '#fef2f2' : '#f8fafc'),
                 borderRadius: '8px',
-                borderLeft: isActive ? '4px solid #0f766e' : '4px solid #cbd5e1'
+                borderLeft: isActive ? '4px solid #0f766e' : (isEmergency ? '4px solid #ef4444' : '4px solid #cbd5e1'),
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e293b' }}>{event}</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'capitalize' }}>{type}</div>
+                <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: isEmergency ? '#b91c1c' : '#1e293b' }}>{event}</div>
+                    <div style={{ fontSize: '0.75rem', color: isEmergency ? '#ef4444' : '#64748b', textTransform: 'capitalize' }}>{type}</div>
+                </div>
+
+                {isEmergency && (
+                    <button style={{
+                        background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px',
+                        padding: '6px 12px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer'
+                    }}>
+                        View Case
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -89,7 +102,7 @@ const TimeSlot = ({ time, event, type, status }) => {
 
 import { useNavigate } from 'react-router-dom';
 
-const PatientCard = ({ id, caseId, name, age, gender, reason, time, mode, type, aiFlag }) => {
+const PatientCard = ({ id, caseId, appointmentId, name, age, gender, reason, time, mode, type, aiFlag, status }) => { // [FIX] Accept status prop
     const isEmergency = type === 'emergency';
     const navigate = useNavigate();
 
@@ -135,12 +148,12 @@ const PatientCard = ({ id, caseId, name, age, gender, reason, time, mode, type, 
                     onClick={() => navigate(`/doctor/patients/${id}?caseId=${caseId}`, {
                         state: {
                             patientData: {
-                                name, age, gender, id, caseId, reason, time, mode, type, aiFlag
+                                name, age, gender, id, caseId, appointmentId, reason, time, mode, type, aiFlag, status // [FIX] Use status prop
                             }
                         }
                     })}
                     className="btn-start-consult">
-                    Start Consult
+                    View Case
                 </button>
                 <button className="btn-view-notes">
                     <FileText size={16} />
@@ -192,10 +205,9 @@ const DoctorDashboard = () => {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const apps = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const apps = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(a => a.status !== 'CONSULTATION_ENDED' && a.status !== 'COMPLETED'); // [FIX] Filter completed
             // Sort by time (Client side to avoid Composite Index requirement during demo)
             apps.sort((a, b) => new Date(a.slot_time) - new Date(b.slot_time));
 
@@ -302,21 +314,35 @@ const DoctorDashboard = () => {
                                     No active appointments found for this doctor account.
                                 </div>
                             ) : (
-                                appointments.map(appt => (
-                                    <PatientCard
-                                        key={appt.id}
-                                        id={appt.patient_id || appt.profile_id}
-                                        caseId={appt.case_id}
-                                        name={appt.patient_name || "Unknown Patient"}
-                                        age={appt.patient_age || "?"}
-                                        gender={appt.patient_gender || "?"}
-                                        reason={appt.severity === 'red' ? "Emergency / Critical" : "General Consultation"}
-                                        time={appt.slot_time ? new Date(appt.slot_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
-                                        mode={appt.mode === 'VIDEO' ? 'Video' : 'In-Person'}
-                                        type={appt.severity === 'red' ? 'emergency' : 'standard'}
-                                        aiFlag={appt.severity === 'red' ? "High Severity Triage" : null}
-                                    />
-                                ))
+                                appointments.map(appt => {
+                                    console.log("Appointment Data:", appt); // [DEBUG]
+                                    // [FIX] Read from patient_snapshot (nested) or fallback to root (legacy)
+                                    const pSnapshot = appt.patient_snapshot || {};
+                                    const pName = pSnapshot.name || appt.patient_name || appt.patientName || "Unknown Patient";
+                                    const pAge = pSnapshot.age || appt.patient_age || appt.age || "?";
+                                    const pGender = pSnapshot.gender || appt.patient_gender || appt.gender || "?";
+
+                                    // [FIX] Robust ID check
+                                    const computedId = appt.patient_id || appt.profile_id || appt.id;
+
+                                    return (
+                                        <PatientCard
+                                            key={appt.id}
+                                            id={computedId}
+                                            appointmentId={appt.id} // [ADDED] Pass appointment ID
+                                            caseId={appt.case_id}
+                                            name={pName}
+                                            age={pAge}
+                                            gender={pGender}
+                                            reason={appt.severity === 'red' ? "Emergency / Critical" : "General Consultation"}
+                                            time={appt.slot_time ? new Date(appt.slot_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                                            mode={appt.mode === 'VIDEO' ? 'Video' : 'In-Person'}
+                                            type={appt.severity === 'red' ? 'emergency' : 'standard'}
+                                            aiFlag={appt.severity === 'red' ? "High Severity Triage" : null}
+                                            status={appt.status} // [FIX] Pass status
+                                        />
+                                    );
+                                })
                             )}
                         </div>
                     </div>

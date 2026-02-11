@@ -41,6 +41,18 @@ class FirebaseService:
                 print(f"Firebase Error: {e}")
                 return None
 
+    def update_record(self, collection, doc_id, data):
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Updating '{collection}/{doc_id}': {data}")
+            return True
+        else:
+            try:
+                self.db.collection(collection).document(doc_id).update(data)
+                return True
+            except Exception as e:
+                print(f"Firebase Update Error: {e}")
+                return False
+
     def get_records(self, collection, patient_id=None, case_id=None):
         if self.mock_mode:
             print(f"[MOCK FIREBASE] Fetching from '{collection}'.")
@@ -48,10 +60,12 @@ class FirebaseService:
         else:
             try:
                 query = self.db.collection(collection)
-                if patient_id:
-                    query = query.where("patient_id", "==", patient_id)
+                
+                # [FIX] Prioritize case_id if available (it is more specific and avoids profile_id mismatches)
                 if case_id:
                     query = query.where("case_id", "==", case_id)
+                elif patient_id:
+                    query = query.where("patient_id", "==", patient_id)
                     
                 docs = query.stream()
                 return [{**doc.to_dict(), "id": doc.id} for doc in docs]
@@ -59,22 +73,52 @@ class FirebaseService:
                 print(f"Firebase Fetch Error: {e}")
                 return []
 
-    def get_appointments(self, doctor_id=None, patient_id=None):
+    def get_appointments(self, doctor_id=None, patient_id=None, user_id=None):
         """
         Fetch appointments with V1.0 enrichment.
         - If patient_id: Enrich with Doctor details.
         - If doctor_id: Enrich with Patient details (from snapshot).
+        - If user_id: Enrich with Doctor details (Account view).
         """
         if self.mock_mode:
-            print(f"[MOCK FIREBASE] Fetching appointments for doc={doctor_id} pat={patient_id}")
-            return []
+            print(f"[MOCK FIREBASE] Fetching appointments for doc={doctor_id} pat={patient_id} usr={user_id}")
+            # [MOCK DATA] Return sample appointments for testing
+            return [
+                {
+                    "id": "apt_101",
+                    "doctor_id": "doc_mock_001",
+                    "patient_id": "P-101",
+                    "patient_name": "Rahul Verma",
+                    "patient_age": 45,
+                    "patient_gender": "Male",
+                    "appointment_time": (datetime.now() - timedelta(days=2)).isoformat(),
+                    "reason": "Chest Pain",
+                    "status": "COMPLETED",
+                    "slot_time": "10:00 AM"
+                },
+                {
+                    "id": "apt_104",
+                    "doctor_id": "doc_mock_001",
+                    "patient_id": "P-104", 
+                    "patient_name": "Priya Sharma",
+                    "patient_age": 28,
+                    "patient_gender": "Female",
+                    "appointment_time": datetime.now().isoformat(),
+                    "reason": "Severe Migraine",
+                    "status": "APPOINTMENT_IN_PROGRESS",
+                    "slot_time": "11:30 AM"
+                }
+            ]
         
         try:
             query = self.db.collection("appointments")
             
             if doctor_id:
                 query = query.where("doctor_id", "==", doctor_id)
-            if patient_id:
+            if user_id:
+                # [NEW] Fetch by Account Owner (Show all family appointments)
+                query = query.where("user_id", "==", user_id)
+            elif patient_id:
                 # Support both profile_id and older patient_id field if needed
                 # Ideally V1.0 uses profile_id, but legacy might use patient_id
                 # Let's try profile_id first as it's the V1.0 standard
@@ -156,25 +200,73 @@ class FirebaseService:
             return []
         else:
             try:
+                emergencies = []
+
+                # 1. Fetch Emergency Medical Records (Existing Logic)
                 # Query 'cases' where triage_level is Red/Emergency
                 # Note: 'cases' collection needs to be populated by the graphs.
                 # Fallback: Query medical_records with type 'AI_SUMMARY_DOCTOR' and severity 'CRITICAL'/'HIGH'
                 
-                # option A: Query medical_records
-                query = self.db.collection("medical_records").where("type", "==", "AI_SUMMARY_DOCTOR")
-                docs = query.stream()
-                
-                emergencies = []
-                for doc in docs:
-                    data = doc.to_dict()
-                    # Check inside the nested JSON structure
-                    summary = data.get("data", {}).get("pre_doctor_consultation_summary", {})
-                    severity = summary.get("assessment", {}).get("severity", "LOW")
+                try:
+                    query = self.db.collection("medical_records").where("type", "==", "AI_SUMMARY_DOCTOR")
+                    docs = query.stream()
+                    for doc in docs:
+                        data = doc.to_dict()
+                        # Check inside the nested JSON structure
+                        summary = data.get("data", {}).get("pre_doctor_consultation_summary", {})
+                        severity = summary.get("assessment", {}).get("severity", "LOW")
+                        
+                        if severity in ["CRITICAL", "HIGH", "RED"]:
+                             emergencies.append({**data, "id": doc.id, "severity": severity, "source_type": "medical_record"})
+                except Exception as e:
+                    print(f"Error fetching medical records: {e}")
+
+                # 2. [NEW] Fetch Emergency Appointments
+                try:
+                    apt_query = self.db.collection("appointments").where("is_emergency", "==", True)
+                    apt_docs = apt_query.stream()
                     
-                    if severity in ["CRITICAL", "HIGH", "RED"]:
-                         emergencies.append({**data, "id": doc.id, "severity": severity})
+                    for doc in apt_docs:
+                        apt_data = doc.to_dict()
+                        # Normalize to match expected structure or mark as appointment
+                        # Construct a mock "summary" for the frontend to consume easily
+                        
+                        summary_payload = {
+                            "trigger_reason": "Emergency Appointment Booking",
+                            "assessment": {
+                                "severity": "HIGH",
+                                "severity_score": 99
+                            },
+                            "vitals_reported": {} 
+                        }
+                        
+                        patient_profile = apt_data.get("patient_snapshot", {})
+                        if not patient_profile.get("name"):
+                             patient_profile["name"] = apt_data.get("patient_name", "Unknown")
+
+                        emergencies.append({
+                            "id": doc.id,
+                            "patient_id": apt_data.get("patient_id"),
+                            "profile_id": apt_data.get("profile_id"),
+                            "case_id": apt_data.get("case_id"),
+                            "created_at": apt_data.get("created_at"),
+                            "data": {
+                                "patient_profile": patient_profile,
+                                "pre_doctor_consultation_summary": summary_payload
+                            },
+                            "source_type": "appointment",
+                            "appointment_details": apt_data # Keep original data
+                except Exception as e:
+                    print(f"Error fetching emergency appointments: {e}")
                          
-                return emergencies
+                # [FIX] Filter out completed/ended emergencies
+                active_emergencies = [
+                    e for e in emergencies 
+                    if e.get("status") not in ["CONSULTATION_ENDED", "COMPLETED"]
+                ]
+
+                print(f"DEBUG: Returning {len(active_emergencies)} active emergencies (filtered from {len(emergencies)})")
+                return active_emergencies
             except Exception as e:
                 print(f"Firebase Emergency Error: {e}")
                 return []
@@ -332,6 +424,45 @@ class FirebaseService:
                 print(f"Firebase Delete Slot Error: {e}")
                 return False
 
+    def update_case_status(self, case_id: str, status: str):
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Update case {case_id} status to {status}")
+            return {"status": "success", "mock": True}
+        
+        try:
+            doc_ref = self.db.collection("cases").document(case_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                # Try query if ID mismatch
+                query = self.db.collection("cases").where("case_id", "==", case_id).stream()
+                found = False
+                for d in query:
+                    doc_ref = d.reference
+                    doc = d
+                    found = True
+                    break
+                if not found:
+                    raise Exception("Case not found")
+
+            current_data = doc.to_dict()
+            updates = {
+                "status": status,
+                "last_updated_at": datetime.utcnow().isoformat()
+            }
+            
+            # [USER REQUEST] Ensure generated_at exists in schema
+            if "generated_at" not in current_data:
+                # Set to current time if missing (indicating consultation start / generation of this status)
+                updates["generated_at"] = datetime.utcnow().isoformat()
+            
+            doc_ref.update(updates)
+            return {"status": "success", "case_id": case_id, "updates": updates}
+        
+        except Exception as e:
+            print(f"Update Case Error: {e}")
+            raise e
+   
     def delete_slots_for_day(self, doctor_id: str, date: str):
         """
         Deletes all slots for a doctor on a specific date.

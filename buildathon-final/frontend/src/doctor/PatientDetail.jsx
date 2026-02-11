@@ -1,28 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     ArrowLeft, Activity, AlertTriangle, FileText,
-    Pill, Clock, CheckCircle, Plus, File, Star, Stethoscope, Video, PhoneOff, X
+    Pill, Clock, CheckCircle, Plus, File, Star, Stethoscope, Video, PhoneOff, X, ExternalLink
 } from 'lucide-react';
 import VideoPopup from './VideoPopup';
 
 const PatientDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [isVideoOpen, setIsVideoOpen] = useState(false);
     const location = useLocation();
+
+
+    // [FIX] Robust Patient Data Derivation
+    const locationStateData = location.state?.patientData || {};
+    const urlParams = new URLSearchParams(location.search);
+    const derivedCaseId = locationStateData.caseId || urlParams.get('caseId');
+    const patientData = { ...locationStateData, caseId: derivedCaseId };
+    console.log("PATIENT DETAIL DEBUG:", { locationStateData, urlCaseId: urlParams.get('caseId'), derivedCaseId, patientData }); // [DEBUG]
+
+    // [NEW] Consultation State
+    const initialStatus = 'PENDING'; // [FIX] Start safe, then sync
+    const [consultationStatus, setConsultationStatus] = useState(initialStatus);
+    const [isVideoOpen, setIsVideoOpen] = useState(false); // [FIX] No auto-open
     const [activeTab, setActiveTab] = useState(location.state?.defaultTab || 'Medical Files');
     const [medicalRecords, setMedicalRecords] = useState([]);
     const [loadingRecords, setLoadingRecords] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [isPrescriptionSubmitted, setIsPrescriptionSubmitted] = useState(false); // [NEW] Track prescription submission
+
+    // [NEW] Sync Status from Backend
+    useEffect(() => {
+        const syncStatus = async () => {
+            if (patientData?.caseId) {
+                try {
+                    const res = await fetch(`http://localhost:8004/get_case?case_id=${patientData.caseId}`);
+                    if (res.ok) {
+                        const caseDetails = await res.json();
+                        console.log("Synced Case Status:", caseDetails.status);
+                        if (caseDetails.status) {
+                            setConsultationStatus(caseDetails.status);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Status Sync Error:", e);
+                }
+            }
+        };
+        syncStatus();
+    }, [patientData?.caseId]);
 
     // Fetch Records
     React.useEffect(() => {
         const fetchRecords = async () => {
             try {
-                // Use caseId if available for context-specific records
-                const caseId = location.state?.patientData?.caseId;
-                let url = `http://localhost:8003/get_records?patient_id=${id || ''}`;
+                // [FIX] Use derived caseId (from State OR URL)
+                const caseId = patientData.caseId;
+                let url = `/get_records?patient_id=${id || ''}`;
                 if (caseId) {
                     url += `&case_id=${caseId}`;
                 }
@@ -41,18 +75,19 @@ const PatientDetail = () => {
             }
         };
         fetchRecords();
-    }, [id, location.state]);
+    }, [id, location.state, patientData.caseId]);
 
-    const handleSubmitConsultation = async (consultationData) => {
+    const handleSubmitConsultation = async (consultationData, recordType = "PRESCRIPTION") => {
         setSubmitting(true);
         try {
             const payload = {
                 patient_id: id,
-                type: "PRESCRIPTION",
-                data: consultationData
+                type: recordType,
+                data: consultationData,
+                case_id: patientData?.caseId // [FIX] Link to Case
             };
 
-            const response = await fetch('http://localhost:8003/upload_record', {
+            const response = await fetch('/upload_record', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -60,7 +95,7 @@ const PatientDetail = () => {
 
             if (response.ok) {
                 alert("Consultation saved successfully!");
-                navigate('/doctor/patients');
+                // navigate('/doctor/patients'); // [FIX] Stay on page
             } else {
                 alert("Failed to save consultation.");
             }
@@ -122,7 +157,7 @@ const PatientDetail = () => {
     };
 
     // Use passed patient data or fallback to a default structure
-    const patientData = location.state?.patientData || {};
+    // const patientData = location.state?.patientData || {}; // [REMOVED] Defined at top
 
     // Default / Fallback Data
     const patient = {
@@ -139,6 +174,78 @@ const PatientDetail = () => {
             weight: "70 kg" // Placeholder
         },
         emergency: location.state?.type === 'emergency'
+    };
+
+    // [NEW] Handle Start/End Consultation
+    // [NEW] Handle Start Consultation
+    const handleStartConsultation = async () => {
+        console.log("handleStartConsultation called");
+        console.log("Current Status:", consultationStatus);
+        console.log("Patient Data:", patientData);
+
+        if (consultationStatus !== 'APPOINTMENT_IN_PROGRESS' && consultationStatus !== 'CONSULTATION_ENDED') {
+            // --- STARTING CONSULTATION ---
+            const isVideoMode = !location.state?.type || location.state?.type === 'standard' || location.state?.type === 'video';
+            if (isVideoMode) setIsVideoOpen(true);
+
+            // 1. Update Case Status
+            if (patientData?.caseId) {
+                console.log("Updating Case Status for:", patientData.caseId);
+                try {
+                    await fetch(`http://localhost:8004/update_case_status?case_id=${patientData.caseId}&status=APPOINTMENT_IN_PROGRESS`, {
+                        method: 'POST'
+                    });
+                    console.log("Case Status Updated");
+                } catch (e) {
+                    console.error("Error updating case status:", e);
+                }
+            } else {
+                console.warn("No Case ID found for status update");
+            }
+
+            // 2. Update Appointment Status
+            if (patientData?.appointmentId) {
+                console.log("Updating Appointment Status for:", patientData.appointmentId);
+                try {
+                    await fetch(`http://localhost:8004/update_appointment_status?appointment_id=${patientData.appointmentId}&status=APPOINTMENT_IN_PROGRESS`, {
+                        method: 'POST'
+                    });
+                    console.log("Appointment Status Updated");
+                } catch (e) {
+                    console.error("Error updating appointment status:", e);
+                }
+            } else {
+                console.warn("No Appointment ID found for status update");
+            }
+
+            setConsultationStatus('APPOINTMENT_IN_PROGRESS');
+        } else {
+            console.log("Consultation already in progress or ended. Skipping start logic.");
+        }
+    };
+
+    // [NEW] Handle End Consultation (Explicit Action)
+    const handleEndConsultation = async () => {
+        // --- ENDING CONSULTATION ---
+        setIsVideoOpen(false);
+        // 1. Update Case Status
+        if (patientData?.caseId) {
+            await fetch(`http://localhost:8004/update_case_status?case_id=${patientData.caseId}&status=CONSULTATION_ENDED`, {
+                method: 'POST'
+            });
+        }
+        // 2. Update Appointment Status
+        if (patientData?.appointmentId) {
+            await fetch(`http://localhost:8004/update_appointment_status?appointment_id=${patientData.appointmentId}&status=CONSULTATION_ENDED`, {
+                method: 'POST'
+            });
+        }
+        setConsultationStatus('CONSULTATION_ENDED');
+
+        // [NEW] Auto-Navigate back to Patient List
+        setTimeout(() => {
+            navigate('/doctor/patients');
+        }, 2000);
     };
 
     return (
@@ -196,30 +303,28 @@ const PatientDetail = () => {
 
                     <button
                         type="button"
+                        onClick={consultationStatus === 'APPOINTMENT_IN_PROGRESS' ? handleEndConsultation : handleStartConsultation}
+                        disabled={consultationStatus === 'CONSULTATION_ENDED' || (consultationStatus === 'APPOINTMENT_IN_PROGRESS' && !isPrescriptionSubmitted)}
                         style={{
-                            width: '100%',
-                            padding: '12px 20px',
-                            background: isVideoOpen ? '#ef4444' : '#0f766e',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
+                            padding: '10px 20px',
+                            background: consultationStatus === 'APPOINTMENT_IN_PROGRESS' ?
+                                (!isPrescriptionSubmitted ? '#9ca3af' : '#ef4444') :
+                                (consultationStatus === 'CONSULTATION_ENDED' ? '#94a3b8' : '#0f766e'),
+                            color: 'white', border: 'none', borderRadius: '8px',
+                            fontWeight: '600',
+                            cursor: (consultationStatus === 'CONSULTATION_ENDED' || (consultationStatus === 'APPOINTMENT_IN_PROGRESS' && !isPrescriptionSubmitted)) ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '8px',
                             marginTop: '1rem',
-                            boxShadow: isVideoOpen ? '0 4px 6px -1px rgba(239, 68, 68, 0.3)' : '0 4px 6px -1px rgba(15, 118, 110, 0.3)',
-                            transition: 'all 0.2s'
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                         }}
-                        onClick={() => setIsVideoOpen(!isVideoOpen)}
-                        onMouseOver={(e) => e.target.style.background = isVideoOpen ? '#dc2626' : '#0d6560'}
-                        onMouseOut={(e) => e.target.style.background = isVideoOpen ? '#ef4444' : '#0f766e'}
                     >
-                        {isVideoOpen ? (
+                        {consultationStatus === 'APPOINTMENT_IN_PROGRESS' ? (
                             <>
                                 <PhoneOff size={18} /> End Consultation
+                            </>
+                        ) : consultationStatus === 'CONSULTATION_ENDED' ? (
+                            <>
+                                <CheckCircle size={18} /> Consultation Ended
                             </>
                         ) : (
                             <>
@@ -255,30 +360,28 @@ const PatientDetail = () => {
             {activeTab === 'Medical Files' ? (
                 <MedicalFilesView records={medicalRecords} loading={loadingRecords} />
             ) : activeTab === 'Consultation' ? (
-                <ConsultationMode records={medicalRecords} onSubmit={handleSubmitConsultation} submitting={submitting} />
+                <ConsultationMode
+                    records={medicalRecords}
+                    onSubmit={handleSubmitConsultation}
+                    submitting={submitting}
+                    patientData={patientData}
+                    isPrescriptionSubmitted={isPrescriptionSubmitted}
+                    setIsPrescriptionSubmitted={setIsPrescriptionSubmitted}
+                    consultationStatus={consultationStatus}
+                />
             ) : (
                 <div style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', background: 'white', borderRadius: '12px', border: '1px dashed #e2e8f0' }}>
                     Content for {activeTab} will appear here.
                 </div>
             )}
 
-            {/* Action Bar */}
-            <div style={{
-                position: 'fixed', bottom: '2rem', right: '2rem',
-                background: 'white', padding: '1rem', borderRadius: '12px',
-                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0',
-                display: 'flex', gap: '1rem', zIndex: 100
-            }}>
-                <ActionButton icon={<Plus size={18} />} label="Add Notes" color="white" />
-                <ActionButton icon={<FileText size={18} />} label="Request Lab" color="white" />
-                <ActionButton icon={<Pill size={18} />} label="Prescribe Meds" color="primary" />
-                <ActionButton icon={<CheckCircle size={18} />} label="Mark Reviewed" color="success" />
-            </div>
+            {/* Action Bar REMOVED per user request */}
             {/* Video Popup */}
             {isVideoOpen && (
                 <VideoPopup
-                    patientName={patient ? patient.name : "Patient"}
+                    patientName={patientData?.patient_name || "Patient"}
                     onClose={() => setIsVideoOpen(false)}
+                    caseId={patientData?.caseId}
                 />
             )}
         </div>
@@ -286,10 +389,17 @@ const PatientDetail = () => {
 };
 
 const MedicalFilesView = ({ records, loading }) => {
+    const [selectedSummary, setSelectedSummary] = useState(null);
+
     if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading records...</div>;
 
     // Filter Records
-    const aiSummaries = records.filter(r => r.type === 'AI_SUMMARY_DOCTOR' || r.type === 'summary');
+    const aiSummaries = records.filter(r =>
+        r.type === 'AI_SUMMARY_DOCTOR' ||
+        r.type === 'DOCTOR_SUMMARY'
+        // r.type === 'summary' || // Legacy
+        // r.type === 'AI_SUMMARY' // Patient-facing summary (Excluded per user request)
+    );
     const prescriptions = records.filter(r => r.type === 'PRESCRIPTION');
     const labReports = records.filter(r => r.type === 'LAB_REPORT');
 
@@ -297,16 +407,27 @@ const MedicalFilesView = ({ records, loading }) => {
         <div style={{ display: 'grid', gap: '2rem' }}>
             <FileSection title="Pre-Doctor Consultation Summary File" count={aiSummaries.length}>
                 {aiSummaries.length === 0 ? <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>No AI summaries found.</div> :
-                    aiSummaries.map(doc => (
-                        <FileCard
-                            key={doc.record_id}
-                            name={`AI Insight: ${doc.data?.pre_doctor_consultation_summary?.trigger_reason || "General Checkup"}`}
-                            date={new Date(doc.created_at).toLocaleDateString()}
-                            type="AI Insight"
-                            isAI
-                            summary={`Severity: ${doc.data?.triage_decision || "Unknown"}`}
-                        />
-                    ))
+                    aiSummaries.map(doc => {
+                        // Compatibility: Handle both legacy nested 'data' and new flat structure
+                        const isDoctorSummary = doc.type === 'DOCTOR_SUMMARY' || doc.type === 'AI_SUMMARY_DOCTOR';
+                        const summaryData = doc.data?.pre_doctor_consultation_summary || (isDoctorSummary ? doc : (doc.data || {}));
+
+                        const reason = summaryData.trigger_reason || "General Checkup";
+                        const severity = doc.triage_level || doc.data?.triage_decision || summaryData.assessment?.severity || "Unknown";
+
+                        return (
+                            <FileCard
+                                key={doc.summary_id || doc.id || doc.record_id}
+                                name={`AI Insight: ${reason}`}
+                                date={new Date(doc.created_at || doc.generated_at).toLocaleDateString()}
+                                type={isDoctorSummary ? "Pre-Consult Summary" : "AI Triage"}
+                                isAI
+                                summary={`Severity: ${severity}`}
+                                onClick={() => isDoctorSummary ? setSelectedSummary(doc) : null}
+                                actionLabel={isDoctorSummary ? "View Full Details" : null}
+                            />
+                        );
+                    })
                 }
             </FileSection>
 
@@ -334,6 +455,9 @@ const MedicalFilesView = ({ records, loading }) => {
                     ))
                 }
             </FileSection>
+
+            {/* Summary Modal */}
+            <SummaryModal data={selectedSummary} onClose={() => setSelectedSummary(null)} />
         </div>
     );
 };
@@ -347,24 +471,7 @@ const VitalItem = ({ label, value }) => (
     </div>
 );
 
-const ActionButton = ({ icon, label, color }) => {
-    const styles = {
-        white: { bg: 'white', text: '#334155', border: '1px solid #cbd5e1' },
-        primary: { bg: '#0f766e', text: 'white', border: '1px solid #0f766e' },
-        success: { bg: '#15803d', text: 'white', border: '1px solid #15803d' }
-    };
-    const theme = styles[color];
 
-    return (
-        <button style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: theme.bg, color: theme.text, border: theme.border,
-            padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
-        }}>
-            {icon} {label}
-        </button>
-    );
-};
 
 const FileSection = ({ title, count, children }) => (
     <div>
@@ -377,14 +484,14 @@ const FileSection = ({ title, count, children }) => (
     </div>
 );
 
-const FileCard = ({ name, date, type, isAbnormal, isAI, summary }) => (
+const FileCard = ({ name, date, type, isAbnormal, isAI, summary, onClick, actionLabel }) => (
     <div style={{
         background: isAI ? '#f5f3ff' : 'white',
         border: isAbnormal ? '1px solid #fecaca' : (isAI ? '1px solid #ddd6fe' : '1px solid #e2e8f0'),
         borderRadius: '10px', padding: '1rem',
-        position: 'relative', cursor: 'pointer', transition: 'box-shadow 0.2s',
+        position: 'relative', cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow 0.2s',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-    }}>
+    }} onClick={onClick}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
             <div style={{
                 padding: '6px', borderRadius: '6px',
@@ -406,22 +513,113 @@ const FileCard = ({ name, date, type, isAbnormal, isAI, summary }) => (
                 "{summary}"
             </div>
         )}
+
+        {actionLabel && (
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#0f766e', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {actionLabel} <ExternalLink size={14} />
+                </span>
+            </div>
+        )}
     </div>
 );
 
-const ConsultationMode = ({ records, onSubmit, submitting }) => {
+const ConsultationMode = ({ records, onSubmit, submitting, patientData, isPrescriptionSubmitted, setIsPrescriptionSubmitted, consultationStatus }) => {
+    console.log("DEBUG: ConsultationMode Props:", { patientData, records, consultationStatus });
     const [remarks, setRemarks] = useState("");
+    const [advice, setAdvice] = useState("");
     const [medicines, setMedicines] = useState([]);
-    const [currentMed, setCurrentMed] = useState({ name: "", dosage: "", frequency: "", duration: "" });
+    const [currentMed, setCurrentMed] = useState({
+        name: "",
+        dosage: "",
+        frequency: "",
+        duration: "",
+        instruction: "",
+        type: "Tablet",
+        timing: { morning: false, noon: false, evening: false, night: false }
+    });
 
-    // Pre-fill remarks from AI Summary if available
+    const isReadOnly = consultationStatus === 'CONSULTATION_ENDED' || consultationStatus === 'COMPLETED';
+
+    // [NEW] Persistence Key
+    const storageKey = patientData?.caseId ? `consultation_draft_${patientData.caseId}` : null;
+
+    // [NEW] Load Data (Draft OR Submitted)
+    useEffect(() => {
+        console.log("DEBUG: ConsultationMode Effect Triggered", { isReadOnly, recordsLen: records?.length, storageKey });
+
+        // Priority 1: Submitted Data (if Read Only)
+        if (isReadOnly) {
+            if (!records || records.length === 0) {
+                console.log("DEBUG: ReadOnly but no records yet.");
+                return;
+            }
+
+            console.log("DEBUG: Processing Submitted Data...");
+            const rxRecord = records.find(r => r.type === 'PRESCRIPTION_MEDICINES' || r.type === 'PRESCRIPTION');
+            const notesRecord = records.find(r => r.type === 'DOCTOR_REMARKS');
+
+            console.log("DEBUG: Found Records:", { rxRecord, notesRecord });
+
+            if (rxRecord?.data?.medicines) {
+                console.log("DEBUG: Setting Medicines:", rxRecord.data.medicines);
+                setMedicines(rxRecord.data.medicines);
+            }
+            if (notesRecord?.data) {
+                console.log("DEBUG: Setting Notes:", notesRecord.data);
+                setRemarks(notesRecord.data.remarks || "");
+                setAdvice(notesRecord.data.advice || "");
+            }
+            return; // Don't load draft if we have submitted data
+        }
+
+        // Priority 2: Saved Draft
+        if (storageKey) {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    console.log("DEBUG: Loading Draft:", data);
+                    if (data.remarks) setRemarks(data.remarks);
+                    if (data.advice) setAdvice(data.advice);
+                    if (data.medicines) setMedicines(data.medicines);
+                } catch (e) {
+                    console.error("Failed to parse saved draft", e);
+                }
+            }
+        }
+    }, [storageKey, isReadOnly, records]);
+
+    // [NEW] Save Draft on Change (Only if NOT Read Only)
+    useEffect(() => {
+        if (storageKey && !isReadOnly) {
+            const data = { remarks, advice, medicines };
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+    }, [remarks, advice, medicines, storageKey, isReadOnly]);
+
+    // Pre-fill remarks from AI Summary if available (Only if empty and editable)
     React.useEffect(() => {
-        const latestSummary = records.find(r => r.type === 'AI_SUMMARY_DOCTOR' || r.type === 'summary');
+        if (isReadOnly) return;
+        const latestSummary = records.find(r =>
+            r.type === 'DOCTOR_SUMMARY' ||
+            r.type === 'AI_SUMMARY_DOCTOR' ||
+            r.type === 'summary'
+        );
+
         if (latestSummary) {
-            const reason = latestSummary.data?.pre_doctor_consultation_summary?.trigger_reason || "";
-            const assessment = latestSummary.data?.pre_doctor_consultation_summary?.assessment?.likely_diagnosis || "";
-            if (!remarks) { // Only set if empty
-                // setRemarks(`AI Trigger: ${reason}\nAssessment: ${assessment}\n\n`); // Optional: Auto-fill
+            const isDoctorSummary = latestSummary.type === 'DOCTOR_SUMMARY' || latestSummary.type === 'AI_SUMMARY_DOCTOR';
+            const summaryData = latestSummary.data?.pre_doctor_consultation_summary || (latestSummary.type === 'DOCTOR_SUMMARY' ? latestSummary : (latestSummary.data || {}));
+
+            const reason = summaryData.trigger_reason || "";
+            const assessment = summaryData.assessment?.likely_diagnosis || "";
+
+            // Only set if empty AND no saved draft was loaded (simple check: if remarks is still empty)
+            // But wait, the Load Draft effect runs once. The Pre-fill runs when records change.
+            // If we restore draft, remarks might be non-empty. 
+            // The condition `!remarks` handles this safe-guard.
+            if (!remarks) {
+                // setRemarks(`AI Trigger: ${reason}\nAssessment: ${assessment}\n\n`); // DISABLED: Doctor fills manually
             }
         }
     }, [records]);
@@ -429,7 +627,17 @@ const ConsultationMode = ({ records, onSubmit, submitting }) => {
     const addMedicine = () => {
         if (currentMed.name && currentMed.dosage) {
             setMedicines([...medicines, { ...currentMed, id: Date.now() }]);
-            setCurrentMed({ name: "", dosage: "", frequency: "", duration: "" });
+            setCurrentMed({
+                name: "",
+                dosage: "",
+                frequency: "",
+                duration: "",
+                instruction: "",
+                type: "Tablet",
+                timing: { morning: false, noon: false, evening: false, night: false }
+            });
+        } else {
+            alert("Please enter medicine name and dosage.");
         }
     };
 
@@ -437,165 +645,456 @@ const ConsultationMode = ({ records, onSubmit, submitting }) => {
         setMedicines(medicines.filter(med => med.id !== id));
     };
 
-    const handleFinalSubmit = () => {
+
+
+    const handleFinalSubmit = async () => {
         const data = {
             remarks,
+            advice,
             medicines,
             timestamp: new Date().toISOString()
         };
-        onSubmit(data);
+        // [NEW] Submit Prescription & Update Status
+        await onSubmit(data, "PRESCRIPTION");
+
+        // 1. Update Case Status to Intermediate Step
+        if (patientData?.caseId) {
+            await fetch(`http://localhost:8004/update_case_status?case_id=${patientData.caseId}&status=DOCTOR_NOTES_AND_PRESCRIPTION_READY`, {
+                method: 'POST'
+            });
+        }
+
+        // [NEW] Clear Persistence
+        if (storageKey) localStorage.removeItem(storageKey);
+
+        setIsPrescriptionSubmitted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        alert("Prescription submitted. You can now End the Consultation.");
+    };
+
+    const handleSaveDraft = () => {
+        const data = {
+            remarks,
+            advice,
+            medicines,
+            timestamp: new Date().toISOString()
+        };
+        onSubmit(data, "DRAFT_PRESCRIPTION");
+        // [NEW] Clear Persistence (Optional: or keep it? Draft usually implies saved to DB, so clear local)
+        if (storageKey) localStorage.removeItem(storageKey);
     };
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
-            {/* Left: Doctor's Remarks (Pre-Consultation Summary) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ marginTop: 0, color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FileText size={20} color="#0f766e" /> Doctor's remarks
-                    </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            {/* Left Column: Notes & Advice */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
+                {/* Clinical Notes */}
+                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '400px' }}>
+                    <h3 style={{ marginTop: 0, color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Clinical Notes
+                    </h3>
                     <textarea
                         value={remarks}
                         onChange={(e) => setRemarks(e.target.value)}
-                        placeholder="Enter clinical notes here..."
+                        placeholder="Enter examination notes, symptoms, and diagnosis..."
+                        disabled={isReadOnly}
                         style={{
-                            flex: 1, width: '100%', minHeight: '300px', padding: '1rem',
+                            flex: 1, width: '100%', padding: '1rem',
                             borderRadius: '8px', border: '1px solid #cbd5e1',
                             fontSize: '1rem', fontFamily: 'inherit', resize: 'none',
-                            outline: 'none', transition: 'border-color 0.2s'
+                            outline: 'none', transition: 'border-color 0.2s',
+                            background: isReadOnly ? '#f8fafc' : 'white'
                         }}
-                        onFocus={(e) => e.target.style.borderColor = '#0f766e'}
-                        onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                        onFocus={(e) => !isReadOnly && (e.target.style.borderColor = '#0f766e')}
+                        onBlur={(e) => !isReadOnly && (e.target.style.borderColor = '#cbd5e1')}
+                    />
+                </div>
+
+                {/* Patient Advice */}
+                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '300px' }}>
+                    <h3 style={{ marginTop: 0, color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FileText size={20} color="#0f766e" /> Patient Advice & Instructions
+                    </h3>
+                    <textarea
+                        value={advice}
+                        onChange={(e) => setAdvice(e.target.value)}
+                        placeholder="Enter advice for the patient (e.g., Diet restrictions, rest, follow-up plan, warning signs)..."
+                        disabled={isReadOnly}
+                        style={{
+                            flex: 1, width: '100%', padding: '1rem',
+                            borderRadius: '8px', border: '1px solid #cbd5e1',
+                            fontSize: '1rem', fontFamily: 'inherit', resize: 'none',
+                            outline: 'none', background: isReadOnly ? '#f8fafc' : '#fffbeb'
+                        }}
                     />
                 </div>
             </div>
 
-            {/* Right: Digital Prescription & Actions */}
+            {/* Right Column: Prescription Form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {/* Prescription Form */}
                 <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                     <h3 style={{ marginTop: 0, color: '#334155', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                        <Pill size={20} color="#0f766e" /> Digital Prescription
+                        Prescribe Medicine
                     </h3>
 
-                    {/* Add Medicine Form */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '1.5rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    {/* Form */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '1.5rem' }}>
+                        {/* Row 1: Name & Dosage */}
                         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                             <input
                                 type="text" placeholder="Medicine Name (e.g. Paracetamol)"
                                 value={currentMed.name}
                                 onChange={(e) => setCurrentMed({ ...currentMed, name: e.target.value })}
-                                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                                disabled={isReadOnly}
+                                style={{
+                                    padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem',
+                                    background: isReadOnly ? '#f8fafc' : 'white'
+                                }}
                             />
-                            <select
-                                value={currentMed.frequency}
-                                onChange={(e) => setCurrentMed({ ...currentMed, frequency: e.target.value })}
-                                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', background: 'white' }}
-                            >
-                                <option value="">Frequency</option>
-                                <option value="1-0-1">1-0-1 (Morning-Night)</option>
-                                <option value="1-0-0">1-0-0 (Morning)</option>
-                                <option value="0-0-1">0-0-1 (Night)</option>
-                                <option value="1-1-1">1-1-1 (TDS)</option>
-                                <option value="SOS">SOS (As needed)</option>
-                            </select>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <input
-                                type="text" placeholder="Dosage (e.g. 500mg)"
+                                type="text" placeholder="Dosage (500mg)"
                                 value={currentMed.dosage}
                                 onChange={(e) => setCurrentMed({ ...currentMed, dosage: e.target.value })}
-                                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                                disabled={isReadOnly}
+                                style={{
+                                    padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem',
+                                    background: isReadOnly ? '#f8fafc' : 'white'
+                                }}
                             />
+                        </div>
+
+                        {/* Row 2: Type & Duration */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <select
+                                value={currentMed.type}
+                                onChange={(e) => setCurrentMed({ ...currentMed, type: e.target.value })}
+                                disabled={isReadOnly}
+                                style={{
+                                    padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem',
+                                    background: isReadOnly ? '#f8fafc' : 'white'
+                                }}
+                            >
+                                {['Tablet', 'Syrup', 'Capsule', 'Injection', 'Cream', 'Drops'].map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
                             <input
                                 type="text" placeholder="Duration (e.g. 5 days)"
                                 value={currentMed.duration}
                                 onChange={(e) => setCurrentMed({ ...currentMed, duration: e.target.value })}
-                                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                            />
-                            <input
-                                type="text" placeholder="Instruction (e.g. After food)"
-                                value={currentMed.instruction}
-                                onChange={(e) => setCurrentMed({ ...currentMed, instruction: e.target.value || "" })} // Handle optional logic
-                                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                                disabled={isReadOnly}
+                                style={{
+                                    padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem',
+                                    background: isReadOnly ? '#f8fafc' : 'white'
+                                }}
                             />
                         </div>
-                        <button
-                            onClick={addMedicine}
+
+                        {/* Row 3: Instruction */}
+                        <input
+                            type="text" placeholder="Instruction (e.g. After Food)"
+                            value={currentMed.instruction}
+                            onChange={(e) => setCurrentMed({ ...currentMed, instruction: e.target.value })}
+                            disabled={isReadOnly}
                             style={{
-                                alignSelf: 'flex-end', padding: '10px 20px', background: '#0f766e', color: 'white',
-                                border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: '600'
+                                padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem',
+                                background: isReadOnly ? '#f8fafc' : 'white'
                             }}
-                        >
-                            <Plus size={16} /> Add Medicine
-                        </button>
+                        />
+
+                        {/* Row 4: Timing Toggles */}
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#64748b', marginBottom: '6px' }}>Timing</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {['Morning', 'Noon', 'Evening', 'Night'].map(t => {
+                                    const key = t.toLowerCase();
+                                    const active = currentMed.timing[key];
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => setCurrentMed({ ...currentMed, timing: { ...currentMed.timing, [key]: !active } })}
+                                            disabled={isReadOnly}
+                                            style={{
+                                                flex: 1, padding: '8px', borderRadius: '6px',
+                                                border: active ? '1px solid #0f766e' : '1px solid #cbd5e1',
+                                                background: active ? '#f0fdfa' : (isReadOnly ? '#f8fafc' : 'white'),
+                                                color: active ? '#0f766e' : '#64748b',
+                                                fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                                            }}
+                                        >
+                                            {t === 'Morning' && '☀️'}
+                                            {t === 'Noon' && '🔆'}
+                                            {t === 'Evening' && 'ws'}
+                                            {t === 'Night' && '🌙'}
+                                            {t}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {!isReadOnly && (
+                            <button
+                                onClick={addMedicine}
+                                style={{
+                                    marginTop: '10px', width: '100%', padding: '10px', background: '#0f766e', color: 'white',
+                                    border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600'
+                                }}
+                            >
+                                + Add Medicine
+                            </button>
+                        )}
                     </div>
 
-                    {/* Medicine List Table */}
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                            <thead>
-                                <tr style={{ background: '#f1f5f9', color: '#475569', textAlign: 'left' }}>
-                                    <th style={{ padding: '10px', borderRadius: '6px 0 0 6px' }}>Medicine</th>
-                                    <th style={{ padding: '10px' }}>Dosage</th>
-                                    <th style={{ padding: '10px' }}>Freq</th>
-                                    <th style={{ padding: '10px' }}>Duration</th>
-                                    <th style={{ padding: '10px' }}>Instruction</th>
-                                    <th style={{ padding: '10px', borderRadius: '0 6px 6px 0' }}></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {medicines.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>
-                                            No medicines prescribed yet.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    medicines.map((med) => (
-                                        <tr key={med.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                            <td style={{ padding: '12px 10px', fontWeight: '600', color: '#334155' }}>{med.name}</td>
-                                            <td style={{ padding: '12px 10px', color: '#64748b' }}>{med.dosage}</td>
-                                            <td style={{ padding: '12px 10px', color: '#0f766e', fontWeight: '500' }}>{med.frequency}</td>
-                                            <td style={{ padding: '12px 10px', color: '#64748b' }}>{med.duration}</td>
-                                            <td style={{ padding: '12px 10px', color: '#64748b' }}>{med.instruction || "-"}</td>
-                                            <td style={{ padding: '12px 10px', textAlign: 'right' }}>
-                                                <button onClick={() => removeMedicine(med.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                                                    <X size={16} />
-                                                </button>
+                    {/* Medicine Table */}
+                    <div style={{ minHeight: '100px', border: '1px dashed #e2e8f0', borderRadius: '8px', padding: '1rem' }}>
+                        {medicines.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: '#94a3b8', fontStyle: 'italic', marginTop: '30px' }}>
+                                No medicines added yet.
+                            </div>
+                        ) : (
+                            <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
+                                <tbody>
+                                    {medicines.map((med, i) => (
+                                        <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                            <td style={{ padding: '8px 0' }}>
+                                                <div style={{ fontWeight: '600', color: '#334155' }}>{med.name} <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'normal' }}>({med.dosage}, {med.type})</span></div>
+                                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                                    {Object.entries(med.timing).filter(([k, v]) => v).map(([k]) => k).join('-')} • {med.duration} • {med.instruction}
+                                                </div>
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                {!isReadOnly && (
+                                                    <button onClick={() => setMedicines(medicines.filter((_, idx) => idx !== i))} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
 
                 {/* Actions */}
                 <div style={{ background: '#f0fdfa', padding: '1.5rem', borderRadius: '12px', border: '1px solid #ccfbf1' }}>
-                    <h4 style={{ marginTop: 0, color: '#0f766e', marginBottom: '1rem' }}>Consultation Actions</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <button style={{
-                            padding: '12px', background: 'white', color: '#0f766e', border: '1px solid #0f766e',
-                            borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                        }}>
-                            <FileText size={18} /> Save Draft
-                        </button>
-                        <button
-                            onClick={handleFinalSubmit}
-                            disabled={submitting}
-                            style={{
-                                padding: '12px', background: submitting ? '#9ca3af' : '#0f766e', color: 'white', border: 'none',
-                                borderRadius: '8px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                boxShadow: '0 4px 6px -1px rgba(15, 118, 110, 0.4)'
+                    <h4 style={{ marginTop: 0, color: '#0f766e', marginBottom: '1rem' }}>Actions</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {isReadOnly ? (
+                            <div style={{
+                                padding: '12px', background: '#ecfdf5', color: '#047857',
+                                borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                border: '1px solid #6ee7b7'
                             }}>
-                            {submitting ? 'Submitting...' : 'Submit and end consultation'}
-                        </button>
+                                <CheckCircle size={20} /> Consultation Completed
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleFinalSubmit}
+                                    disabled={submitting || isPrescriptionSubmitted}
+                                    style={{
+                                        padding: '12px',
+                                        background: isPrescriptionSubmitted ? '#cbd5e1' : '#0f766e',
+                                        color: isPrescriptionSubmitted ? '#64748b' : 'white',
+                                        border: 'none',
+                                        borderRadius: '8px', fontWeight: '600',
+                                        cursor: isPrescriptionSubmitted ? 'not-allowed' : 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                        boxShadow: isPrescriptionSubmitted ? 'none' : '0 4px 6px -1px rgba(15, 118, 110, 0.4)'
+                                    }}>
+                                    {isPrescriptionSubmitted ? (
+                                        <>
+                                            <CheckCircle size={18} /> Prescription Submitted
+                                        </>
+                                    ) : "Finalize & Submit Prescription"}
+                                </button>
+                                <button
+                                    onClick={handleSaveDraft}
+                                    disabled={submitting}
+                                    style={{
+                                        padding: '12px', background: 'white', color: '#0f766e', border: '1px solid #0f766e',
+                                        borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}>
+                                    Save Consultation as Draft
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
+
+        </div>
+    );
+};
+
+const SummaryModal = ({ data, onClose }) => {
+    if (!data) return null;
+
+    // Normalize data
+    const isDoctorSummary = data.type === 'DOCTOR_SUMMARY' || data.type === 'AI_SUMMARY_DOCTOR';
+    const summary = isDoctorSummary ? (data.pre_doctor_consultation_summary || data) : (data.data || {});
+
+    const assessment = summary.assessment || {};
+    const vitals = summary.vitals_reported || summary.vitals || {};
+    const actions = summary.immediate_actions || summary.plan?.immediate_actions || [];
+    const redFlags = summary.red_flags || summary.red_flags_to_watch || [];
+
+    // Extract Symptoms
+    const history = summary.history || {};
+    const reportedSymptoms = history.symptoms || [];
+    const deniedSymptoms = history.negatives || [];
+
+    return (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, backdropFilter: 'blur(4px)'
+        }} onClick={onClose}>
+            <div style={{
+                background: 'white', width: '90%', maxWidth: '800px', maxHeight: '90vh',
+                borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'fadeIn 0.2s'
+            }} onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+                    <div>
+                        <h2 style={{ margin: 0, color: '#0f766e', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <FileText size={24} /> Pre-Doctor Consultation Summary
+                        </h2>
+                        <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px' }}>
+                            Generated on {new Date(data.created_at || data.generated_at).toLocaleString()}
+                        </div>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={24} /></button>
+                </div>
+
+                {/* Content */}
+                <div style={{ padding: '2rem', overflowY: 'auto' }}>
+
+                    {/* 1. Assessment & Severity */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                        <div style={{ background: '#f0fdfa', padding: '1.5rem', borderRadius: '12px', border: '1px solid #ccfbf1' }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#0f766e', textTransform: 'uppercase', fontSize: '0.85rem' }}>Likely Diagnosis</h4>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#134e4a' }}>
+                                {assessment.likely_diagnosis || "Under Evaluation"}
+                            </div>
+                        </div>
+                        <div style={{ background: '#fff1f2', padding: '1.5rem', borderRadius: '12px', border: '1px solid #ffe4e6' }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#be123c', textTransform: 'uppercase', fontSize: '0.85rem' }}>Severity Level</h4>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#881337', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {assessment.severity || "Unknown"}
+                                {assessment.severity_score && <span style={{ fontSize: '0.9rem', background: 'white', padding: '2px 8px', borderRadius: '12px', border: '1px solid #fecdd3' }}>Score: {assessment.severity_score}</span>}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 2. Reasoning & Symptom Analysis */}
+                    <div style={{ marginBottom: '2rem' }}>
+                        <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Clinical Reasoning</h4>
+
+                        {/* Symptoms Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                            {/* Reported Symptoms */}
+                            <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                                <h5 style={{ margin: '0 0 0.5rem 0', color: '#15803d', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <CheckCircle size={16} /> Reported Symptoms
+                                </h5>
+                                {reportedSymptoms.length > 0 ? (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {reportedSymptoms.map((sym, idx) => (
+                                            <span key={idx} style={{ background: 'white', color: '#166534', padding: '2px 8px', borderRadius: '12px', fontSize: '0.85rem', border: '1px solid #dcfce7' }}>
+                                                {sym}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : <span style={{ color: '#86efac', fontStyle: 'italic', fontSize: '0.9rem' }}>None recorded</span>}
+                            </div>
+
+                            {/* Denied Symptoms */}
+                            <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                                <h5 style={{ margin: '0 0 0.5rem 0', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <X size={16} /> Denied / Absent
+                                </h5>
+                                {deniedSymptoms.length > 0 ? (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {deniedSymptoms.map((sym, idx) => (
+                                            <span key={idx} style={{ background: 'white', color: '#991b1b', padding: '2px 8px', borderRadius: '12px', fontSize: '0.85rem', border: '1px solid #fee2e2' }}>
+                                                {sym}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : <span style={{ color: '#fca5a5', fontStyle: 'italic', fontSize: '0.9rem' }}>None recorded</span>}
+                            </div>
+                        </div>
+
+                        <p style={{ lineHeight: '1.6', color: '#475569', background: '#f8fafc', padding: '1rem', borderRadius: '8px', margin: 0 }}>
+                            {assessment.reasoning || summary.reasoning || "No additional reasoning provided."}
+                        </p>
+                    </div>
+
+                    {/* 3. Vitals & Actions */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+
+                        {/* Reported Vitals */}
+                        <div>
+                            <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Vitals</h4>
+                            {Object.keys(vitals).length > 0 ? (
+                                <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '0.8rem' }}>
+                                    {Object.entries(vitals).map(([key, val]) => (
+                                        <li key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', paddingBottom: '4px' }}>
+                                            <span style={{ textTransform: 'capitalize', color: '#64748b' }}>{key.replace(/_/g, ' ')}</span>
+                                            <span style={{ fontWeight: '600', color: '#334155' }}>{val}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>No specific vitals reported.</div>
+                            )}
+                        </div>
+
+                        {/* Immediate Actions */}
+                        <div>
+                            <h4 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Recommended Actions</h4>
+                            {actions.length > 0 ? (
+                                <ul style={{ paddingLeft: '20px', color: '#475569' }}>
+                                    {actions.map((action, idx) => (
+                                        <li key={idx} style={{ marginBottom: '0.5rem' }}>{action}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>No actions listed.</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 4. Red Flags */}
+                    {redFlags.length > 0 && (
+                        <div style={{ marginTop: '2rem', background: '#fff7ed', padding: '1rem', borderRadius: '8px', border: '1px solid #ffedd5' }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#c2410c', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <AlertTriangle size={18} /> Red Flags to Watch
+                            </h4>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {redFlags.map((flag, idx) => (
+                                    <span key={idx} style={{ background: 'white', color: '#9a3412', padding: '4px 10px', borderRadius: '20px', fontSize: '0.9rem', border: '1px solid #fdba74' }}>
+                                        {flag}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+
+
+
+
+            </div>
+
+
         </div>
     );
 };
