@@ -256,6 +256,8 @@ class FirebaseService:
                             },
                             "source_type": "appointment",
                             "appointment_details": apt_data # Keep original data
+                        })
+                        
                 except Exception as e:
                     print(f"Error fetching emergency appointments: {e}")
                          
