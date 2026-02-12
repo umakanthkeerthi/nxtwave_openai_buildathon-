@@ -54,7 +54,7 @@ const DoctorReports = () => {
     useEffect(() => {
         const fetchReports = async () => {
             try {
-                const response = await fetch('/get_records');
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_records`);
                 if (!response.ok) throw new Error('Failed to fetch reports');
                 const data = await response.json();
 

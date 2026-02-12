@@ -347,7 +347,7 @@ const DashboardSchedule = ({ currentUser, isEmergencyMode }) => {
         if (currentUser?.doctor_id || currentUser?.uid) {
             const docId = currentUser.doctor_id || currentUser.uid;
             setSlotsLoading(true);
-            fetch(`/get_slots?doctor_id=${docId}&status=ALL`)
+            fetch(`${import.meta.env.VITE_API_URL}/get_slots?doctor_id=${docId}&status=ALL`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.slots) {

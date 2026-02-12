@@ -60,7 +60,7 @@ const DoctorSlotManager = () => {
         setLoading(true);
         try {
             // Fetch ALL slots for doctor
-            const response = await fetch(`/get_slots?doctor_id=${currentUser.doctor_id}`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/get_slots?doctor_id=${currentUser.doctor_id}`);
             if (response.ok) {
                 const data = await response.json();
                 setAllSlots(data.slots || []); // Save all slots
@@ -98,7 +98,7 @@ const DoctorSlotManager = () => {
                 time_gap_minutes: parseInt(timeGap) // NEW
             };
 
-            const response = await fetch('/create_slots_batch', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/create_slots_batch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -137,7 +137,7 @@ const DoctorSlotManager = () => {
         };
 
         try {
-            const response = await fetch('/create_slot', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/create_slot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newSlot)
@@ -159,7 +159,7 @@ const DoctorSlotManager = () => {
         if (!window.confirm("Are you sure you want to delete this slot?")) return;
 
         try {
-            const response = await fetch(`/delete_slot?slot_id=${slotId}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_slot?slot_id=${slotId}`, {
                 method: 'DELETE'
             });
 
@@ -182,7 +182,7 @@ const DoctorSlotManager = () => {
 
         const dateKey = getLocalDateString(selectedDate);
         try {
-            const response = await fetch(`/delete_slots_for_day?doctor_id=${currentUser.doctor_id}&date=${dateKey}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/delete_slots_for_day?doctor_id=${currentUser.doctor_id}&date=${dateKey}`, {
                 method: 'DELETE'
             });
 
