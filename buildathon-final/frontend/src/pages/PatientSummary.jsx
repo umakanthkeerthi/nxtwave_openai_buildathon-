@@ -48,7 +48,7 @@ const PatientSummary = () => {
 
     const handleSave = async () => {
         try {
-            const response = await fetch('/save_summary', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/save_summary`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +81,7 @@ const PatientSummary = () => {
         // Requirement: Trigger Medical Files Agent (Save BOTH) AND Doctor Consultation Agent (Navigate)
         try {
             // 1. Trigger Medical Files Agent
-            const response = await fetch('/save_summary', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/save_summary`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
