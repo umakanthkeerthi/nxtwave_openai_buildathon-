@@ -71,7 +71,7 @@ const AiToolCard = ({ item, navigate }) => (
             transition: 'border-color 0.3s ease'
         }}
     >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
             <div style={{
                 backgroundColor: item.bg,
                 color: item.color,

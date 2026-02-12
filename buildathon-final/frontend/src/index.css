@@ -124,8 +124,8 @@ button {
 
   /* Adjust padding for bottom nav */
   body {
-    padding-bottom: 60px;
-    /* Reduced from 80px */
+    padding-bottom: 120px;
+    /* Increased to prevent content overlap with bottom nav */
   }
 }
 

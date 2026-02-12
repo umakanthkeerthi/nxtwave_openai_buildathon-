@@ -133,7 +133,7 @@ const MyAppointments = () => {
                                             </div>
 
                                             {/* Info */}
-                                            <div>
+                                            <div className="doctor-info-text">
                                                 <h3 className="doctor-name">{apt.doctorName}</h3>
                                                 <p className="doctor-specialty">{apt.specialty}</p>
                                                 <div className="appointment-meta">
@@ -154,7 +154,9 @@ const MyAppointments = () => {
                                             >
                                                 {apt.status}
                                             </span>
-                                            <ChevronRight size={20} color="#ccc" />
+                                            <div className="chevron-box">
+                                                <ChevronRight size={20} />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

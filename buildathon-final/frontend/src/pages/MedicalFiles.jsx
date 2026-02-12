@@ -696,42 +696,66 @@ const AISummariesView = ({ summaries }) => {
                     No summaries generated yet. Complete a consultation to see AI insights here.
                 </div>
             ) : (
-                summaries.map((summary) => (
-                    <div key={summary.id} className="file-card" style={{ borderLeft: '4px solid var(--color-primary)' }}>
-                        <div className="file-icon-box" style={{ backgroundColor: 'rgba(7, 118, 89, 0.1)', color: 'var(--color-primary)' }}>
-                            <Sparkles size={28} />
-                        </div>
-
-                        <div className="file-info">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <h3 className="file-title">{summary.title}</h3>
-                                <span className="meta-chip">AI Generated</span>
+                summaries.map((summary) => {
+                    const isRed = summary.color === 'Red' || summary.color === 'RED';
+                    return (
+                        <div key={summary.id} className="ai-summary-card">
+                            {/* Header with Icon and Badge */}
+                            <div className="ai-card-header">
+                                <div className="ai-icon-container">
+                                    <Sparkles size={24} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                    <span className="ai-badge-premium">AI Generated</span>
+                                </div>
                             </div>
 
-                            <div className="file-meta-row">
-                                <span className="meta-chip">Case ID: {summary.caseId ? summary.caseId.slice(0, 8) : 'N/A'}...</span>
-                                <span>•</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Calendar size={14} /> {summary.date}
-                                </span>
-                            </div>
-                        </div>
+                            {/* Content */}
+                            <div className="ai-card-content">
+                                <div>
+                                    <h3 className="ai-title">{summary.title}</h3>
+                                    <div className="ai-meta">
+                                        <span className="ai-meta-item">
+                                            <span style={{ opacity: 0.5 }}>#</span>
+                                            {summary.caseId ? summary.caseId.slice(0, 8) : 'N/A'}...
+                                        </span>
+                                        <span style={{ opacity: 0.3 }}>|</span>
+                                        <span className="ai-meta-item">
+                                            <Calendar size={14} /> {summary.date}
+                                        </span>
+                                    </div>
+                                </div>
 
-                        <button
-                            className="btn-view-file"
-                            style={{ color: 'var(--color-primary)', borderColor: 'var(--color-primary)', backgroundColor: 'transparent' }}
-                            onClick={() => navigate('/patient/patient-summary', {
-                                state: {
-                                    readOnly: true,
-                                    summary: summary
-                                }
-                            })}
-                        >
-                            <Sparkles size={16} style={{ marginRight: '6px' }} />
-                            View
-                        </button>
-                    </div>
-                ))
+                                {/* Triage Badge */}
+                                <div className="ai-triage-badge" style={{
+                                    backgroundColor: isRed ? '#fef2f2' : '#f0fdf4',
+                                    color: isRed ? '#dc2626' : '#16a34a',
+                                    border: `1px solid ${isRed ? '#fee2e2' : '#dcfce7'}`,
+                                    alignSelf: 'flex-start',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isRed ? '#dc2626' : '#16a34a' }}></span>
+                                    {summary.triage}
+                                </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <button
+                                className="ai-btn-premium"
+                                onClick={() => navigate('/patient/patient-summary', {
+                                    state: {
+                                        readOnly: true,
+                                        summary: summary
+                                    }
+                                })}
+                            >
+                                View Analysis <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    );
+                })
             )}
         </div>
     );
@@ -803,6 +827,28 @@ const PrescriptionDetailModal = ({ isOpen, onClose, data }) => {
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button
+                            className="btn-secondary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                backgroundColor: 'white',
+                                color: '#166534',
+                                padding: '0.6rem 1.2rem',
+                                borderRadius: '8px',
+                                border: '1px solid #166534',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                            }}
+                            onClick={() => {
+                                onClose();
+                                navigate('/patient/medications', { state: { prescription: data } });
+                            }}
+                        >
+                            <Activity size={18} />
+                            Track Medication
+                        </button>
                         <button
                             className="btn-primary"
                             style={{

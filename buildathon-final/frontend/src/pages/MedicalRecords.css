@@ -255,6 +255,8 @@
     .mr-content {
         margin-left: 0;
         padding: 1rem;
+        padding-bottom: 120px;
+        /* Ensure content clears bottom nav */
     }
 
     /* Adjust Card Layout for Mobile */
@@ -326,9 +328,7 @@
     border-color: var(--color-primary) !important;
 }
 
-.section-block {
-    /* No spec styles needed as grid gap handles it, but good for future extension */
-}
+/* .section-block removed as it was empty */
 
 .section-title {
     margin-top: 0;
@@ -340,4 +340,128 @@
     gap: 8px;
     border-bottom: 1px solid #f1f5f9;
     padding-bottom: 0.5rem;
+}
+
+/* --- AI SUMMARY CARD REDESIGN --- */
+.ai-summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #faffff 100%);
+    border: 1px solid rgba(0, 135, 158, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 220px;
+    border-left: 5px solid var(--color-primary);
+    /* Existing color pop */
+}
+
+.ai-summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 135, 158, 0.1), 0 10px 10px -5px rgba(0, 135, 158, 0.04);
+    border-color: var(--color-primary);
+}
+
+.ai-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.ai-icon-container {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.ai-badge-premium {
+    background: linear-gradient(90deg, #10b981 0%, #0ea5e9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background-color: rgba(224, 242, 254, 0.3);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.ai-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.ai-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.ai-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ai-triage-badge {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.ai-btn-premium {
+    width: 100%;
+    padding: 0.9rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: var(--color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.ai-btn-premium:hover {
+    background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+    border-color: var(--color-primary);
+    color: #0f766e;
+    box-shadow: 0 4px 6px rgba(0, 135, 158, 0.15);
 }

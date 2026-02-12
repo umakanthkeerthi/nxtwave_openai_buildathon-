@@ -26,8 +26,49 @@ const Medications = () => {
     const [filterPrescriptionId, setFilterPrescriptionId] = useState(null);
     const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
 
+    const [dynamicMedications, setDynamicMedications] = useState([]);
+
     useEffect(() => {
-        if (location.state?.prescriptionId) {
+        if (location.state?.prescription) {
+            const px = location.state.prescription;
+            // px has fullData.medicines, doctor, date, etc.
+            const medicinesFromState = px.fullData?.medicines?.map((med, idx) => {
+                // Parse duration to days left (rough estimate)
+                let days = 5; // Default
+                if (typeof med.duration === 'string') {
+                    const match = med.duration.match(/(\d+)/);
+                    if (match) days = parseInt(match[0]);
+                }
+
+                // Parse timing
+                const schedule = [];
+                if (med.timing) {
+                    if (med.timing.morning) schedule.push('morning');
+                    if (med.timing.afternoon || med.timing.noon) schedule.push('noon');
+                    if (med.timing.evening) schedule.push('evening');
+                    if (med.timing.night) schedule.push('night');
+                }
+
+                return {
+                    id: `imported-${Date.now()}-${idx}`,
+                    name: med.name,
+                    dosage: med.dosage,
+                    prescribedBy: px.doctor,
+                    daysLeft: days,
+                    schedule: schedule.length > 0 ? schedule : ['morning'], // Fallback
+                    status: 'pending',
+                    type: med.type,
+                    prescriptionId: px.id,
+                    caseId: px.caseId || 'Imported',
+                    instruction: med.instruction,
+                    advice: px.fullData?.advice || px.fullData?.remarks || "Follow prescription instructions."
+                };
+            }) || [];
+
+            setDynamicMedications(medicinesFromState);
+            setFilterPrescriptionId(px.id);
+            setActiveTab('active');
+        } else if (location.state?.prescriptionId) {
             setFilterPrescriptionId(location.state.prescriptionId);
             setActiveTab(location.state.tab || 'active');
         }
@@ -173,9 +214,11 @@ const Medications = () => {
         }
     ];
 
+    const allMedications = [...dynamicMedications, ...medications];
+
     const displayedMedications = filterPrescriptionId
-        ? medications.filter(m => m.prescriptionId === filterPrescriptionId)
-        : medications;
+        ? allMedications.filter(m => m.prescriptionId === filterPrescriptionId)
+        : allMedications;
 
     // Group by Case ID
     const groupedMedications = displayedMedications.reduce((acc, med) => {

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Utensils, ArrowRight, Activity, Target, Heart, ChefHat } from 'lucide-react';
 import './NutritionAnalyzer.css';
 
@@ -10,7 +10,7 @@ const NutritionAnalyzer = () => {
         gender: '',
         height: '',
         currentWeight: '',
-        targetWeight: '',
+
         goal: '',
         activityLevel: '',
         dietType: '',
@@ -31,13 +31,9 @@ const NutritionAnalyzer = () => {
     ];
 
     const DIET_TYPES = ["Veg", "Non-Veg", "Eggitarian", "Vegan"];
-
     const ALLERGIES = ["None", "Nuts", "Lactose", "Gluten", "Soy", "Shellfish"];
-
     const CUISINES = ["South Indian", "North Indian", "Continental", "Asian", "Mediterranean"];
-
     const MEALS_PER_DAY = ["3", "4", "Flexible"];
-
     const CONDITIONS = ["None", "Diabetes", "Thyroid", "High BP", "PCOS", "Cholesterol"];
 
     const handleInput = (e) => {
@@ -84,8 +80,7 @@ const NutritionAnalyzer = () => {
     const [mealInput, setMealInput] = useState("");
     const [analyzing, setAnalyzing] = useState(false);
     const [smartSuggestion, setSmartSuggestion] = useState(null);
-    const [isGenerating, setIsGenerating] = useState(false); // NEW: For transition animation
-
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // Macro Calculations (Derived State)
     const w = parseFloat(profile.currentWeight) || 70;
@@ -164,12 +159,9 @@ const NutritionAnalyzer = () => {
         }
     };
 
-    // Initialize Suggestion on Mount (only if step 4)
-    React.useEffect(() => {
+    useEffect(() => {
         if (step === 4 && !smartSuggestion) fetchSuggestion(dailyLog);
     }, [step]);
-
-
 
     const renderMealSection = (type, targetCals, placeholder, emoji) => {
         const meals = dailyMeals.filter(m => m.type === type);
@@ -182,22 +174,22 @@ const NutritionAnalyzer = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>{currentCals} of {targetCals} Cal</span>
                         <div
-                            style={{ background: '#166534', color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            style={{ background: '#ecfccb', color: '#365314', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid #84cc16' }}
                             onClick={() => setAddingMealType(type)}
                         >+</div>
                     </div>
                 </div>
 
                 {meals.length === 0 && addingMealType !== type ? (
-                    <div style={{ background: '#f3f4f6', borderRadius: '1rem', padding: '1.5rem', textAlign: 'center', color: '#6b7280', fontSize: '0.9rem', border: '1px solid #e5e7eb' }}>
+                    <div style={{ background: '#f8fafc', borderRadius: '16px', padding: '1.5rem', textAlign: 'center', color: '#64748b', fontSize: '0.9rem', border: '1px dashed #cbd5e1' }}>
                         {placeholder} {emoji}
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gap: '0.5rem' }}>
                         {meals.map((m, i) => (
-                            <div key={i} className="na-meal-card" style={{ height: 'auto', minHeight: '60px', padding: '0.75rem' }}>
-                                <div style={{ fontWeight: 600, color: '#3f6212', fontSize: '0.9rem' }}>{m.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: '#65a30d' }}>
+                            <div key={i} className="na-meal-card">
+                                <div style={{ fontWeight: 600, color: '#3f6212', fontSize: '0.95rem' }}>{m.name}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#65a30d', marginTop: '4px' }}>
                                     {m.total_calories} kcal • P: {m.protein_g}g • C: {m.carbs_g}g • F: {m.fats_g}g
                                 </div>
                             </div>
@@ -206,8 +198,7 @@ const NutritionAnalyzer = () => {
                 )}
 
                 {addingMealType === type && (
-                    <div className="na-card" style={{ padding: '1rem', marginTop: '0.5rem', animation: 'fadeIn 0.3s' }}>
-                        {/* <label className="na-label" style={{fontSize: '0.85rem'}}>What did you eat?</label> */}
+                    <div className="na-card" style={{ padding: '1.5rem', marginTop: '1rem', animation: 'fadeIn 0.3s' }}>
                         <input
                             type="text"
                             className="na-input"
@@ -217,20 +208,20 @@ const NutritionAnalyzer = () => {
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleAddMeal()}
                             disabled={analyzing}
-                            style={{ marginBottom: '0.5rem' }}
+                            style={{ width: '100%', marginBottom: '1rem' }}
                         />
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
                                 className="na-btn-primary"
                                 onClick={handleAddMeal}
                                 disabled={analyzing}
-                                style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                                style={{ marginTop: 0, padding: '0.75rem 1.5rem', flex: 1 }}
                             >
-                                {analyzing ? "..." : "Add"}
+                                {analyzing ? "Analyzing..." : "Add Meal"}
                             </button>
                             <button
                                 className="na-btn-primary"
-                                style={{ background: 'transparent', color: '#64748b', boxShadow: 'none', border: '1px solid #cbd5e1', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                                style={{ marginTop: 0, background: 'transparent', color: '#64748b', boxShadow: 'none', border: '1px solid #cbd5e1', padding: '0.75rem 1.5rem', width: 'auto' }}
                                 onClick={() => { setAddingMealType(null); setMealInput(''); }}
                             >
                                 Cancel
@@ -244,21 +235,21 @@ const NutritionAnalyzer = () => {
 
     if (isGenerating) {
         return (
-            <div className="na-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f7fee7' }}>
+            <div className="na-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
                 <div style={{ textAlign: 'center', animation: 'fadeIn 0.5s' }}>
                     <div style={{
-                        display: 'inline-block', padding: '1.5rem', borderRadius: '50%',
-                        background: 'white', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', marginBottom: '1.5rem'
+                        display: 'inline-block', padding: '2rem', borderRadius: '50%',
+                        background: 'white', boxShadow: '0 20px 40px rgba(132, 204, 22, 0.2)', marginBottom: '2rem'
                     }}>
-                        <ChefHat size={48} color="#65a30d" style={{ animation: 'bounce 2s infinite' }} />
+                        <ChefHat size={64} color="#65a30d" style={{ animation: 'bounce 2s infinite' }} />
                     </div>
-                    <h2 style={{ color: '#365314', fontSize: '1.5rem', marginBottom: '0.5rem' }}>AI is generating your diet plan...</h2>
-                    <p style={{ color: '#65a30d' }}>Analyzing your profile and preferences</p>
+                    <h2 style={{ color: '#1e293b', fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.75rem' }}>AI is crafting your plan...</h2>
+                    <p style={{ color: '#64748b', fontSize: '1.1rem' }}>Analyzing your profile and preferences.</p>
                 </div>
                 <style>{`
                     @keyframes bounce {
                         0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-10px); }
+                        50% { transform: translateY(-15px); }
                     }
                  `}</style>
             </div>
@@ -274,11 +265,12 @@ const NutritionAnalyzer = () => {
                 </div>
 
                 {/* PROGRESS BAR */}
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '3rem', gap: '0.75rem' }}>
                     {[1, 2, 3, 4].map(s => (
                         <div key={s} style={{
-                            width: '3rem', height: '0.4rem', borderRadius: '1rem',
-                            backgroundColor: s <= step ? '#65a30d' : '#d9f99d'
+                            width: '3.5rem', height: '0.5rem', borderRadius: '1rem',
+                            backgroundColor: s <= step ? '#65a30d' : '#e2e8f0',
+                            transition: 'background-color 0.3s ease'
                         }}></div>
                     ))}
                 </div>
@@ -309,10 +301,7 @@ const NutritionAnalyzer = () => {
                                 <label className="na-label">Current Weight (kg)</label>
                                 <input type="number" name="currentWeight" className="na-input" value={profile.currentWeight} onChange={handleInput} placeholder="e.g. 70" />
                             </div>
-                            <div className="na-form-group">
-                                <label className="na-label">Target Weight (kg) <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>(Optional)</span></label>
-                                <input type="number" name="targetWeight" className="na-input" value={profile.targetWeight} onChange={handleInput} placeholder="e.g. 65" />
-                            </div>
+
                         </div>
 
                         <button className="na-btn-primary" onClick={handleNext}>
@@ -325,8 +314,8 @@ const NutritionAnalyzer = () => {
                     <div className="na-card">
                         <div className="section-title"><Target size={24} color="#65a30d" /> Goals & Lifestyle</div>
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="na-label" style={{ marginBottom: '0.5rem', display: 'block' }}>What is your primary goal?</label>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label className="na-label" style={{ marginBottom: '1rem', display: 'block' }}>What is your primary goal?</label>
                             <div className="na-select-grid">
                                 {GOALS.map(g => (
                                     <div
@@ -340,25 +329,25 @@ const NutritionAnalyzer = () => {
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="na-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Activity Level</label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label className="na-label" style={{ marginBottom: '1rem', display: 'block' }}>Activity Level</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {ACTIVITY_LEVELS.map(a => (
                                     <div
                                         key={a.label}
                                         className={`na-chip ${profile.activityLevel === a.label ? 'selected' : ''}`}
-                                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}
+                                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left', padding: '1rem 1.5rem' }}
                                         onClick={() => handleSelect('activityLevel', a.label)}
                                     >
-                                        <span style={{ fontWeight: 600 }}>{a.label}</span>
-                                        <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>{a.sub}</span>
+                                        <span style={{ fontWeight: 600, color: profile.activityLevel === a.label ? '#365314' : '#1e293b' }}>{a.label}</span>
+                                        <span style={{ fontSize: '0.85rem', color: profile.activityLevel === a.label ? '#4d7c0f' : '#64748b' }}>{a.sub}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button className="na-btn-primary" style={{ backgroundColor: 'white', background: 'white', color: '#65a30d', border: '1px solid #d9f99d' }} onClick={() => setStep(1)}>
+                            <button className="na-btn-primary" style={{ background: 'white', color: '#65a30d', border: '1px solid #d9f99d', boxShadow: 'none' }} onClick={() => setStep(1)}>
                                 Back
                             </button>
                             <button className="na-btn-primary" onClick={handleNext}>
@@ -372,8 +361,8 @@ const NutritionAnalyzer = () => {
                     <div className="na-card">
                         <div className="section-title"><Utensils size={24} color="#65a30d" /> Food & Health Preferences</div>
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="na-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Diet Type</label>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label className="na-label" style={{ marginBottom: '1rem', display: 'block' }}>Diet Type</label>
                             <div className="na-select-grid">
                                 {DIET_TYPES.map(d => (
                                     <div
@@ -389,14 +378,14 @@ const NutritionAnalyzer = () => {
 
                         <div className="na-form-grid">
                             <div>
-                                <label className="na-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Cuisines (Select multiple)</label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <label className="na-label" style={{ marginBottom: '1rem', display: 'block' }}>Cuisines (Select multiple)</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                                     {CUISINES.map(c => (
                                         <div
                                             key={c}
                                             className={`na-chip ${profile.cuisine.includes(c) ? 'selected' : ''}`}
                                             onClick={() => toggleSelection('cuisine', c)}
-                                            style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }}
+                                            style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}
                                         >
                                             {c}
                                         </div>
@@ -405,14 +394,14 @@ const NutritionAnalyzer = () => {
                             </div>
 
                             <div>
-                                <label className="na-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Meals Per Day</label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <label className="na-label" style={{ marginBottom: '1rem', display: 'block' }}>Meals Per Day</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                                     {MEALS_PER_DAY.map(m => (
                                         <div
                                             key={m}
                                             className={`na-chip ${profile.mealsPerDay === m ? 'selected' : ''}`}
                                             onClick={() => handleSelect('mealsPerDay', m)}
-                                            style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }}
+                                            style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}
                                         >
                                             {m}
                                         </div>
@@ -421,15 +410,15 @@ const NutritionAnalyzer = () => {
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="na-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Allergies (Optional)</label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label className="na-label" style={{ marginBottom: '1rem', display: 'block' }}>Allergies (Optional)</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                                 {ALLERGIES.map(a => (
                                     <div
                                         key={a}
                                         className={`na-chip ${profile.allergies.includes(a) ? 'selected' : ''}`}
                                         onClick={() => toggleSelection('allergies', a)}
-                                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }}
+                                        style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}
                                     >
                                         {a}
                                     </div>
@@ -437,17 +426,17 @@ const NutritionAnalyzer = () => {
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="na-label" style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label className="na-label" style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                 <Heart size={16} /> Medical Conditions (Optional)
                             </label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                                 {CONDITIONS.map(c => (
                                     <div
                                         key={c}
                                         className={`na-chip ${profile.medicalConditions.includes(c) ? 'selected' : ''}`}
                                         onClick={() => toggleSelection('medicalConditions', c)}
-                                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }}
+                                        style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}
                                     >
                                         {c}
                                     </div>
@@ -456,7 +445,7 @@ const NutritionAnalyzer = () => {
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button className="na-btn-primary" style={{ backgroundColor: 'white', background: 'white', color: '#65a30d', border: '1px solid #d9f99d' }} onClick={() => setStep(2)}>
+                            <button className="na-btn-primary" style={{ background: 'white', color: '#65a30d', border: '1px solid #d9f99d', boxShadow: 'none' }} onClick={() => setStep(2)}>
                                 Back
                             </button>
                             <button className="na-btn-primary" onClick={handleNext}>
@@ -485,11 +474,13 @@ const NutritionAnalyzer = () => {
                                 {profile.mealsPerDay !== '3' && renderMealSection('Snack', Math.round(targetCalories * 0.10), "Refuel your body between meals", "🥜")}
 
                                 <div className="na-smart-suggestion" style={{ marginTop: '2rem' }}>
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                        <ChefHat size={20} color="#84cc16" />
-                                        <span style={{ fontWeight: 700, color: '#365314' }}>Smart Suggestion</span>
+                                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
+                                        <div style={{ background: 'white', padding: '0.5rem', borderRadius: '50%' }}>
+                                            <ChefHat size={24} color="#65a30d" />
+                                        </div>
+                                        <span style={{ fontWeight: 700, fontSize: '1.2rem', color: '#14532d' }}>Smart Suggestion</span>
                                     </div>
-                                    <p>{smartSuggestion?.suggestion || `Your goal is ${targetCalories} kcal. Start logging to get AI advice!`}</p>
+                                    <p style={{ position: 'relative', zIndex: 1, fontSize: '1.05rem' }}>{smartSuggestion?.suggestion || `Your goal is ${targetCalories} kcal. Start logging to get AI advice!`}</p>
                                 </div>
 
 
@@ -497,50 +488,45 @@ const NutritionAnalyzer = () => {
 
                             {/* RIGHT COLUMN: SCORES & STATS */}
                             <div className="na-col-sidebar">
-                                <div className="na-score-card" style={{ position: 'relative' }}>
-                                    <div
-                                        style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer' }}
-                                        title="This score updates in real-time based on your total daily nutrition. Log more balanced meals to increase it!"
-                                    >
-                                        <div style={{ background: '#e5e7eb', color: '#6b7280', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold' }}>?</div>
-                                    </div>
-                                    <div className="na-score-circle">
-                                        <span className="sc-val">
-                                            {smartSuggestion?.meal_quality_score || 0}
-                                            <span style={{ fontSize: '0.5em', color: '#6b7280', marginLeft: '2px' }}>/10</span>
-                                        </span>
-                                        <span className="sc-label">Meal Quality</span>
+                                <div className="na-score-card">
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                                        <div className="na-score-circle" style={{ '--percentage': `${(smartSuggestion?.meal_quality_score || 0) * 10}%` }}>
+                                            <span className="sc-val">
+                                                {smartSuggestion?.meal_quality_score || 0}
+                                            </span>
+                                            <span className="sc-label">Meal Quality</span>
+                                        </div>
                                     </div>
                                     <div className="na-score-breakdown">
                                         <div className="sb-item"><span>Protein</span> <div className="sb-bar"><div style={{ width: `${smartSuggestion?.score_breakdown?.protein_score || 0}%`, background: '#f87171' }}></div></div></div>
                                         <div className="sb-item"><span>Fiber</span> <div className="sb-bar"><div style={{ width: `${smartSuggestion?.score_breakdown?.fiber_score || 0}%`, background: '#84cc16' }}></div></div></div>
                                         <div className="sb-item"><span>Balance</span> <div className="sb-bar"><div style={{ width: `${smartSuggestion?.score_breakdown?.balance_score || 0}%`, background: '#facc15' }}></div></div></div>
                                     </div>
-                                    <div style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                                    <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1.5rem', fontStyle: 'italic' }}>
                                         Updates as you log meals
                                     </div>
                                 </div>
 
-                                <div className="na-card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
-                                    <div className="section-title" style={{ fontSize: '1rem' }}><Target size={18} /> Daily Targets</div>
+                                <div className="na-card" style={{ padding: '2rem', marginTop: '2rem' }}>
+                                    <div className="section-title" style={{ fontSize: '1.2rem' }}><Target size={20} color="#65a30d" /> Daily Targets</div>
 
                                     <div className="na-target-row">
                                         <span>Calories</span>
                                         <span>{dailyLog.calories} / {targetCalories}</span>
                                     </div>
-                                    <div className="na-progress" style={{ marginBottom: '1rem' }}><div style={{ width: `${Math.min((dailyLog.calories / targetCalories) * 100, 100)}%` }}></div></div>
+                                    <div className="na-progress" style={{ marginBottom: '1.5rem' }}><div style={{ width: `${Math.min((dailyLog.calories / targetCalories) * 100, 100)}%` }}></div></div>
 
                                     <div className="na-target-row">
                                         <span>Protein</span>
                                         <span>{dailyLog.protein} / {targetProtein}g</span>
                                     </div>
-                                    <div className="na-progress" style={{ marginBottom: '1rem' }}><div style={{ width: `${Math.min((dailyLog.protein / targetProtein) * 100, 100)}%`, background: '#f87171' }}></div></div>
+                                    <div className="na-progress" style={{ marginBottom: '1.5rem' }}><div style={{ width: `${Math.min((dailyLog.protein / targetProtein) * 100, 100)}%`, background: '#f87171' }}></div></div>
 
                                     <div className="na-target-row">
                                         <span>Carbs</span>
                                         <span>{dailyLog.carbs} / {targetCarbs}g</span>
                                     </div>
-                                    <div className="na-progress" style={{ marginBottom: '1rem' }}><div style={{ width: `${Math.min((dailyLog.carbs / targetCarbs) * 100, 100)}%`, background: '#facc15' }}></div></div>
+                                    <div className="na-progress" style={{ marginBottom: '1.5rem' }}><div style={{ width: `${Math.min((dailyLog.carbs / targetCarbs) * 100, 100)}%`, background: '#facc15' }}></div></div>
 
                                     <div className="na-target-row">
                                         <span>Fats</span>

@@ -527,6 +527,7 @@ const Pharmacy = () => {
         <div style={{
             padding: isMobile ? '1rem' : '2rem',
             paddingTop: '100px',
+            paddingBottom: isMobile ? '120px' : '2rem',
             maxWidth: '1200px',
             margin: '0 auto',
             position: 'relative',
@@ -550,7 +551,7 @@ const Pharmacy = () => {
                                 <ArrowLeft size={20} color="#1e293b" />
                             </button>
                             <div>
-                                <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
+                                <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#0f766e', margin: 0 }}>
                                     {selectedPharmacy.name}
                                 </h1>
                                 <p style={{ color: '#64748b', margin: 0 }}> medicines available</p>
@@ -620,7 +621,7 @@ const Pharmacy = () => {
                     {/* Content View: Products or Orders */}
                     {selectedCategory === 'Orders' ? (
                         <div style={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', background: 'white', padding: '1rem' }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1e293b' }}>My Orders</h2>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#0f766e' }}>My Orders</h2>
                             {orders.length === 0 ? (
                                 <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>No orders yet.</p>
                             ) : isMobile ? (
@@ -801,7 +802,7 @@ const Pharmacy = () => {
                             <h1 style={{
                                 fontSize: isMobile ? '1.75rem' : '2.5rem',
                                 fontWeight: 'bold',
-                                color: '#1e293b',
+                                color: '#0f766e',
                                 marginBottom: '0.5rem'
                             }}>
                                 Pharmacy Locations
@@ -826,7 +827,7 @@ const Pharmacy = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '2rem' }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#0f766e', marginBottom: '0.5rem' }}>
                             Nearby Pharmacies
                         </h2>
 

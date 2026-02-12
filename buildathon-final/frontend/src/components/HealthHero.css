@@ -511,7 +511,7 @@
     /* Adjust container for tighter overlap */
     /* Adjust container for tighter overlap */
     .health-hero-container {
-        padding: 1.5rem 1rem 5rem 1rem;
+        padding: 0 1rem 5rem 1rem;
         /* Reduced side padding to 1rem */
         min-height: auto;
         border-radius: 0 0 30px 30px;
@@ -522,10 +522,11 @@
 
     .hero-greeting {
         font-size: 1.5rem;
-        flex-direction: column;
-        /* Stack wave icon if needed */
-        align-items: flex-start;
-        gap: 5px;
+        flex-direction: row;
+        /* Keep icon beside name */
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0.25rem;
     }
 
     .hero-action-card-wrapper {
