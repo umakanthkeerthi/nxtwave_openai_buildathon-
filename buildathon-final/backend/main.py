@@ -119,6 +119,8 @@ from app.core.config import settings
 import shutil
 import os
 import json
+from app.core.prescription_service import analyze_prescription_image
+from app.core.lab_report_service import analyze_lab_report_image
 
 # ISO-639-1 Codes for Whisper
 LANGUAGE_CODES = {
@@ -173,6 +175,68 @@ async def translate_text(req: TranslationRequest):
     except Exception as e:
         print(f"Translation Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/analyze_prescription")
+async def analyze_prescription_endpoint(file: UploadFile = File(...)):
+    """
+    Analyzes an uploaded prescription image.
+    """
+    print(f"DEBUG: Analyze Prescription called. Filename: {file.filename}")
+    try:
+        image_bytes = await file.read()
+        analysis_result = await analyze_prescription_image(image_bytes)
+        return analysis_result
+    except Exception as e:
+        print(f"Prescription Analysis Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/analyze_lab_report")
+async def analyze_lab_report_endpoint(file: UploadFile = File(...)):
+    """
+    Analyzes an uploaded lab report image.
+    """
+    print(f"DEBUG: Analyze Lab Report called. Filename: {file.filename}")
+    try:
+        image_bytes = await file.read()
+        analysis_result = await analyze_lab_report_image(image_bytes)
+        return analysis_result
+    except Exception as e:
+        print(f"Lab Report Analysis Error: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- NUTRITION AI ENDPOINTS ---
+from app.core.nutrition_service import analyze_meal_text, get_nutrition_suggestion
+
+class MealAnalysisRequest(BaseModel):
+    description: str
+
+class NutritionSuggestionRequest(BaseModel):
+    profile: dict
+    current_log: dict
+
+@app.post("/analyze_meal")
+async def analyze_meal_endpoint(req: MealAnalysisRequest):
+    print(f"DEBUG: Analyze Meal called. Description: {req.description}")
+    return await analyze_meal_text(req.description)
+
+@app.post("/get_nutrition_suggestion")
+async def nutrition_suggestion_endpoint(req: NutritionSuggestionRequest):
+    print(f"DEBUG: Get Nutrition Suggestion called.")
+    return await get_nutrition_suggestion(req.profile, req.current_log)
+
+# --- DIET PLAN ENDPOINT ---
+from app.core.nutrition_service import generate_diet_plan
+
+class DietPlanRequest(BaseModel):
+    profile: dict
+
+@app.post("/generate_diet_plan")
+async def generate_diet_plan_endpoint(req: DietPlanRequest):
+    print(f"DEBUG: Generate Diet Plan called.")
+    return await generate_diet_plan(req.profile)
+
+
 
 @app.post("/process_audio")
 async def process_audio(

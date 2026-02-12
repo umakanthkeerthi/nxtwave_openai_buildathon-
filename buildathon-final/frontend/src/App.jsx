@@ -11,6 +11,10 @@ import ClinicalChat from './pages/ClinicalChat';
 import PatientSummary from './pages/PatientSummary';
 import EmergencyPage from './pages/EmergencyPage';
 import NotFound from './pages/NotFound';
+import Wellness from './pages/Wellness';
+import PrescriptionAnalyzer from './pages/PrescriptionAnalyzer';
+import LabReportAnalyzer from './pages/LabReportAnalyzer';
+import NutritionAnalyzer from './pages/NutritionAnalyzer';
 
 // Auth Modules
 import { AuthProvider } from './context/AuthContext';
@@ -118,6 +122,10 @@ function App() {
                         <Route path="clinical-chat" element={<ClinicalChat />} />
                         <Route path="patient-summary" element={<PatientSummary />} />
                         <Route path="emergency" element={<EmergencyPage />} />
+                        <Route path="wellness" element={<Wellness />} />
+                        <Route path="prescription-analyzer" element={<PrescriptionAnalyzer />} />
+                        <Route path="lab-report-analyzer" element={<LabReportAnalyzer />} />
+                        <Route path="nutrition" element={<NutritionAnalyzer />} />
                     </Route>
 
                     {/* Handle unknown paths with explicit 404 */}

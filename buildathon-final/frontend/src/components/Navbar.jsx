@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Activity, Stethoscope, Pill, Bell } from 'lucide-react';
+import { User, Activity, Stethoscope, Pill, Bell, Heart } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import ProfileModal from './ProfileModal';
 
@@ -12,17 +12,19 @@ const Navbar = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                // Premium Glassmorphism
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+                // Enhanced visibility with solid white background
+                background: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.18)',
-                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
                 position: 'fixed',
                 top: 0,
                 left: 0,
                 right: 0,
                 zIndex: 1000,
+                height: '70px',
+                padding: '0 2rem'
             }}>
                 <Link to="/patient" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{
@@ -46,6 +48,7 @@ const Navbar = () => {
                     <NavItem to="/patient/medical-files" icon={<Activity size={18} />} label="Medical Files" />
                     <NavItem to="/patient/consult" icon={<Stethoscope size={18} />} label="Consult Doctor" />
                     <NavItem to="/patient/medications" icon={<Activity size={18} />} label="Medications" />
+                    <NavItem to="/patient/wellness" icon={<Heart size={18} />} label="Wellness" />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -96,6 +99,7 @@ const Navbar = () => {
                 <NavItem to="/patient/medical-files" icon={<Activity size={20} />} label="Files" />
                 <NavItem to="/patient/consult" icon={<Stethoscope size={20} />} label="Consult" />
                 <NavItem to="/patient/medications" icon={<Activity size={20} />} label="Meds" />
+                <NavItem to="/patient/wellness" icon={<Heart size={20} />} label="Wellness" />
             </div>
         </>
     );

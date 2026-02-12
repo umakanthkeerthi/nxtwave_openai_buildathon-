@@ -13,3 +13,5 @@ requests
 python-multipart
 scikit-learn
 firebase-admin
+Pillow
+python-multipart

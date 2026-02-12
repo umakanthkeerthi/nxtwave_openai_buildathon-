@@ -69,9 +69,9 @@ button {
   width: 100%;
 }
 
-/* Navbar Responsive Padding */
+/* Navbar - Styling handled inline */
 .main-navbar {
-  padding: 1rem 2rem;
+  /* Padding handled inline for better control */
 }
 
 /* Responsive Styles */

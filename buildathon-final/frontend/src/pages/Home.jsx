@@ -1,7 +1,7 @@
 import React from 'react';
 import HealthHero from '../components/HealthHero';
 import DocTools from '../components/DocTools';
-import HealthInsights from '../components/HealthInsights';
+import DocAITools from '../components/DocAITools';
 import { motion } from 'framer-motion';
 
 const Home = () => {
@@ -36,9 +36,9 @@ const Home = () => {
                 <DocTools />
             </motion.div>
 
-            {/* Health Insights Section */}
+            {/* DocAI Tools Section */}
             <motion.div variants={item}>
-                <HealthInsights />
+                <DocAITools />
             </motion.div>
         </motion.div>
     );
