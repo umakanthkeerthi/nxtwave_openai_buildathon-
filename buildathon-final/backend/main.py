@@ -21,6 +21,22 @@ app.add_middleware(
 async def root():
     return {"status": "ok", "message": "Agentic Doctor Backend Running"}
 
+from chromadb.utils import embedding_functions
+
+@app.on_event("startup")
+async def startup_event():
+    print("⬇️ STARTUP: Pre-loading ChromaDB Embedding Model...")
+    try:
+        # Force download of model by initializing it
+        ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        # Run dummy inference to ensure weights are loaded
+        ef(["test"])
+        print("✅ STARTUP: Model loaded successfully.")
+    except Exception as e:
+        print(f"⚠️ STARTUP WARNING: Model load failed (will retry on first request): {e}")
+async def root():
+    return {"status": "ok", "message": "Agentic Doctor Backend Running"}
+
 from datetime import datetime
 
 class ChatRequest(BaseModel):
