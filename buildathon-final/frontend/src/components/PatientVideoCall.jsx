@@ -4,8 +4,9 @@ import { X, Minus, Maximize2 } from 'lucide-react';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 
 // Shared credentials (must match Doctor side)
-const APP_ID = 1481566233;
-const SERVER_SECRET = "fbda77fa6dd5cc2b978c9df7738a861a";
+// Shared credentials (must match Doctor side)
+const APP_ID = Number(import.meta.env.VITE_ZEGO_APP_ID);
+const SERVER_SECRET = import.meta.env.VITE_ZEGO_SERVER_SECRET;
 
 const PatientVideoCall = ({ onClose, caseId }) => {
     // Popup dimensions and position state
