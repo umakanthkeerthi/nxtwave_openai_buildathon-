@@ -48,7 +48,7 @@ const MedicalFiles = () => {
             console.log("DEBUG: Fetching records for:", targetId);
             // V1.0: Use profile_id param explicitly if available, or fall back to patient_id logic
             // [FIX] Use relative path to avoid CORS and leverage Vite proxy
-            fetch(`/get_records?profile_id=${targetId}&patient_id=${targetId}`)
+            fetch(`${import.meta.env.VITE_API_URL}/get_records?profile_id=${targetId}&patient_id=${targetId}`)
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                     return res.json();
@@ -204,8 +204,8 @@ const MedicalFiles = () => {
     const handleUpload = async (formData) => {
         if (!currentUser?.uid) return;
         try {
-            // [FIX] Relative path
-            const response = await fetch('/upload_record', {
+            // [FIX] Absolute path
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/upload_record`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
