@@ -26,7 +26,7 @@ const DoctorDirectory = () => {
         const fetchDoctors = async () => {
             try {
                 // Use Backend API instead of direct Firestore query
-                const response = await fetch('/get_doctors');
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_doctors`);
                 const data = await response.json();
 
                 if (data.doctors) {
@@ -100,7 +100,7 @@ const DoctorDirectory = () => {
         }
 
         try {
-            await fetch('/book_appointment', {
+            await fetch(`${import.meta.env.VITE_API_URL}/book_appointment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

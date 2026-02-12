@@ -46,7 +46,7 @@ const MyAppointments = () => {
                     queryString = `user_id=${currentUser.uid}`;
                 }
 
-                const response = await fetch(`/get_appointments?${queryString}`);
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_appointments?${queryString}`);
                 console.log("DEBUG: Response status:", response.status, response.ok);
 
                 if (!response.ok) throw new Error('Failed to fetch');

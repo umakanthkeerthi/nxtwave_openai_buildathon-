@@ -775,13 +775,7 @@ async def debug_firebase_status():
         "db_initialized": firebase_service.db is not None
     }
 
-@app.get("/get_patients")
-async def get_patients_endpoint(doctor_id: str):
-    try:
-        return firebase_service.get_patients(doctor_id)
-    except Exception as e:
-        print(f"Get Patients Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/get_emergencies")
 async def get_emergencies_endpoint():
@@ -957,25 +951,7 @@ class BatchSlotRequest(BaseModel):
     slot_duration_minutes: int = 30
     time_gap_minutes: int = 0  # NEW
 
-@app.get("/get_case")
-async def get_case_endpoint(case_id: str):
-    try:
-        print(f"DEBUG: /get_case called with case_id={case_id}")
-        case_data = firebase_service.get_case(case_id)
-        if not case_data:
-             print(f"DEBUG: Case {case_id} not found")
-             raise HTTPException(status_code=404, detail="Case not found")
-        print(f"DEBUG: Found case data: {case_data}")
-        return case_data
-    except HTTPException as he:
-        # Re-raise HTTP exceptions (e.g. 404)
-        raise he
-    except Exception as e:
-        import traceback
-        with open("backend_error.log", "w") as f:
-            f.write(f"Error for case_id {case_id}: {str(e)}\n")
-            traceback.print_exc(file=f)
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/create_slots_batch")
 async def create_slots_batch_endpoint(req: BatchSlotRequest):
@@ -1013,18 +989,7 @@ async def get_slots_endpoint(doctor_id: str, status: Optional[str] = "AVAILABLE"
         print(f"Get Slots Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/get_appointments")
-async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id: Optional[str] = None):
-    """
-    Returns list of appointments.
-    - If doctor_id provided: Returns appointments for that doctor (with patient details).
-    - If patient_id provided: Returns appointments for that patient (with doctor details).
-    """
-    try:
-        return firebase_service.get_appointments(doctor_id=doctor_id, patient_id=patient_id)
-    except Exception as e:
-        print(f"Get Appointments Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.post("/update_appointment_status")

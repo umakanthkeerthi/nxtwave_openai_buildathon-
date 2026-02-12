@@ -46,16 +46,21 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
         const fetchDoctors = async () => {
             try {
                 setLoading(true);
-                let url = '/get_doctors';
+                let url = `${import.meta.env.VITE_API_URL}/get_doctors`;
 
                 // [MODIFIED] Emergency Logic
                 if (location.state?.type === 'emergency' && location.state?.userLocation) {
                     const { lat, lon } = location.state.userLocation;
-                    url = `/get_emergency_doctors?lat=${lat}&lon=${lon}`;
+                    url = `${import.meta.env.VITE_API_URL}/get_emergency_doctors?lat=${lat}&lon=${lon}`;
                     console.log(`DEBUG: Fetching Emergency Doctors from ${url}`);
                 }
 
-                const response = await fetch(url);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 if (!response.ok) throw new Error('Failed to fetch doctors');
 
                 const data = await response.json();
@@ -165,7 +170,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                 return;
             }
 
-            const response = await fetch('/book_appointment', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/book_appointment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookingPayload)

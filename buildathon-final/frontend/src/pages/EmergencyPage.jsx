@@ -44,7 +44,7 @@ const EmergencyPage = () => {
                                     const patientId = selectedProfile?.id || selectedProfile?.profile_id || "user_" + Date.now();
                                     const userId = currentUser?.uid || "anon_user_" + Date.now();
 
-                                    await fetch('/save_summary', {
+                                    await fetch(`${import.meta.env.VITE_API_URL}/save_summary`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
