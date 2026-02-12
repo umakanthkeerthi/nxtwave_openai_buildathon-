@@ -14,6 +14,7 @@ class MedicalRecordsSubgraph:
         try:
             # 1. Identity Resolution
             profile_id = state.get("profile_id")
+            user_id = state.get("user_id") # [NEW]
             if not profile_id:
                 # Fallback for now, though V1.0 assumes strict profiles
                 profile_id = state.get("session_id", "anon_profile")
@@ -22,15 +23,20 @@ class MedicalRecordsSubgraph:
             case_id = state.get("case_id")
             if not case_id:
                 # New Case (e.g. starting a chat)
-                case_id = f"case_{uuid.uuid4()}"
+                # [STANDARDIZED] Match main.py format
+                unique_id = uuid.uuid4().hex[:12].upper()
+                case_id = f"CASE-{unique_id}"
                 print(f"DEBUG: Creating NEW Case ID: {case_id}")
                 
                 case_data = {
                     "case_id": case_id,
                     "profile_id": profile_id,
+                    "user_id": user_id, # [NEW]
+                    "patient_id": profile_id, # Ensure patient_id maps to profile_id
                     "status": "AI_TRIAGE",
                     "is_emergency": state.get("triage_decision") == "EMERGENCY",
                     "created_at": datetime.utcnow().isoformat(),
+                    "generated_at": datetime.utcnow().isoformat(), # [ADDED] For consistency
                     "last_updated_at": datetime.utcnow().isoformat()
                 }
                 # Save to 'cases' collection
@@ -54,6 +60,7 @@ class MedicalRecordsSubgraph:
         try:
             case_id = state.get("case_id")
             profile_id = state.get("profile_id")
+            user_id = state.get("user_id") # [NEW]
             payload = state.get("full_summary_payload", {})
             
             if not case_id:
@@ -74,12 +81,13 @@ class MedicalRecordsSubgraph:
                 "summary_id": f"sum_{uuid.uuid4()}",
                 "case_id": case_id,
                 "profile_id": profile_id,
+                "user_id": user_id, # [NEW]
                 "patient_id": profile_id, # [FIX] Added for get_records compatibility
                 "type": "AI_SUMMARY", # Standardized Type
                 "triage_level": patient_summary_data.get("triage_level", "Green"),
                 "symptoms_reported": patient_summary_data.get("symptoms_reported", []),
                 "symptoms_denied": patient_summary_data.get("symptoms_denied", []),
-                "red_flags_to_watch": patient_summary_data.get("red_flags", []),
+                "red_flags_to_watch": patient_summary_data.get("red_flags_to_watch_out_for") or patient_summary_data.get("red_flags", []),
                 "guidelines": {
                     "actions": [patient_summary_data.get("clinical_guidelines", "")],
                     "source": "AI_GENERATED"
@@ -96,6 +104,7 @@ class MedicalRecordsSubgraph:
                     "summary_id": f"pre_doc_{uuid.uuid4()}",
                     "case_id": case_id,
                     "profile_id": profile_id,
+                    "user_id": user_id, # [NEW]
                     "patient_id": profile_id, # [FIX] Added for get_records compatibility
                     "type": "DOCTOR_SUMMARY", # Standardized Type
                     **doctor_summary_data, # Spread the technical fields (assessment, history, etc)
@@ -108,7 +117,10 @@ class MedicalRecordsSubgraph:
                 # In real app, we'd do a patch update. Here we rely on the service.
                 # firebase_service.update_status("cases", case_id, "SUMMARY_READY") 
 
-            return {"saved_record_id": patient_summary_record["summary_id"]} # Legacy return
+            return {
+                "saved_record_id": patient_summary_record["summary_id"],
+                "pre_doctor_summary_id": doctor_summary_record["summary_id"] if doctor_summary_data else None
+            }
             
         except Exception as e:
             print(f"Save Summaries Error: {e}")

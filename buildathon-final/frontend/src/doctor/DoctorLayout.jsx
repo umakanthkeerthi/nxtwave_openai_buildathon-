@@ -24,7 +24,7 @@ const DoctorLayout = () => {
         const fetchDoctorProfile = async () => {
             if (currentUser && currentUser.doctor_id) {
                 try {
-                    const response = await fetch(`http://localhost:8003/get_doctor?doctor_id=${currentUser.doctor_id}`);
+                    const response = await fetch(`/get_doctor?doctor_id=${currentUser.doctor_id}`);
                     if (response.ok) {
                         const data = await response.json();
                         setDoctorProfile(data);

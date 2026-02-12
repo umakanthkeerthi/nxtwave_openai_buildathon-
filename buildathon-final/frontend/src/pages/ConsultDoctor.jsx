@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Search, MapPin, Clock, Video, AlertCircle } from 'lucide-react';
 import SymptomEvaluator from '../components/SymptomEvaluator';
 import DoctorGridCarousel from '../components/DoctorGridCarousel';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MyAppointments from './MyAppointments';
 import './ConsultDoctor.css';
@@ -13,7 +13,8 @@ import { useAuth } from '../context/AuthContext';
 
 const ConsultDoctor = ({ view = 'doctors' }) => {
     const location = useLocation();
-    const { currentUser } = useAuth();
+    const navigate = useNavigate();
+    const { currentUser, selectedProfile } = useAuth();
     const [blinkTrigger, setBlinkTrigger] = useState(0);
     const [mode, setMode] = useState('standard');
 
@@ -95,8 +96,8 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
     const handleBookAppointment = () => {
         // [POLICY] Direct booking is not allowed. Must have AI Triage Summary.
         if (!location.state?.summary) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            setBlinkTrigger(prev => prev + 1); // Blink the AI Symptom Evaluator
+            alert("Please consult the AI Agent first to generate a medical case.");
+            navigate('/patient/chat');
             return;
         }
         setIsBookingOpen(true);
@@ -107,25 +108,64 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
         setIsBookingOpen(true);
     };
 
+
+    // ... existing state ...
+
+    // ... existing useEffects ...
+
     const handleBookingConfirm = async (details) => {
         try {
             const { doctor, slot_id, date, time } = details;
 
+            // [UPDATED] Use selectedProfile for booking details
+            // Fallback to currentUser if no profile selected (though should be enforced)
+            const patientName = selectedProfile?.fullName || currentUser?.displayName || "Unknown";
+            const patientAge = selectedProfile?.age || currentUser?.age || 0;
+            const patientGender = selectedProfile?.gender || currentUser?.gender || "Not Specified";
+            console.log("DEBUG: selectedProfile:", selectedProfile);
+            console.log("DEBUG: currentUser:", currentUser);
+
+            if (!selectedProfile) {
+                alert("Error: No Patient Profile selected. Please go to Home and select a profile.");
+                return;
+            }
+
+            const profileId = selectedProfile.profile_id || selectedProfile.id;
+            // Fallback only if profile is strictly missing (which we blocked above, but for safety)
+            if (!profileId) {
+                alert("Error: Selected Profile has no ID.");
+                return;
+            }
+
+            console.log("DEBUG: Booking for Profile:", profileId, patientName);
+
+            console.log("VERSION CHECK: ConsultDoctor_v3_FIXED");
+
             // Prepare booking payload
             const bookingPayload = {
-                profile_id: currentUser?.uid, // Patient's user ID
+                profile_id: profileId, // [FIXED] Strict Profile ID
+                user_id: currentUser?.uid || null, // [FIX] Ensure key exists locally even if null
                 doctor_id: doctor.id || doctor.doctor_id,
                 slot_id: slot_id,
-                appointment_time: `${date}T${time}`, // Combine date and time
+                appointment_time: `${date}T${time}`,
                 consultation_mode: mode === 'emergency' ? 'in-person' : 'video',
-                patient_name: currentUser?.displayName || currentUser?.email?.split('@')[0],
-                patient_age: currentUser?.age || 0,
-                patient_gender: currentUser?.gender || 'Not Specified',
-                // Use existing session ID if available (from AI Triage), otherwise generate new one
-                session_id: location.state?.summary?.caseId || `CASE-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+                patient_name: patientName,
+                patient_age: patientAge,
+                patient_gender: patientGender,
+                // [FIXED] Enforce existing Case ID. Do not generate new one.
+                session_id: location.state?.summary?.caseId,
+                pre_doctor_consultation_summary_id: location.state?.pre_doctor_summary_id, // [New] Linked Summary
+                is_emergency: mode === 'emergency' // [NEW] Flag for Emergency Queue
             };
+            console.log("DEBUG: Sending Booking Payload:", bookingPayload);
 
-            const response = await fetch('http://localhost:8003/book_appointment', {
+            if (!bookingPayload.user_id) {
+                alert("Error: User ID is missing. Please try logging out and back in.");
+                console.error("CRITICAL: user_id is null/undefined in booking payload", currentUser);
+                return;
+            }
+
+            const response = await fetch('/book_appointment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookingPayload)

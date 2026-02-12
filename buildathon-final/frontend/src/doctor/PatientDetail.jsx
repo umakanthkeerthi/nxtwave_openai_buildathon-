@@ -4,12 +4,14 @@ import {
     ArrowLeft, Activity, AlertTriangle, FileText,
     Pill, Clock, CheckCircle, Plus, File, Star, Stethoscope, Video, PhoneOff, X, ExternalLink
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext'; // [NEW] Import Auth
 import VideoPopup from './VideoPopup';
 
 const PatientDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { currentUser } = useAuth(); // [NEW] Get Doctor Details
 
 
     // [FIX] Robust Patient Data Derivation
@@ -83,7 +85,11 @@ const PatientDetail = () => {
             const payload = {
                 patient_id: id,
                 type: recordType,
-                data: consultationData,
+                data: {
+                    ...consultationData,
+                    doctor: currentUser?.displayName || "Unknown Doctor", // [FIX] Send Doctor Name
+                    title: recordType === "PRESCRIPTION" ? "Prescription" : "Consultation Record" // [FIX] Send Title
+                },
                 case_id: patientData?.caseId // [FIX] Link to Case
             };
 
@@ -97,11 +103,20 @@ const PatientDetail = () => {
                 alert("Consultation saved successfully!");
                 // navigate('/doctor/patients'); // [FIX] Stay on page
             } else {
-                alert("Failed to save consultation.");
+                // [FIX] Detailed Error Handling
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || "Failed to save consultation.";
+                console.error("Upload failed:", response.status, errorData);
+
+                if (response.status === 500) {
+                    alert(`Server Error (500): ${errorMessage}\n\nThis might be a temporary server issue or a network problem.`);
+                } else {
+                    alert(`Error: ${errorMessage}`);
+                }
             }
         } catch (error) {
-            console.error("Submit error:", error);
-            alert("Network error.");
+            console.error("Submit network error:", error);
+            alert("Network Error: Unable to reach the server.\n\nPlease check your internet connection and try again.");
         } finally {
             setSubmitting(false);
         }
@@ -185,7 +200,16 @@ const PatientDetail = () => {
 
         if (consultationStatus !== 'APPOINTMENT_IN_PROGRESS' && consultationStatus !== 'CONSULTATION_ENDED') {
             // --- STARTING CONSULTATION ---
-            const isVideoMode = !location.state?.type || location.state?.type === 'standard' || location.state?.type === 'video';
+            // --- STARTING CONSULTATION ---
+            // [FIX] Check patientData for mode, fallback to location.state
+            const mode = patientData?.mode || location.state?.mode;
+            const type = patientData?.type || location.state?.type;
+
+            // Logic: Auto-open if mode is 'Video' OR (Standard + Online)
+            const isVideoMode = mode === 'Video' || (type === 'standard' && mode === 'online');
+
+            console.log("Starting Consult - Mode:", mode, "Type:", type, "IsVideoMode:", isVideoMode);
+
             if (isVideoMode) setIsVideoOpen(true);
 
             // 1. Update Case Status

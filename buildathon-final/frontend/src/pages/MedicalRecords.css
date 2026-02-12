@@ -96,6 +96,8 @@
 .files-grid {
     display: grid;
     gap: 1rem;
+    /* Responsive Grid */
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
 }
 
 .file-card {
@@ -312,4 +314,30 @@
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     /* Dimensions are handled by inline styles or motion defaults */
+}
+
+/* --- [NEW] Folder & Modal Content Styles --- */
+.folder-card {
+    border-left: 4px solid var(--color-primary) !important;
+}
+
+.folder-card:hover {
+    background-color: #f0fdfa;
+    border-color: var(--color-primary) !important;
+}
+
+.section-block {
+    /* No spec styles needed as grid gap handles it, but good for future extension */
+}
+
+.section-title {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.5rem;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Clock, Circle, FileText, Video, Upload, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PatientVideoCall from './PatientVideoCall'; // [NEW]
 
 // Mock Data for the steps (typically passed as props)
 // stepsData moved inside component to access props
@@ -30,7 +31,7 @@ const Tag = ({ label, color }) => {
     );
 };
 
-const AppointmentTracker = ({ caseId, doctorName, specialty }) => {
+const AppointmentTracker = ({ caseId, doctorName, specialty, appointmentMode }) => {
     // Generate steps data with dynamic props
     const stepsData = [
         {
@@ -80,31 +81,8 @@ const AppointmentTracker = ({ caseId, doctorName, specialty }) => {
                         <span>5-10 mins ETA</span>
                     </div>
                     <p style={{ fontSize: '0.9rem', color: '#666', lineHeight: '1.5', marginBottom: '1rem' }}>
-                        Your case is currently in queue for {doctorName ? doctorName : 'the doctor'} to conduct a thorough review. This is a crucial human-in-the-loop checkpoint.
+                        Your case is currently in queue for {doctorName ? doctorName : 'the doctor'} to conduct a thorough review. Since this is an {appointmentMode?.toLowerCase() === 'emergency' ? 'offline' : 'online'} consultation, please be prepared.
                     </p>
-                    <div style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', margin: '0 0 0.5rem 0', color: '#333' }}>What this means for you:</h4>
-                        <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
-                            {doctorName ? doctorName : 'The doctor'} is reviewing your captured symptoms and AI triage results. This ensures accuracy and personalized care.
-                        </p>
-                    </div>
-                    <button style={{
-                        width: '100%',
-                        padding: '0.8rem',
-                        borderRadius: '50px',
-                        border: '1px solid #ddd',
-                        backgroundColor: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        color: '#555',
-                        fontWeight: '500'
-                    }}>
-                        <Upload size={18} />
-                        Upload Reports
-                    </button>
                 </div>
             )
         },
@@ -116,9 +94,18 @@ const AppointmentTracker = ({ caseId, doctorName, specialty }) => {
             tagColor: "blue",
             content: (
                 <div style={{ marginTop: '5px' }}>
-                    <button style={{ background: 'none', border: 'none', color: '#00879e', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'not-allowed', opacity: 0.6 }}>
-                        <Video size={16} /> Call Video
-                    </button>
+                    {appointmentMode?.toLowerCase() === 'standard' || appointmentMode?.toLowerCase() === 'video' ? (
+                        <button
+                            onClick={() => setJoinVideo(true)}
+                            style={{ background: '#0f766e', border: 'none', color: 'white', padding: '8px 16px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                        >
+                            <Video size={16} /> Join Video Call
+                        </button>
+                    ) : (
+                        <div style={{ padding: '8px 12px', background: '#f0fdfa', color: '#0f766e', borderRadius: '6px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <User size={16} /> Doctor is interacting with you in offline
+                        </div>
+                    )}
                 </div>
             )
         },
@@ -154,11 +141,14 @@ const AppointmentTracker = ({ caseId, doctorName, specialty }) => {
     };
 
     const [error, setError] = useState(null);
+    const [joinVideo, setJoinVideo] = useState(false); // [NEW] Video Call State
+
+
 
     useEffect(() => {
         const fetchTracking = async () => {
+            // [POLLING] Skip if no caseId
             if (!caseId) {
-                console.log("DEBUG: No caseId provided to tracker");
                 setLoading(false);
                 return;
             }
@@ -167,42 +157,87 @@ const AppointmentTracker = ({ caseId, doctorName, specialty }) => {
                 const response = await fetch(`/get_case?case_id=${caseId}`);
                 if (response.ok) {
                     const caseData = await response.json();
-                    console.log("DEBUG: Tracker fetched case:", caseData);
 
-                    // Map Status to Steps
-                    // defined in doctor_consultation.py: DOCTOR_ASSIGNED
+                    // Only log if status changes to avoid console spam? 
+                    // For now, keep it simple.
+                    // console.log("DEBUG: Tracker Polling:", caseData.status);
+
                     const status = caseData.status;
 
                     let currentStepId = 1;
                     if (status === "Submitted") currentStepId = 2; // AI Triage
                     if (status === "DOCTOR_ASSIGNED") currentStepId = 3;
                     if (status === "CONSULTATION_SCHEDULED") currentStepId = 4;
-                    if (status === "COMPLETED") currentStepId = 6;
+                    if (status === "APPOINTMENT_IN_PROGRESS") currentStepId = 5; // [NEW] Skip Step 4
+                    if (status === "DOCTOR_NOTES_AND_PRESCRIPTION_READY") currentStepId = 6; // [NEW] Intermediate
+                    if (status === "CONSULTATION_ENDED") currentStepId = 8; // [NEW] Jump to 8 (Completed)
 
                     setActiveStep(currentStepId);
-                    setOpenStep(currentStepId); // Auto open current step
+
+                    // Only auto-open if we moved forward (optional UX)
+                    // setOpenStep(currentStepId); 
 
                     // Update steps status based on currentStepId
                     const updatedSteps = stepsData.map(step => {
-                        if (step.id < currentStepId) return { ...step, status: 'completed' };
-                        if (step.id === currentStepId) return { ...step, status: 'current' };
-                        return { ...step, status: 'upcoming' };
+                        let status = 'upcoming';
+                        if (step.id < currentStepId) status = 'completed';
+                        if (step.id === currentStepId) status = 'current';
+
+                        // [Fix] Only show Video Button if Step 5 is CURRENT
+                        let content = step.content;
+                        if (step.id === 5) {
+                            // Only allow Video if status is strictly IN PROGRESS
+                            if (status !== 'current') {
+                                content = null;
+                            } else {
+                                // Restore content if it was nullified? 
+                                // Ideally `stepsData` has it, and we just use it.
+                                // But `stepsData` is static.
+                                // We need to re-assign the button if current.
+                                content = (
+                                    <div style={{ marginTop: '5px' }}>
+                                        {appointmentMode?.toLowerCase() === 'standard' || appointmentMode?.toLowerCase() === 'video' ? (
+                                            <button
+                                                onClick={() => setJoinVideo(true)}
+                                                style={{ background: '#0f766e', border: 'none', color: 'white', padding: '8px 16px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                                            >
+                                                <Video size={16} /> Join Video Call
+                                            </button>
+                                        ) : (
+                                            <div style={{ padding: '8px 12px', background: '#f0fdfa', color: '#0f766e', borderRadius: '6px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <User size={16} /> Doctor is interacting with you in offline
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+                        }
+
+                        return { ...step, status, content };
                     });
                     setSteps(updatedSteps);
                 } else {
-                    console.error("Failed to fetch case:", response.status);
-                    setError("Tracking information not available for this appointment.");
+                    // Silent fail on polling error to avoid UI flicker
+                    // console.error("Failed to fetch case:", response.status);
                 }
             } catch (error) {
                 console.error("Error fetching case tracking:", error);
-                setError("Unable to load tracking details.");
             } finally {
                 setLoading(false);
             }
         };
 
+        // Initial Fetch
         fetchTracking();
-    }, [caseId]);
+
+        // [POLLING] Set up interval
+        const intervalId = setInterval(fetchTracking, 5000); // 5 Seconds
+
+        // Cleanup
+        return () => clearInterval(intervalId);
+    }, [caseId, appointmentMode]); // Added appointmentMode to deps
+
+
 
     if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading tracking info...</div>;
 
@@ -320,6 +355,10 @@ const AppointmentTracker = ({ caseId, doctorName, specialty }) => {
                     </motion.div>
                 );
             })}
+            {/* Video Call Popup */}
+            {joinVideo && (
+                <PatientVideoCall caseId={caseId} onClose={() => setJoinVideo(false)} />
+            )}
         </div>
     );
 };

@@ -51,33 +51,54 @@ const MOCK_APPOINTMENTS = [
 
 import './DoctorScheduledAppointments.css';
 
+import { useAuth } from '../context/AuthContext';
+
 const DoctorScheduledAppointments = () => {
+    const { currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('Today');
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // TODO: Get real doctor ID from AuthContext
-    const DOCTOR_ID = "doc_mock_001";
-
     useEffect(() => {
         const fetchAppointments = async () => {
+            if (!currentUser) return;
+
             try {
-                const response = await fetch(`/get_appointments?doctor_id=${DOCTOR_ID}`);
+                // Use mapped doctor_id if available, fallback to UID
+                const doctorId = currentUser.doctor_id || currentUser.uid;
+                const response = await fetch(`/get_appointments?doctor_id=${doctorId}`);
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
 
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 // Transform Backend Data to UI Format
-                const formatted = data.map(apt => ({
-                    id: apt.id,
-                    name: apt.patient_name || "Unknown",
-                    time: new Date(apt.appointment_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    date: new Date(apt.appointment_time).toDateString() === new Date().toDateString() ? 'Today' : 'Upcoming', // Simple logic
-                    mode: apt.consultation_mode || "Video",
-                    reason: apt.triage_decision ? `Triage: ${apt.triage_decision}` : "General Consultation",
-                    status: "Scheduled",
-                    type: apt.triage_decision === "RED" ? "Emergency" : "Standard",
-                    patient_id: apt.patient_id
-                }));
+                const formatted = data.map(apt => {
+                    const aptDate = new Date(apt.slot_time || apt.appointment_time);
+                    const aptDay = new Date(aptDate);
+                    aptDay.setHours(0, 0, 0, 0);
+
+                    let dateCategory = 'Past';
+                    if (aptDay.getTime() === today.getTime()) dateCategory = 'Today';
+                    else if (aptDay.getTime() > today.getTime()) dateCategory = 'Upcoming';
+
+                    return {
+                        id: apt.id,
+                        name: apt.patient_snapshot?.name || apt.patient_name || "Unknown",
+                        time: aptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        date: dateCategory,
+                        dateString: aptDate.toDateString(),
+                        mode: apt.mode || apt.consultation_mode || "Video",
+                        reason: apt.severity === 'red' ? "Critical / Emergency" : (apt.triage_decision ? `Triage: ${apt.triage_decision}` : "General Consultation"),
+                        status: apt.status || "Scheduled",
+                        type: apt.severity === 'red' ? "Emergency" : "Standard",
+                        patient_id: apt.patient_id || apt.profile_id,
+                        case_id: apt.case_id, // [NEW] Pass Case ID
+                        summary_id: apt.pre_doctor_consultation_summary_id // [NEW] Pass Summary ID
+                    };
+                });
+
                 setAppointments(formatted);
             } catch (error) {
                 console.error("Error fetching appointments:", error);
@@ -87,13 +108,9 @@ const DoctorScheduledAppointments = () => {
         };
 
         fetchAppointments();
-    }, []);
+    }, [currentUser]);
 
-    const filteredAppointments = appointments.filter(apt => {
-        if (activeTab === 'Today') return apt.date === 'Today';
-        if (activeTab === 'Upcoming') return apt.date !== 'Today';
-        return false;
-    });
+    const filteredAppointments = appointments.filter(apt => apt.date === activeTab);
 
     return (
         <div className="schedule-container">
@@ -196,7 +213,19 @@ const AppointmentCard = ({ data }) => {
             {/* Right: Actions */}
             <div className="actions-wrapper">
                 <button
-                    onClick={() => navigate(`/doctor/patients/${data.id}`, { state: { defaultTab: 'Consultation' } })}
+                    onClick={() => navigate(`/doctor/patients/${data.patient_id}`, {
+                        state: {
+                            defaultTab: 'Consultation',
+                            patientData: {
+                                name: data.name,
+                                id: data.patient_id,
+                                caseId: data.case_id,
+                                summaryId: data.summary_id,
+                                mode: data.mode, // [FIX] Pass mode
+                                type: data.type // [FIX] Pass type
+                            }
+                        }
+                    })}
                     style={{
                         padding: '8px 16px', background: '#0f766e', color: 'white', border: 'none',
                         borderRadius: '6px', fontWeight: '600', cursor: 'pointer', flex: 2

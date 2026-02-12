@@ -9,7 +9,10 @@ import { useAuth } from '../context/AuthContext';
 const PatientSummary = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { currentUser, selectedProfile } = useAuth(); // [FIX] Added selectedProfile
+    const { currentUser, selectedProfile } = useAuth();
+
+    // [FIX] Extract readOnly flag from navigation state
+    const readOnly = location.state?.readOnly || false;
 
     const parsePatientSummary = (rawData) => {
         if (!rawData) return null;
@@ -45,21 +48,27 @@ const PatientSummary = () => {
 
     const handleSave = async () => {
         try {
-            await fetch('/save_summary', {
+            const response = await fetch('/save_summary', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    patient_id: selectedProfile?.id || currentUser?.uid || "user_" + Date.now(), // [FIX] Use selectedProfile.id
+                    patient_id: selectedProfile?.id || currentUser?.uid || "user_" + Date.now(),
+                    user_id: currentUser?.uid,
                     case_id: summary.caseId,
-                    patient_summary: summary.raw_patient_summary || summary.guidelines,
+                    patient_summary: parsedPatientData || summary.guidelines,
                     // [IMPORTANT] EXCLUDE pre_doctor_consultation_summary for "Save Only"
-                    patient_profile: {  // [FIX] Add profile details for record metadata
+                    patient_profile: {
                         name: selectedProfile?.fullName || currentUser?.displayName || "Unknown",
                         age: selectedProfile?.age || currentUser?.age || "Unknown",
                         gender: selectedProfile?.gender || currentUser?.gender || "Unknown"
                     }
                 })
             });
+
+            // [NEW] Capture IDs although we might not use them for just saving
+            const data = await response.json();
+            console.log("Saved Summary IDs:", data);
+
             alert("Patient Summary saved to AI Summary Files!");
             navigate('/patient/medical-files');
         } catch (error) {
@@ -72,15 +81,16 @@ const PatientSummary = () => {
         // Requirement: Trigger Medical Files Agent (Save BOTH) AND Doctor Consultation Agent (Navigate)
         try {
             // 1. Trigger Medical Files Agent
-            await fetch('/save_summary', {
+            const response = await fetch('/save_summary', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    patient_id: selectedProfile?.id || currentUser?.uid || "user_" + Date.now(), // [FIX] Use selectedProfile.id
+                    patient_id: selectedProfile?.id || currentUser?.uid || "user_" + Date.now(),
+                    user_id: currentUser?.uid,
                     case_id: summary.caseId,
-                    patient_summary: summary.raw_patient_summary || summary.guidelines,
-                    pre_doctor_consultation_summary: summary.raw_doctor_summary || {}, // [IMPORTANT] INCLUDE for Doctor
-                    patient_profile: { // [FIX] Add profile details
+                    patient_summary: parsedPatientData || summary.guidelines,
+                    pre_doctor_consultation_summary: summary.raw_doctor_summary || {},
+                    patient_profile: {
                         name: selectedProfile?.fullName || currentUser?.displayName || "Unknown",
                         age: selectedProfile?.age || currentUser?.age || "Unknown",
                         gender: selectedProfile?.gender || currentUser?.gender || "Unknown"
@@ -88,8 +98,19 @@ const PatientSummary = () => {
                 })
             });
 
+            // [NEW] Capture the Doctor Summary ID to pass to booking
+            const data = await response.json();
+            const preDoctorSummaryId = data.pre_doctor_summary_id;
+            console.log("Got Pre-Doctor Summary ID:", preDoctorSummaryId);
+
             // 2. Trigger Doctor Consultation Agent (via Directory selection)
-            navigate('/patient/consult/directory', { state: { summary: summary } });
+            // Pass the ID in state so DoctorDirectory can read it
+            navigate('/patient/consult/directory', {
+                state: {
+                    summary: summary,
+                    pre_doctor_summary_id: preDoctorSummaryId // [NEW] Linkage
+                }
+            });
 
         } catch (error) {
             console.error("Save & Consult Error:", error);
@@ -106,7 +127,17 @@ const PatientSummary = () => {
                 className="summary-card"
             >
                 <div className="summary-header">
-                    <button onClick={() => navigate(-1)} className="back-btn">
+                    <button
+                        onClick={() => {
+                            if (readOnly) {
+                                // Go back to Medical Files properly
+                                navigate('/patient/medical-files', { state: { activeTab: 'summaries' } });
+                            } else {
+                                navigate(-1);
+                            }
+                        }}
+                        className="back-btn"
+                    >
                         <ArrowLeft />
                     </button>
                     <h1 className="page-title">Patient Summary</h1>
@@ -190,23 +221,25 @@ const PatientSummary = () => {
                     </div>
                 </div>
 
-                <div className="summary-actions">
-                    <button
-                        onClick={handleSave}
-                        className="btn-secondary"
-                    >
-                        <Save size={18} />
-                        Save to AI Summary Files and Exit
-                    </button>
+                {!readOnly && (
+                    <div className="summary-actions">
+                        <button
+                            onClick={handleSave}
+                            className="btn-secondary"
+                        >
+                            <Save size={18} />
+                            Save to AI Summary Files and Exit
+                        </button>
 
-                    <button
-                        onClick={handleConsult}
-                        className="btn-primary"
-                    >
-                        <Stethoscope size={18} />
-                        Consult Doctor
-                    </button>
-                </div>
+                        <button
+                            onClick={handleConsult}
+                            className="btn-primary"
+                        >
+                            <Stethoscope size={18} />
+                            Consult Doctor
+                        </button>
+                    </div>
+                )}
 
             </motion.div>
         </div>

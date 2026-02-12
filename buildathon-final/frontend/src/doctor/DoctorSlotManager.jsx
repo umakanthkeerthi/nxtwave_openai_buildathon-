@@ -271,20 +271,25 @@ const DoctorSlotManager = () => {
                     <div style={{ marginBottom: '4px', textAlign: 'center' }}>{day}</div>
 
                     {/* Render Slots directly in calendar */}
-                    {daySlots.slice(0, 3).map(slot => (
-                        <div key={slot.id} style={{
-                            fontSize: '0.7rem',
-                            padding: '2px 4px',
-                            background: isSelected ? 'rgba(255,255,255,0.2)' : '#e0f2fe',
-                            color: isSelected ? 'white' : '#0369a1',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                        }}>
-                            {slot.start_time}
-                        </div>
-                    ))}
+                    {daySlots.slice(0, 3).map(slot => {
+                        const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
+                        const isExpired = slotDateTime < new Date();
+                        return (
+                            <div key={slot.id} style={{
+                                fontSize: '0.7rem',
+                                padding: '2px 4px',
+                                background: isSelected ? 'rgba(255,255,255,0.2)' : (isExpired ? '#f1f5f9' : '#e0f2fe'),
+                                color: isSelected ? 'white' : (isExpired ? '#94a3b8' : '#0369a1'),
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                opacity: isExpired ? 0.7 : 1
+                            }}>
+                                {slot.start_time}
+                            </div>
+                        );
+                    })}
 
                     {daySlots.length > 3 && (
                         <div style={{
@@ -490,22 +495,30 @@ const DoctorSlotManager = () => {
                             <div style={{ color: '#94a3b8', textAlign: 'center', fontStyle: 'italic' }}>No slots for this date.</div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {slots.map(slot => (
-                                    <div key={slot.id} style={{
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0'
-                                    }}>
-                                        <div style={{ fontWeight: '600', color: '#334155' }}>
-                                            {slot.start_time} - {slot.end_time}
+                                {slots.map(slot => {
+                                    const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
+                                    const isExpired = slotDateTime < new Date();
+                                    return (
+                                        <div key={slot.id} style={{
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            padding: '10px', background: isExpired ? '#f1f5f9' : '#f8fafc',
+                                            borderRadius: '8px', border: '1px solid #e2e8f0',
+                                            opacity: isExpired ? 0.6 : 1
+                                        }}>
+                                            <div style={{ fontWeight: '600', color: isExpired ? '#94a3b8' : '#334155', display: 'flex', alignItems: 'center' }}>
+                                                {slot.start_time} - {slot.end_time}
+                                                {isExpired && <span style={{ marginLeft: '8px', fontSize: '0.75rem', color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px' }}>Expired</span>}
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteSlot(slot.id)}
+                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
+                                                title="Delete Slot"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => handleDeleteSlot(slot.id)}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

@@ -51,8 +51,7 @@ const DoctorEmergencyQueue = () => {
                         <h2 className="box-title">Emergency Queue</h2>
                         <span className="live-badge">LIVE</span>
                     </div>
-                    {/* Fixed: Simulate button is now clearly visible */}
-                    <button className="btn-simulate">+ Simulate Case</button>
+
                 </div>
 
                 {/*<p className="header-subtitle">

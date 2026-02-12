@@ -1,11 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Stethoscope, XCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './EmergencyPage.css';
+import { useAuth } from '../context/AuthContext'; // [NEW]
 
 const EmergencyPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { currentUser, selectedProfile } = useAuth(); // [NEW]
 
     return (
         <div className="emergency-container">
@@ -27,22 +30,39 @@ const EmergencyPage = () => {
                     <button
                         onClick={async () => {
                             // 1. Trigger Medical Files Agent (Critical: Save Event)
+                            // [MODIFIED] Only save when user clicks this button
+                            const summaryPayload = location.state?.summary_payload;
+                            // [STANDARDIZED] Match backend format: CASE-{12_HEX_UPPER}
+                            const randomHex = Math.random().toString(16).slice(2, 14).toUpperCase().padEnd(12, '0');
+                            const caseId = location.state?.case_id || `CASE-${randomHex}`;
+
                             try {
-                                await fetch('/save_summary', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        patient_id: "user_" + Date.now(),
-                                        patient_summary: "EMERGENCY DETECTED",
-                                        pre_doctor_consultation_summary: { red_flags: ["Emergency Click"], assessment: { severity: "RED" } }
-                                    })
-                                });
+                                if (summaryPayload) {
+                                    console.log("Saving Emergency Payload Now...", summaryPayload);
+
+                                    // [FIXED] Use actual profile/user IDs if logged in
+                                    const patientId = selectedProfile?.id || selectedProfile?.profile_id || "user_" + Date.now();
+                                    const userId = currentUser?.uid || "anon_user_" + Date.now();
+
+                                    await fetch('/save_summary', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            patient_id: patientId,
+                                            user_id: userId,
+                                            // Ensure profile_id is also sent if backend expects it
+                                            profile_id: patientId,
+                                            patient_summary: "EMERGENCY DETECTED",
+                                            pre_doctor_consultation_summary: summaryPayload,
+                                            case_id: caseId
+                                        })
+                                    });
+                                }
                             } catch (e) { console.error("Emergency Save Failed", e); }
 
 
                             // 2. Trigger Doctor Consultation Agent (Offline/Immediate Mode)
                             // Hardcoded location for MVP: New Delhi (Connaught Place/India Gate area)
-                            // This matches the default location in ProfileModal (28.6129, 77.2295)
                             const MVP_LAT = 28.6129;
                             const MVP_LON = 77.2295;
 
@@ -51,12 +71,13 @@ const EmergencyPage = () => {
                                     type: 'emergency',
                                     userLocation: { lat: MVP_LAT, lon: MVP_LON },
                                     summary: {
-                                        caseId: "CASE-EMERGENCY-" + Date.now().toString().slice(-4),
+                                        caseId: caseId,
                                         triage: "Emergency",
                                         color: "Red",
                                         chiefComplaints: ["Emergency Reported"],
                                         redFlags: ["Immediate Attention Required"]
-                                    }
+                                    },
+                                    pre_doctor_summary_id: null // We don't have the ID yet unless we wait for save response
                                 }
                             });
 

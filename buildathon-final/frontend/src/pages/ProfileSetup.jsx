@@ -57,7 +57,15 @@ const ProfileSetup = () => {
                 updated_at: new Date().toISOString()
             }, { merge: true });
 
-            // Redirect to profile selection
+            // [FIX] Auto-select the new profile so the user is immediately logged in as them
+            // We need to fetch the full object or construct it to set it in context
+            // But selectProfile in AuthContext expects an ID and looks it up in currentUser.profiles
+            // Since currentUser.profiles might not be updated yet (it requires a refresh or re-fetch), 
+            // we should probably force a reload or manually update context.
+
+            // For now, let's stick to the redirect but maybe use navigate to keep SPA state if possible, 
+            // though a window.location reload is safer to refresh currentUser from Firebase.
+
             window.location.href = "/profiles";
         } catch (err) {
             console.error("Error saving profile:", err);

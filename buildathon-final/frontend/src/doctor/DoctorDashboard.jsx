@@ -148,7 +148,10 @@ const PatientCard = ({ id, caseId, appointmentId, name, age, gender, reason, tim
                     onClick={() => navigate(`/doctor/patients/${id}?caseId=${caseId}`, {
                         state: {
                             patientData: {
-                                name, age, gender, id, caseId, appointmentId, reason, time, mode, type, aiFlag, status // [FIX] Use status prop
+                                name, age, gender, id, caseId, appointmentId, reason, time,
+                                mode, // [FIX] Pass mode (Video/Offline)
+                                type, // [FIX] Pass type (Standard/Emergency)
+                                aiFlag, status
                             }
                         }
                     })}
@@ -274,25 +277,9 @@ const DoctorDashboard = () => {
                         </button>
                     }
                 >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {isEmergencyMode && (
-                            <TimeSlot
-                                time="NOW"
-                                event="SUDDEN DETORIATION - ICU 4"
-                                type="emergency"
-                                status="emergency"
-                                isBlinking
-                            />
-                        )}
-                        <TimeSlot time="09:00 AM" event="Team Huddle" type="internal" status="completed" />
-                        <TimeSlot time="09:30 AM" event="Patient Rounds" type="visit" status="completed" />
-                        <TimeSlot
-                            time="10:30 AM"
-                            event="OPD Consults"
-                            type="consult"
-                            status={isEmergencyMode ? 'paused' : 'active'}
-                        />
-                        <TimeSlot time="01:00 PM" event="Lunch Break" type="break" status="upcoming" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto' }}>
+                        {/* Live Slots from Backend */}
+                        <DashboardSchedule currentUser={currentUser} isEmergencyMode={isEmergencyMode} />
                     </div>
                 </SectionShell>
 
@@ -315,7 +302,6 @@ const DoctorDashboard = () => {
                                 </div>
                             ) : (
                                 appointments.map(appt => {
-                                    console.log("Appointment Data:", appt); // [DEBUG]
                                     // [FIX] Read from patient_snapshot (nested) or fallback to root (legacy)
                                     const pSnapshot = appt.patient_snapshot || {};
                                     const pName = pSnapshot.name || appt.patient_name || appt.patientName || "Unknown Patient";
@@ -336,7 +322,7 @@ const DoctorDashboard = () => {
                                             gender={pGender}
                                             reason={appt.severity === 'red' ? "Emergency / Critical" : "General Consultation"}
                                             time={appt.slot_time ? new Date(appt.slot_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
-                                            mode={appt.mode === 'VIDEO' ? 'Video' : 'In-Person'}
+                                            mode={appt.mode && appt.mode.toUpperCase() === 'VIDEO' ? 'Video' : (appt.mode || 'In-Person')} // [FIX] Case insensitive & fallback
                                             type={appt.severity === 'red' ? 'emergency' : 'standard'}
                                             aiFlag={appt.severity === 'red' ? "High Severity Triage" : null}
                                             status={appt.status} // [FIX] Pass status
@@ -350,6 +336,81 @@ const DoctorDashboard = () => {
 
             </div>
         </div>
+    );
+};
+// [FIX] Extracted interactive schedule component
+const DashboardSchedule = ({ currentUser, isEmergencyMode }) => {
+    const [liveSlots, setLiveSlots] = React.useState([]);
+    const [slotsLoading, setSlotsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (currentUser?.doctor_id || currentUser?.uid) {
+            const docId = currentUser.doctor_id || currentUser.uid;
+            setSlotsLoading(true);
+            fetch(`/get_slots?doctor_id=${docId}&status=ALL`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.slots) {
+                        // Filter for TODAY
+                        const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+                        const todays = data.slots.filter(s => s.date === todayStr);
+                        todays.sort((a, b) => a.start_time.localeCompare(b.start_time));
+                        setLiveSlots(todays);
+                    }
+                })
+                .catch(err => console.error("Dashboard Slots Error:", err))
+                .finally(() => setSlotsLoading(false));
+        }
+    }, [currentUser]);
+
+    if (slotsLoading) return <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>Loading schedule...</div>;
+
+    if (liveSlots.length === 0 && !isEmergencyMode) {
+        return (
+            <div style={{
+                padding: '2rem', textAlign: 'center', color: '#94a3b8',
+                background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1'
+            }}>
+                No slots scheduled for today.
+            </div>
+        );
+    }
+
+    return (
+        <>
+            {isEmergencyMode && (
+                <TimeSlot
+                    time="NOW"
+                    event="SUDDEN DETORIATION - ICU 4"
+                    type="emergency"
+                    status="emergency"
+                    isBlinking
+                />
+            )}
+            {liveSlots.map(slot => {
+                // Determine Status props
+                const now = new Date();
+                const slotStart = new Date(`${slot.date}T${slot.start_time}`);
+                const isBooked = slot.status === 'BOOKED';
+                // Check if slot is in the past (only if not booked, to show expired)
+                // If booked, it stays "booked" (faded). If available but past, it's expired (faded).
+                const isPast = slotStart < now;
+
+                let visualStatus = 'active'; // Default for Available Future
+                if (isBooked) visualStatus = 'completed';
+                else if (isPast) visualStatus = 'completed';
+
+                return (
+                    <TimeSlot
+                        key={slot.id}
+                        time={new Date(`2000-01-01T${slot.start_time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        event={isBooked ? "Patient Appointment" : "Available Slot"}
+                        type={isBooked ? "consult" : "open"}
+                        status={visualStatus}
+                    />
+                );
+            })}
+        </>
     );
 };
 

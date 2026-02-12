@@ -27,21 +27,26 @@ const MyAppointments = () => {
                 // Use the Selected Profile ID
                 // If the selected profile is strict "Self", we might want to use the owner_uid (currentUser.uid) 
                 // because that's how appointments are often saved initially.
-                let targetId = selectedProfile?.id || currentUser.uid;
+                let queryString = "";
 
-                if (selectedProfile?.relation === 'Self' && selectedProfile?.owner_uid) {
-                    console.log("DEBUG: strictly using owner_uid for Self profile");
-                    targetId = selectedProfile.owner_uid;
-                } else if (!selectedProfile && currentUser) {
-                    targetId = currentUser.uid;
+                if (selectedProfile && selectedProfile.id) {
+                    // Specific Profile Selected
+                    // Handle "Self" strict check if needed, but generally use profile ID
+                    let targetPid = selectedProfile.id;
+                    if (selectedProfile.relation === 'Self' && selectedProfile.owner_uid) {
+                        // Some logic uses owner_uid for Self, but let's stick to consistent profile_id if possible.
+                        // For now, let's trust selectedProfile.id unless it's missing
+                    }
+                    console.log("DEBUG: Fetching by patient_id (Profile):", targetPid);
+                    queryString = `patient_id=${targetPid}`;
+                } else {
+                    // No Profile Selected = Account Owner Overview
+                    // Fetch ALL appointments for this user
+                    console.log("DEBUG: Fetching by user_id (Owner):", currentUser.uid);
+                    queryString = `user_id=${currentUser.uid}`;
                 }
 
-                console.log("DEBUG: Fetching appointments for patient_id:", targetId);
-                console.log("DEBUG: currentUser.uid:", currentUser?.uid);
-                console.log("DEBUG: selectedProfile:", selectedProfile);
-
-
-                const response = await fetch(`/get_appointments?patient_id=${targetId}`);
+                const response = await fetch(`/get_appointments?${queryString}`);
                 console.log("DEBUG: Response status:", response.status, response.ok);
 
                 if (!response.ok) throw new Error('Failed to fetch');
@@ -69,7 +74,8 @@ const MyAppointments = () => {
                         time: timeFormatted,
                         status: apt.status || "Scheduled",
                         statusColor: (apt.status === "Completed") ? "green" : "blue",
-                        image: apt.doctorImage || "https://randomuser.me/api/portraits/legos/1.jpg"
+                        image: apt.doctorImage || "https://randomuser.me/api/portraits/legos/1.jpg",
+                        mode: apt.mode || "standard" // [NEW] Default to standard (Video) if missing
                     };
                 });
                 setAppointments(formatted);
@@ -178,9 +184,10 @@ const MyAppointments = () => {
 
                         {/* The Step Tracker Component */}
                         <AppointmentTracker
-                            caseId={appointments.find(a => a.id === selectedId)?.caseId} // [FIX] ID Mismatch
+                            caseId={appointments.find(a => a.id === selectedId)?.caseId}
                             doctorName={appointments.find(a => a.id === selectedId)?.doctorName}
                             specialty={appointments.find(a => a.id === selectedId)?.specialty}
+                            appointmentMode={appointments.find(a => a.id === selectedId)?.mode} // [NEW] Pass mode
                         />
                     </motion.div>
                 )}

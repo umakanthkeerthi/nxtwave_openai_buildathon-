@@ -16,12 +16,14 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
     React.useEffect(() => {
         if (isOpen && doctor?.id) {
             setLoadingSlots(true);
-            fetch(`http://localhost:8003/get_slots?doctor_id=${doctor.id}`)
+            fetch(`/get_slots?doctor_id=${doctor.id}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.slots) {
                         // Group by Date
                         const grouped = {};
+                        const now = new Date();
+
                         data.slots.forEach(slot => {
                             // Backend returns separate 'date' (YYYY-MM-DD) and 'start_time' (HH:MM) fields
                             // Combine them to create a proper Date object
@@ -31,6 +33,11 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                             // Fallback if Date is invalid
                             if (isNaN(dateObj.getTime())) {
                                 console.warn("Invalid slot date:", slot);
+                                return;
+                            }
+
+                            // [FIX] Filter out past slots
+                            if (dateObj < now) {
                                 return;
                             }
 

@@ -5,12 +5,56 @@ import {
     Navigation, User, AlertOctagon
 } from 'lucide-react';
 import './DoctorEmergencyQueue.css';
+import { useAuth } from '../context/AuthContext';
+
 
 const DoctorEmergency = () => {
     const [queue, setQueue] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // [NEW] Doctor Location State
+    const [doctorLocation, setDoctorLocation] = useState(null);
+    const { currentUser } = useAuth();
+
+    // Fetch Doctor Profile to get Location
     useEffect(() => {
+        const fetchDoctorProfile = async () => {
+            if (currentUser?.uid) {
+                try {
+                    // In a real app, we might have the full profile in context. 
+                    // Here we fetch it to be sure we get the new lat/lon fields.
+                    const res = await fetch(`/get_doctor_profile?doctor_id=${currentUser.uid}`); // Hypothetical endpoint or reuse existing
+                    // For now, let's assume we can get it from a direct firestore fetch or if AuthContext has it.
+                    // A safer bet without a new endpoint is to use the existing /get_doctors and filter, 
+                    // OR just trust that we will add a specific endpoint or use the updated context.
+
+                    // SIMPLER APPROACH: 
+                    // If AuthContext doesn't have it, we might need to fetch. 
+                    // Let's assume for this step we will rely on a new fetch or just mock the hookup if the context isn't ready.
+
+                    // Let's try to fetch specific doctor details
+                    const response = await fetch(`/get_doctors`); // This returns all, inefficient but works for now
+                    const data = await response.json();
+                    const me = data.doctors.find(d => d.doctor_id === currentUser.uid || d.id === currentUser.uid);
+
+                    if (me && me.latitude && me.longitude) {
+                        setDoctorLocation({ lat: me.latitude, lng: me.longitude });
+                    } else {
+                        // Fallback
+                        setDoctorLocation({ lat: 12.9716, lng: 77.5946 });
+                    }
+                } catch (e) {
+                    console.error("Error fetching doctor location", e);
+                    setDoctorLocation({ lat: 12.9716, lng: 77.5946 });
+                }
+            }
+        };
+        fetchDoctorProfile();
+    }, [currentUser]);
+
+    useEffect(() => {
+        if (!doctorLocation) return; // Wait for location
+
         const fetchEmergencies = async () => {
             try {
                 const response = await fetch(`/get_emergencies`);
@@ -21,26 +65,36 @@ const DoctorEmergency = () => {
                     const summary = item.data?.pre_doctor_consultation_summary || {};
                     const profile = item.data?.patient_profile || {};
 
+                    // [NEW] Handle Appointment Data Source
+                    const isAppointment = item.source_type === 'appointment';
+                    const trigger = isAppointment ? "Emergency Appointment" : (summary.trigger_reason || "Critical Health Alert");
+
+                    // [FIX] Robust ID check
+                    const computedId = item.patient_id || item.profile_id || item.id;
+
                     return {
                         emergencyId: item.id,
-                        patientId: item.patient_id,
+                        patientId: computedId, // Use robust ID
+                        caseId: item.case_id, // [FIX] Map case_id from backend
+                        originalId: item.id, // Keep track of the source doc ID (appointment ID)
                         patientProfile: {
                             name: profile.name || "Unknown",
                             age: profile.age || "?",
                             gender: profile.gender || "?"
                         },
-                        triggerSource: "AI Triage",
-                        triggerReason: summary.trigger_reason || "Critical Health Alert",
+                        triggerSource: isAppointment ? "Direct Booking" : "AI Triage",
+                        triggerReason: trigger,
                         detectedAt: item.created_at || new Date().toISOString(),
                         severityScore: summary.assessment?.severity_score || 90,
                         severityLevel: summary.assessment?.severity || "HIGH",
                         vitals: summary.vitals_reported || {},
                         location: { lat: 12.9716, lng: 77.5946 }, // Default for now
-                        status: "PENDING"
+                        status: isAppointment ? (item.data?.appointment_details?.status || "PENDING") : "PENDING",
+                        sourceType: item.source_type // Pass through
                     };
                 });
 
-                setQueue(sortQueue(formatted));
+                setQueue(sortQueue(formatted, doctorLocation));
             } catch (error) {
                 console.error("Error fetching emergencies:", error);
             } finally {
@@ -52,45 +106,35 @@ const DoctorEmergency = () => {
         // Poll every 30 seconds for new emergencies
         const interval = setInterval(fetchEmergencies, 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, [doctorLocation]);
 
-    // Simulation Trigger
-    const simulateIncomingCase = () => {
-        const newCase = {
-            emergencyId: `EM-2024-${Math.floor(Math.random() * 1000)}`,
-            patientId: `P-${Math.floor(Math.random() * 900)}`,
-            patientProfile: {
-                name: "New Emergency Case",
-                age: Math.floor(Math.random() * 60) + 20,
-                gender: "other"
-            },
-            triggerSource: "clinical-chat",
-            triggerReason: "Simulated Chest Discomfort",
-            detectedAt: new Date().toISOString(),
-            severityScore: Math.floor(Math.random() * 100), // Random Score
-            severityLevel: ["LOW", "MEDIUM", "HIGH", "CRITICAL"][Math.floor(Math.random() * 4)],
-            vitals: { heartRate: 100 + Math.floor(Math.random() * 40) },
-            location: {
-                lat: 12.9716 + (Math.random() * 0.05 - 0.025), // Random nearby location
-                lng: 77.5946 + (Math.random() * 0.05 - 0.025)
-            },
-            preferredMode: "audio",
-            status: "PENDING"
-        };
 
-        // Push and Sort
-        setQueue(prev => sortQueue([...prev, newCase]));
 
-        // Notify (Mock)
-        alert(`New Case Received! Severity: ${newCase.severityLevel}`);
-    };
-
-    const [processingId, setProcessingId] = useState(null);
     const navigate = useNavigate();
 
-    const handleAccept = (patientId) => {
-        // Navigate directly to patient detail page
-        navigate(`/doctor/patients/${patientId}`);
+    const handleAccept = (item) => {
+        // [FIXED] Pass robust patientId and appointmentId
+        // If it's an appointment source, the emergencyId IS the appointmentId
+        const appointmentId = item.sourceType === 'appointment' ? item.emergencyId : null;
+
+        navigate(`/doctor/patients/${item.patientId}`, {
+            state: {
+                patientData: {
+                    name: item.patientProfile.name,
+                    age: item.patientProfile.age,
+                    gender: item.patientProfile.gender,
+                    id: item.patientId,
+                    // Pass appointmentId so status update works
+                    appointmentId: appointmentId,
+                    // [FIX] Pass caseId (backend now provides it)
+                    caseId: item.caseId,
+                    reason: item.triggerReason,
+                    status: item.status, // [ADDED] Pass status for consult logic
+                    type: 'emergency'
+                },
+                type: 'emergency'
+            }
+        });
     };
 
     return (
@@ -107,7 +151,7 @@ const DoctorEmergency = () => {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             position: 'relative', flexShrink: 0
                         }}>
-                            <Siren size={24} className="pulse-animation" />
+                            <Siren size={24} color="white" />
                             <div style={{ position: 'absolute', top: -2, right: -2, width: '12px', height: '12px', background: '#22c55e', border: '2px solid white', borderRadius: '50%' }}></div>
                         </div>
                         <div>
@@ -121,13 +165,7 @@ const DoctorEmergency = () => {
 
                 {/* Bottom Row: Simulate Button + Available Toggle */}
                 <div className="box-row-bottom">
-                    <button
-                        onClick={simulateIncomingCase}
-                        className="btn-simulate"
-                        style={{ width: '100%', maxWidth: '200px', textAlign: 'center' }}
-                    >
-                        + Simulate Case
-                    </button>
+
 
 
                 </div>
@@ -140,8 +178,8 @@ const DoctorEmergency = () => {
                         key={item.emergencyId}
                         data={item}
                         patientId={item.patientId}
-                        isProcessing={processingId === item.patientId}
-                        onAccept={() => handleAccept(item.patientId)}
+                        onAccept={() => handleAccept(item)} // [FIX] Pass full item
+                        doctorLocation={doctorLocation}
                     />
                 ))}
 
@@ -154,28 +192,13 @@ const DoctorEmergency = () => {
                 )}
             </div>
 
-            <style>{`
-                @keyframes pulse {
-                    0% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.1); opacity: 0.8; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-                .pulse-animation {
-                    animation: pulse 1.5s infinite ease-in-out;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                .spin-animation {
-                    animation: spin 1s linear infinite;
-                }
-            `}</style>
+
         </div>
     );
 };
 
 // --- Helper Functions ---
+
 
 const getSeverityWeight = (level) => {
     switch (level) {
@@ -202,41 +225,45 @@ const calculateDistance = (loc1, loc2) => {
 
 const deg2rad = (deg) => deg * (Math.PI / 180);
 
-const sortQueue = (list) => {
+const sortQueue = (list, doctorLoc) => {
+    // Fallback if location not ready
+    const center = doctorLoc || { lat: 12.9716, lng: 77.5946 };
+
     return [...list].sort((a, b) => {
         // 1. Severity DESC
         const weightDiff = getSeverityWeight(b.severityLevel) - getSeverityWeight(a.severityLevel);
         if (weightDiff !== 0) return weightDiff;
 
         // 2. Distance ASC
-        const distA = calculateDistance(DOCTOR_LOCATION, a.location);
-        const distB = calculateDistance(DOCTOR_LOCATION, b.location);
+        const distA = calculateDistance(center, a.location);
+        const distB = calculateDistance(center, b.location);
         return distA - distB;
     });
 };
 
-const EmergencyCard = ({ data, onAccept, isProcessing }) => {
+// Pass doctorLocation down to card for distance calc
+const EmergencyCard = ({ data, onAccept, doctorLocation }) => {
     const isAccepted = data.status === 'ACCEPTED';
-    const distanceKm = calculateDistance(DOCTOR_LOCATION, data.location).toFixed(1);
+    const center = doctorLocation || { lat: 12.9716, lng: 77.5946 };
+    const distanceKm = calculateDistance(center, data.location).toFixed(1);
 
     return (
         <div style={{
             display: 'grid', gridTemplateColumns: '80px 1fr 200px',
-            background: (isAccepted || isProcessing) ? '#f0fdfa' : 'white',
-            border: (isAccepted || isProcessing) ? '1px solid #0f766e' : '1px solid #e2e8f0',
-            borderLeft: (isAccepted || isProcessing) ? '5px solid #0f766e' : '5px solid #ef4444',
+            background: (isAccepted) ? '#f0fdfa' : 'white',
+            border: (isAccepted) ? '1px solid #0f766e' : '1px solid #e2e8f0',
+            borderLeft: (isAccepted) ? '5px solid #0f766e' : '5px solid #ef4444',
             borderRadius: '12px', overflow: 'hidden',
             boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-            transition: 'all 0.3s ease',
-            opacity: isProcessing ? 0.8 : 1
+            transition: 'all 0.3s ease'
         }}>
             {/* Left: Icon */}
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: (isAccepted || isProcessing) ? '#ccfbf1' : '#fef2f2'
+                background: (isAccepted) ? '#ccfbf1' : '#fef2f2'
             }}>
-                {(isAccepted || isProcessing) ?
-                    <CheckCircle size={32} color="#0f766e" className={isProcessing ? "spin-animation" : ""} /> :
+                {(isAccepted) ?
+                    <CheckCircle size={32} color="#0f766e" /> :
                     <AlertOctagon size={32} color="#ef4444" />
                 }
             </div>
@@ -270,12 +297,7 @@ const EmergencyCard = ({ data, onAccept, isProcessing }) => {
                 display: 'flex', flexDirection: 'column', gap: '10px',
                 justifyContent: 'center', borderLeft: '1px solid #f1f5f9'
             }}>
-                {isProcessing ? (
-                    <div style={{ textAlign: 'center', color: '#0f766e', fontWeight: '600' }}>
-                        <div style={{ marginBottom: '4px' }}>Initializing...</div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 'normal', color: '#115e59' }}>Setting up console</div>
-                    </div>
-                ) : isAccepted ? (
+                {isAccepted ? (
                     <div style={{ textAlign: 'center', color: '#0f766e', fontWeight: '600' }}>
                         Case Accepted
                         <div style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>Redirecting to map...</div>

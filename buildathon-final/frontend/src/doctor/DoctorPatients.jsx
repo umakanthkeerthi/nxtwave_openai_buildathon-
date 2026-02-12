@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Activity, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Search, Eye, AlertCircle, Activity } from 'lucide-react';
 
 const MOCK_PATIENTS = [
     { id: 'P-101', name: 'Rahul Verma', age: 45, gender: 'M', lastVisit: '2 days ago', condition: 'Angina Pectoris', risk: 'High', type: 'Emergency' },
@@ -12,34 +13,42 @@ const MOCK_PATIENTS = [
 ];
 
 const DoctorPatients = () => {
+    const { currentUser } = useAuth(); // [FIX] Use Auth
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('All');
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // TODO: Get real doctor ID
-    const DOCTOR_ID = "doc_mock_001";
-
     useEffect(() => {
         const fetchPatients = async () => {
+            if (!currentUser) return;
+
+            // [FIX] Use real ID
+            const DOCTOR_ID = currentUser.doctor_id || currentUser.uid;
+            console.log("DEBUG: Fetching patients for:", DOCTOR_ID);
+
             try {
-                const response = await fetch(`/get_patients?doctor_id=${DOCTOR_ID}`);
+                const response = await fetch(`http://localhost:8004/get_patients?doctor_id=${DOCTOR_ID}`);
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
+                console.log("DEBUG: DoctorPatients fetched:", data);
 
                 // Transform Backend Data (Patient Snapshot)
                 const formatted = data.map(p => ({
                     id: p.id,
-                    // If snapshot data is missing, provide fallbacks
                     name: p.name || p.id,
                     age: p.age || "?",
                     gender: p.gender || "?",
-                    lastVisit: 'Recently', // We don't track this yet in snapshot
-                    condition: 'Under Observation', // Placeholder until we have diagnosis history
-                    risk: 'Medium', // Default risk
-                    type: 'Active'
+                    lastVisit: p.lastVisit ? new Date(p.lastVisit).toLocaleDateString() : 'Recently',
+                    condition: p.condition || 'Under Observation',
+                    risk: p.risk || 'Medium',
+                    mode: p.mode || "Video", // [FIX] Map mode
+                    type: (p.status === 'CONSULTATION_ENDED' || p.status === 'COMPLETED') ? 'Completed' : (p.status === 'APPOINTMENT_IN_PROGRESS' ? 'In Progress' : 'Active'),
+                    caseId: p.caseId,
+                    appointmentId: p.appointmentId
                 }));
+                console.log("DEBUG: Formatted Patients:", formatted);
                 setPatients(formatted);
             } catch (error) {
                 console.error("Error fetching patients:", error);
@@ -49,7 +58,7 @@ const DoctorPatients = () => {
         };
 
         fetchPatients();
-    }, []);
+    }, [currentUser]); // [FIX] Re-run when user loads
 
     const filteredPatients = patients.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -164,7 +173,16 @@ const DoctorPatients = () => {
                                 </td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
                                     <button
-                                        onClick={() => navigate(`/doctor/patients/${patient.id}`)}
+                                        onClick={() => navigate(`/doctor/patients/${patient.id}`, {
+                                            state: {
+                                                patientData: {
+                                                    ...patient,
+                                                    caseId: patient.caseId,
+                                                    appointmentId: patient.appointmentId,
+                                                    mode: patient.mode // [FIX] Pass mode
+                                                }
+                                            }
+                                        })}
                                         style={{
                                             padding: '8px', border: '1px solid #e2e8f0', borderRadius: '6px',
                                             background: 'white', color: '#64748b', cursor: 'pointer'

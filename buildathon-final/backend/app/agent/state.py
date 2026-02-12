@@ -35,6 +35,7 @@ class TriageState(TypedDict):
     # Medical Records & Booking (Phase 1.5)
     # V1.0 Schema Additions
     case_id: Optional[str] # Golden Spine
+    user_id: Optional[str] # Account Owner ID
     profile_id: Optional[str] # Linked to 'profiles' collection
     slot_id: Optional[str] # Linked to 'doctor_slots' collection
     
@@ -56,3 +57,7 @@ class TriageState(TypedDict):
 
     # Meta
     session_id: str
+    
+    # [NEW] Linked Summaries
+    pre_doctor_consultation_summary_id: Optional[str]
+    pre_doctor_summary_id: Optional[str]

@@ -26,6 +26,20 @@ class DoctorConsultationSubgraph:
         if slot.get("status") != "AVAILABLE":
              print(f"ERROR: Slot {slot_id} is {slot.get('status')}")
              return {"booking_status": "failed", "final_advice": "Selected slot is no longer available."}
+
+        # [NEW] Check for Expired Slots
+        try:
+            # Parse slot date and time (Assume format YYYY-MM-DD and HH:MM)
+            slot_date_str = slot.get("date")
+            slot_time_str = slot.get("start_time")
+            
+            if slot_date_str and slot_time_str:
+                slot_datetime = datetime.strptime(f"{slot_date_str} {slot_time_str}", "%Y-%m-%d %H:%M")
+                if slot_datetime < datetime.now():
+                    print(f"ERROR: Slot {slot_id} is in the past ({slot_datetime}).")
+                    return {"booking_status": "failed", "final_advice": "Selected slot has expired."}
+        except Exception as e:
+            print(f"WARN: Could not validate slot time: {e}")
              
         return {"booking_status": "available"}
 
@@ -56,13 +70,17 @@ class DoctorConsultationSubgraph:
         Creates 'appointments' doc and updates 'doctor_slots' & 'cases'.
         """
         try:
-            print("DEBUG: Executing book_appointment_node")
+            print("DEBUG: Executing book_appointment_node", flush=True)
+            print(f"DEBUG STATE: {state}", flush=True)
+            
             # inputs
             case_id = state.get("case_id")
             
             print(f"DEBUG: book_appointment_node case_id={case_id}")
             
             profile_id = state.get("profile_id") or state.get("session_id", "anon_profile")
+            user_id = state.get("user_id") # [NEW] Account Owner ID
+            print(f"DEBUG: profile_id={profile_id}, user_id={user_id}")
             doctor_id = state.get("doctor_id")
             slot_id = state.get("slot_id")
             
@@ -76,7 +94,9 @@ class DoctorConsultationSubgraph:
             appointment_record = {
                 "appointment_id": appt_id,
                 "case_id": case_id,
-                "profile_id": profile_id,
+                "pre_doctor_consultation_summary_id": state.get("pre_doctor_consultation_summary_id"), # [NEW] Linked Summary
+                "profile_id": profile_id, # Patient (Family Member)
+                "user_id": user_id,       # Account Owner (Access Control)
                 "doctor_id": doctor_id,
                 "slot_id": slot_id,
                 "status": "SCHEDULED", # V1.0 Standard

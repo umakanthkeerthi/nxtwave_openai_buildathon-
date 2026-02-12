@@ -10,7 +10,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 
 const DoctorDirectory = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, selectedProfile } = useAuth(); // [UPDATED] Use selectedProfile
     const navigate = useNavigate();
     const location = useLocation();
     const [searchTerm, setSearchTerm] = useState('');
@@ -78,16 +78,42 @@ const DoctorDirectory = () => {
 
     const handleConfirmBooking = async (details) => {
         console.log("Booking details:", details);
+
+        // [FIX] Priority Logic for Profile ID:
+        // 1. Use currently selected profile (e.g. if user switched to "Mom")
+        // 2. If no selection, try to find "Self" profile in list
+        // 3. Fallback to User ID (Account Owner)
+
+        // [FIX] Use the mandatory selected profile (enforced by ProtectedRoute)
+        const targetProfileId = selectedProfile?.profile_id || selectedProfile?.id;
+        const targetName = selectedProfile?.fullName || currentUser?.displayName || "Anonymous Patient";
+        const targetAge = selectedProfile?.age || "??";
+        const targetGender = selectedProfile?.gender || "??";
+
+        console.log("Booking for Profile:", targetProfileId, targetName);
+
+        if (!targetProfileId) {
+            console.error("Critical Error: No Profile ID found even after protection.");
+            alert("Session Error: Please re-select your profile.");
+            navigate('/profiles');
+            return;
+        }
+
         try {
             await fetch('/book_appointment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     session_id: location.state?.summary?.caseId || "session_" + Date.now(),
-                    patient_id: currentUser?.uid || "guest_" + Date.now(),
-                    patient_name: currentUser?.profile?.fullName || currentUser?.displayName || "Anonymous Patient",
-                    patient_age: currentUser?.profile?.age || "??",
-                    patient_gender: currentUser?.profile?.gender || "??",
+                    patient_id: targetProfileId, // Use resolved ID
+                    user_id: currentUser?.uid || null, // Always Owner
+                    profile_id: targetProfileId,       // Always resolved Profile ID
+                    pre_doctor_consultation_summary_id: location.state?.pre_doctor_summary_id, // [New] Linked Summary
+
+                    patient_name: targetName,
+                    patient_age: targetAge,
+                    patient_gender: targetGender,
+
                     doctor_id: details.doctor.id,
                     slot_id: details.slot_id, // [V1.0] Critical
                     appointment_time: details.date + " " + details.time,

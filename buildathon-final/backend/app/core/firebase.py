@@ -18,11 +18,16 @@ class FirebaseService:
         
         if FIREBASE_AVAILABLE and cred_path and os.path.exists(cred_path):
             try:
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
+                # [FIX] Check if already initialized to avoid "Default app already exists" error
+                if not firebase_admin._apps:
+                    cred = credentials.Certificate(cred_path)
+                    firebase_admin.initialize_app(cred)
+                    print("SUCCESS: Firebase initialized (New App).")
+                else:
+                    print("SUCCESS: Firebase already initialized (Using Existing).")
+                
                 self.db = firestore.client()
                 self.mock_mode = False
-                print("SUCCESS: Firebase initialized in LIVE mode.")
             except Exception as e:
                 print(f"ERROR: Firebase init failed: {e}. Switching to MOCK mode.")
         else:
@@ -146,7 +151,14 @@ class FirebaseService:
                     snapshot = apt.get("patient_snapshot", {})
                     apt["patient_name"] = snapshot.get("name") or apt.get("patient_name") or "Unknown"
                     apt["patient_age"] = snapshot.get("age") or apt.get("patient_age")
+                    apt["patient_age"] = snapshot.get("age") or apt.get("patient_age")
                     apt["patient_gender"] = snapshot.get("gender") or apt.get("patient_gender")
+
+                # [FIX] Injection of calculated fields for Doctor Dashboard
+                if apt.get("is_emergency") is True:
+                    apt["severity"] = "red"
+                else:
+                    apt["severity"] = "green"
 
                 # 2. Enlighten Doctor Info (for Patients)
                 if patient_id:
@@ -187,8 +199,13 @@ class FirebaseService:
                     pid = data.get("patient_id")
                     if pid and pid not in unique_patients:
                         # Use the snapshot if available, otherwise just ID
-                        unique_patients[pid] = data.get("patient_snapshot", {"name": "Unknown", "age": "?", "gender": "?"})
-                        unique_patients[pid]["id"] = pid
+                        pat_data = data.get("patient_snapshot", {"name": "Unknown", "age": "?", "gender": "?"})
+                        pat_data["id"] = pid
+                        # [FIX] Inject latest appointment context for "My Patients" list
+                        pat_data["mode"] = data.get("mode", "Video")
+                        pat_data["appointmentId"] = doc.id
+                        pat_data["caseId"] = data.get("case_id")
+                        unique_patients[pid] = pat_data
                 
                 return list(unique_patients.values())
             except Exception as e:
@@ -255,6 +272,7 @@ class FirebaseService:
                                 "pre_doctor_consultation_summary": summary_payload
                             },
                             "source_type": "appointment",
+                            "status": apt_data.get("status"), # [FIX] Lift status for filtering
                             "appointment_details": apt_data # Keep original data
                         })
                         
@@ -266,8 +284,7 @@ class FirebaseService:
                     e for e in emergencies 
                     if e.get("status") not in ["CONSULTATION_ENDED", "COMPLETED"]
                 ]
-
-                print(f"DEBUG: Returning {len(active_emergencies)} active emergencies (filtered from {len(emergencies)})")
+                
                 return active_emergencies
             except Exception as e:
                 print(f"Firebase Emergency Error: {e}")
@@ -366,19 +383,27 @@ class FirebaseService:
         else:
             return self.get_document("doctors", doctor_id)
 
-    def get_doctor_slots(self, doctor_id: str):
+    def update_doctor(self, doctor_id: str, data: dict):
+        """
+        Update doctor profile data.
+        """
+        return self.update_document("doctors", doctor_id, data)
+
+    def get_doctor_slots(self, doctor_id: str, status: str = "AVAILABLE"):
         """
         Fetch available slots for a specific doctor.
+        If status="ALL", returns all slots.
         """
         if self.mock_mode:
             print(f"[MOCK FIREBASE] Fetching slots for {doctor_id}.")
             return []
         else:
             try:
-                # Only show AVAILABLE slots
-                query = self.db.collection("doctor_slots")\
-                    .where("doctor_id", "==", doctor_id)\
-                    .where("status", "==", "AVAILABLE")
+                query = self.db.collection("doctor_slots").where("doctor_id", "==", doctor_id)
+                
+                # Only apply status filter if NOT "ALL"
+                if status != "ALL":
+                    query = query.where("status", "==", status)
                 
                 docs = query.stream()
                 slots = [{**doc.to_dict(), "id": doc.id} for doc in docs]

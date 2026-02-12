@@ -27,7 +27,25 @@ const ClinicalChat = () => {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    const [sessionId] = useState(`CASE-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
+    const [sessionId, setSessionId] = useState(null);
+    const [isLoadingSession, setIsLoadingSession] = useState(true);
+
+    const [isTyping, setIsTyping] = useState(false);
+    const [typingText, setTypingText] = useState("Analyzing symptoms...");
+
+    // Cycling Text Effect
+    useEffect(() => {
+        let interval;
+        if (isTyping) {
+            const texts = ["Analyzing symptoms...", "Checking medical guidelines...", "Formulating response...", "Reviewing history..."];
+            let i = 0;
+            interval = setInterval(() => {
+                i = (i + 1) % texts.length;
+                setTypingText(texts[i]);
+            }, 1500);
+        }
+        return () => clearInterval(interval);
+    }, [isTyping]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,19 +53,51 @@ const ClinicalChat = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, isTyping]); // Scroll when typing starts too
+
+    // Initialize Session (Get Case ID from Backend)
+    useEffect(() => {
+        const initSession = async () => {
+            try {
+                // Check if we already have a case_id passed via navigation
+                if (location.state?.case_id) {
+                    setSessionId(location.state.case_id);
+                    setIsLoadingSession(false);
+                    return;
+                }
+
+                const res = await fetch('/init_session');
+                const data = await res.json();
+                if (data.case_id) {
+                    console.log("Initialized Session:", data.case_id);
+                    setSessionId(data.case_id);
+                }
+            } catch (err) {
+                console.error("Failed to init session:", err);
+                // Fallback (though ideally we should show error)
+                // [STANDARDIZED] Match backend format: CASE-{12_HEX_UPPER}
+                const randomHex = Math.random().toString(16).slice(2, 14).toUpperCase().padEnd(12, '0');
+                setSessionId(`CASE-${randomHex}`);
+            } finally {
+                setIsLoadingSession(false);
+            }
+        };
+        initSession();
+    }, []);
 
     // Load initial state from navigation if available
     useEffect(() => {
-        if (location.state?.initialInput) {
-            const timer = setTimeout(() => {
-                handleSend(location.state.initialInput);
-            }, 500);
-            return () => clearTimeout(timer);
-        } else {
-            setMessages([{ type: 'bot', text: 'Namaste! I am the AI Clinical Agent. Speak in your language. I will analyze your symptoms and provide NHSRC medical guidelines.' }]);
+        if (!isLoadingSession && sessionId) {
+            if (location.state?.initialInput) {
+                const timer = setTimeout(() => {
+                    handleSend(location.state.initialInput);
+                }, 500);
+                return () => clearTimeout(timer);
+            } else if (messages.length === 0) {
+                setMessages([{ type: 'bot', text: 'Namaste! I am the AI Clinical Agent. Speak in your language. I will analyze your symptoms and provide NHSRC medical guidelines.' }]);
+            }
         }
-    }, [location.state]);
+    }, [location.state, isLoadingSession, sessionId]);
 
     // Audio Recording Logic
     const startRecording = async () => {
@@ -155,6 +205,8 @@ const ClinicalChat = () => {
         setMessages(prev => [...prev, userMsg]);
         if (!overrideInput) setInput('');
 
+        setIsTyping(true); // START ANIMATION
+
         try {
             // Call Backend /chat
             const response = await fetch('/chat', {
@@ -170,6 +222,7 @@ const ClinicalChat = () => {
             });
 
             const data = await response.json();
+            setIsTyping(false); // STOP ANIMATION
 
             // Sticky Language Logic:
             // If we were in Auto-detect mode, and the backend detected a language, LOCK IT IN.
@@ -186,27 +239,14 @@ const ClinicalChat = () => {
             // Check for Emergency
             if (data.response.includes("EMERGENCY DETECTED") || data.decision === "EMERGENCY") {
 
-                // [NEW] Auto-Save Emergency Record if payload exists
-                if (data.summary_payload) {
-                    try {
-                        console.log("Saving Emergency Payload...", data.summary_payload);
-                        await fetch('/save_summary', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                patient_id: selectedProfile?.id || currentUser?.uid, // Use Profile ID
-                                patient_summary: "Emergency Detected - Auto Saved",
-                                pre_doctor_consultation_summary: data.summary_payload,
-                                patient_profile: { name: selectedProfile?.fullName || currentUser?.displayName || "Unknown" }
-                            })
-                        });
-                    } catch (e) {
-                        console.error("Failed to save emergency record:", e);
-                    }
-                }
-
+                // [MODIFIED] Do NOT auto-save here. Pass payload to EmergencyPage.
                 setTimeout(() => {
-                    navigate('/patient/emergency');
+                    navigate('/patient/emergency', {
+                        state: {
+                            summary_payload: data.summary_payload,
+                            case_id: sessionId
+                        }
+                    });
                 }, 2000); // 2s delay
             }
             // Check for Completion
@@ -218,8 +258,15 @@ const ClinicalChat = () => {
             }
 
         } catch (error) {
-            console.error("Chat Error:", error);
-            setMessages(prev => [...prev, { type: 'bot', text: "Sorry, I am having trouble connecting to the server." }]);
+            console.error("Chat Error Details:", error);
+            setIsTyping(false); // STOP ANIMATION ON ERROR
+            // Check if response is available
+            if (error.response) {
+                console.error("Response Status:", error.response.status);
+                console.error("Response Text:", await error.response.text());
+            }
+            alert(`Chat Error: ${error.message}`);
+            setMessages(prev => [...prev, { type: 'bot', text: `Sorry, I am having trouble connecting to the server. (${error.message})` }]);
         }
     };
 
@@ -241,7 +288,7 @@ const ClinicalChat = () => {
             const redFlags = data.pre_doctor_consultation_summary?.red_flags || data.red_flags || [];
 
             const summaryData = {
-                caseId: "CASE-" + Date.now().toString().slice(-6),
+                caseId: sessionId, // [FIXED] Use the standardized session ID
                 color: data.patient_summary?.triage_level || "Green",
                 triage: (data.patient_summary?.triage_level === "Red") ? "Emergency" : "Non-Emergency",
                 chiefComplaints: [data.pre_doctor_consultation_summary?.trigger_reason || "Reported Symptoms"], // Use trigger reason as specific complaint
@@ -317,6 +364,20 @@ const ClinicalChat = () => {
                     </motion.div>
                 ))}
 
+                {/* VISUAL TYPING INDICATOR */}
+                {isTyping && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="typing-indicator"
+                    >
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                        <span style={{ marginLeft: '8px' }}>{typingText}</span>
+                    </motion.div>
+                )}
+
                 {/* Visual Indicator for Recording */}
                 {isRecording && (
                     <motion.div
@@ -367,7 +428,7 @@ const ClinicalChat = () => {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                         placeholder={isRecording ? "Listening..." : "Type symptoms..."}
-                        disabled={isRecording || isProcessingAudio}
+                        disabled={isRecording || isProcessingAudio || isTyping}
                     />
                 </div>
 
@@ -375,7 +436,7 @@ const ClinicalChat = () => {
                     className="icon-btn send"
                     whileTap={{ scale: 0.9 }}
                     onClick={() => handleSend()}
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || isTyping}
                 >
                     <Send size={20} />
                 </motion.button>

@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     User, Clock, DollarSign, Shield, Video, MapPin,
-    CheckCircle, Save, Calendar
+    CheckCircle, Save, Calendar, Loader
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const DoctorProfile = () => {
+    const { currentUser } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
     const [status, setStatus] = useState({ online: true, emergency: false });
     const [profile, setProfile] = useState({
-        name: "Dr. A. Sharma",
-        specialty: "Cardiologist",
-        experience: "12 Years",
-        fees: "800",
-        about: "Senior Cardiologist with expertise in interventional cardiology and heart failure management.",
+        name: "",
+        specialty: "",
+        experience: "",
+        fees: "",
+        about: "",
         modes: { video: true, offline: true }
     });
 
@@ -25,11 +30,102 @@ const DoctorProfile = () => {
         { day: 'Sun', active: false, start: '', end: '' },
     ]);
 
+    // Fetch Profile on Mount
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!currentUser?.doctor_id) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:8004/get_doctor?doctor_id=${currentUser.doctor_id}`);
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Merge with defaults
+                    setProfile({
+                        name: data.name || currentUser.displayName || "Doctor",
+                        specialty: data.specialization || "",
+                        experience: data.experience || "",
+                        fees: data.consultation_fees || "",
+                        about: data.about || "",
+                        modes: data.consultation_modes || { video: true, offline: true }
+                    });
+
+                    if (data.schedule) {
+                        setSchedule(data.schedule);
+                    }
+
+                    if (data.status_flags) {
+                        setStatus(data.status_flags);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, [currentUser]);
+
+    const handleSave = async () => {
+        if (!currentUser?.doctor_id) return;
+        setSaving(true);
+        try {
+            const payload = {
+                doctor_id: currentUser.doctor_id,
+                data: {
+                    name: profile.name,
+                    specialization: profile.specialty,
+                    experience: profile.experience,
+                    consultation_fees: profile.fees,
+                    about: profile.about,
+                    consultation_modes: profile.modes,
+                    schedule: schedule,
+                    status_flags: status
+                }
+            };
+
+            const res = await fetch('http://localhost:8004/update_doctor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert("Profile and Schedule Saved Successfully!");
+            } else {
+                alert("Failed to save profile.");
+            }
+        } catch (error) {
+            console.error("Error saving profile:", error);
+            alert("Error saving profile.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleScheduleChange = (index, field, value) => {
         const newSchedule = [...schedule];
         newSchedule[index][field] = value;
         setSchedule(newSchedule);
     };
+
+    if (loading) {
+        return (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>
+                <Loader className="spin" size={32} style={{ margin: '0 auto 1rem' }} />
+                <p>Loading Profile...</p>
+                <style>{`
+                    .spin { animation: spin 1s linear infinite; }
+                    @keyframes spin { 100% { transform: rotate(360deg); } }
+                `}</style>
+            </div>
+        );
+    }
 
     return (
         <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '2rem' }}>
@@ -38,12 +134,17 @@ const DoctorProfile = () => {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>Profile & Availability</h1>
                     <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>Manage your professional details and working hours</p>
                 </div>
-                <button style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '10px 20px', background: '#0f766e', border: 'none',
-                    borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer'
-                }}>
-                    <Save size={18} /> Save Changes
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '10px 20px', background: saving ? '#94a3b8' : '#0f766e', border: 'none',
+                        borderRadius: '8px', color: 'white', fontWeight: '600', cursor: saving ? 'wait' : 'pointer'
+                    }}
+                >
+                    {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                    {saving ? 'Saving...' : 'Save Changes'}
                 </button>
             </div>
 

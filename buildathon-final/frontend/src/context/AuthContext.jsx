@@ -6,7 +6,7 @@ import {
     onAuthStateChanged,
     signInWithPopup
 } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'; // [UPDATED]
+import { doc, getDoc, collection, query, where, getDocs, setDoc } from 'firebase/firestore'; // [UPDATED]
 import { auth, googleProvider, db } from '../firebase';
 
 const AuthContext = createContext();
@@ -63,7 +63,32 @@ export function AuthProvider({ children }) {
                     // 1. Fetch User Doc (Role, etc.)
                     const userDocRef = doc(db, "users", user.uid);
                     const userDocSnap = await getDoc(userDocRef);
-                    const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+                    let userData = userDocSnap.exists() ? userDocSnap.data() : {};
+
+                    // [NEW] Auto-Link Logic for Pre-Seeded Doctors
+                    if (!userData.doctor_id && user.email) {
+                        try {
+                            const doctorsRef = collection(db, "doctors");
+                            const q = query(doctorsRef, where("email", "==", user.email));
+                            const querySnapshot = await getDocs(q);
+
+                            if (!querySnapshot.empty) {
+                                const docData = querySnapshot.docs[0].data();
+                                const foundDoctorId = docData.doctor_id || querySnapshot.docs[0].id;
+                                console.log(`AuthContext: Auto-linking ${user.email} -> ${foundDoctorId}`);
+
+                                // 1. Save to User Profile
+                                await setDoc(userDocRef, { doctor_id: foundDoctorId }, { merge: true });
+
+                                // 2. Update local state
+                                userData.doctor_id = foundDoctorId;
+                            }
+                        } catch (linkErr) {
+                            console.error("AuthContext: Auto-link failed", linkErr);
+                        }
+                    }
+
+
 
                     // 2. Fetch Profiles Collection (V1.0 Schema)
                     const profilesRef = collection(db, "profiles");
@@ -76,7 +101,16 @@ export function AuthProvider({ children }) {
                     });
 
                     // Attach profiles to currentUser object for easy access
-                    const userWithProfiles = { ...user, ...userData, profiles: profiles };
+                    // [FIX] Explicitly copy core Auth fields because {...user} might miss non-enumerable properties
+                    const userWithProfiles = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        ...userData,
+                        profiles: profiles,
+                        _authObject: user // Keep original just in case
+                    };
                     setCurrentUser(userWithProfiles);
 
                     // 3. Auto-restore selected profile

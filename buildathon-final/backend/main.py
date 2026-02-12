@@ -23,6 +23,8 @@ class ChatRequest(BaseModel):
     message: str
     session_id: str
     target_language: Optional[str] = "English"
+    case_id: Optional[str] = None # [NEW]
+    profile_id: Optional[str] = None # [NEW]
 
 class ChatResponse(BaseModel):
     response: str
@@ -32,15 +34,21 @@ class ChatResponse(BaseModel):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
-    print(f"DEBUG: Chat endpoint called. Target: '{req.target_language}', Message: '{req.message[:20]}...'")
+    print(f"DEBUG: Chat endpoint called. Target: '{req.target_language}', Message: '{req.message[:20]}...'", flush=True)
     try:
         config = {"configurable": {"thread_id": req.session_id}}
         
         # Invoke Graph
-        result = await agent_graph.ainvoke(
-            {"messages": [HumanMessage(content=req.message)]}, 
-            config=config
-        )
+        # [FIX] Pass case_id and profile_id to state
+        initial_state = {
+            "messages": [HumanMessage(content=req.message)],
+            "case_id": req.case_id,
+            "profile_id": req.profile_id,
+            "user_id": req.profile_id, # Fallback/Assumption for user_id too if needed
+            "session_id": req.session_id
+        }
+        
+        result = await agent_graph.ainvoke(initial_state, config=config)
         
         raw_response = result.get("final_response", "Error generating response.")
         final_response = raw_response
@@ -269,6 +277,7 @@ async def generate_summary(req: SummaryRequest):
         
         1. "patient_summary": A complete, self-contained summary FOR THE PATIENT.
            - Language: {req.target_language}
+           - INSTRUCTION: BASE YOUR CLINICAL GUIDELINES STRICTLY ON **NHSRC (National Health Systems Resource Centre. India)** AND **WHO (World Health Organization)** PROTOCOLS.
            - Structure:
              - "clinical_guidelines": str (The reassuring advice text)
              - "symptoms_reported": [str] (List of symptoms acknowledged)
@@ -358,7 +367,8 @@ async def save_summary_endpoint(summary_data: dict):
         profile_id = summary_data.get("profile_id") or summary_data.get("patient_id", "anon_profile")
         
         fake_state: TriageState = {
-            "profile_id": profile_id, # [NEW]
+            "profile_id": profile_id,
+            "user_id": summary_data.get("user_id"), # [NEW] Account Owner
             "patient_profile": summary_data.get("patient_profile", {}),
             "triage_decision": summary_data.get("pre_doctor_consultation_summary", {}).get("assessment", {}).get("severity", "GREEN"),
             "final_advice": summary_data.get("patient_summary", ""),
@@ -375,30 +385,58 @@ async def save_summary_endpoint(summary_data: dict):
         print(f"Save Summary Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/init_session")
+async def init_session_endpoint():
+    """
+    Generates a new Case ID and Session ID.
+    Used by Frontend to start a fresh clinical session.
+    """
+    try:
+        # [STANDARDIZED] Format: CASE-{UUID}
+        # Old: CASE-{timestamp}-{short_uuid}
+        # New: CASE-{12_char_upper_hex}
+        # Using 12 chars provides 47 bits of entropy (16^12), sufficient for this scale without being too long.
+        unique_id = uuid.uuid4().hex[:12].upper()
+        case_id = f"CASE-{unique_id}"
+        
+        return {
+            "case_id": case_id,
+            "session_id": case_id # For now, session maps to case
+        }
+    except Exception as e:
+        print(f"Init Session Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/book_appointment")
 async def book_appointment_endpoint(booking_req: dict):
+    print(f"DEBUG: book_appointment_endpoint received: {booking_req}", flush=True)
     """
     Books an appointment using the Doctor Consultation Subgraph.
-    Input: { "profile_id": "...", "doctor_id": "...", "slot_id": "..." }
+    Input: { "profile_id": "...", "user_id": "...", "doctor_id": "...", "slot_id": "..." }
     """
     try:
         fake_state: TriageState = {
             "session_id": booking_req.get("patient_id", "anon_patient"),
-            "profile_id": booking_req.get("profile_id"), # [NEW]
-            "case_id": booking_req.get("session_id"), # Case ID from frontend
-            "triage_decision": booking_req.get("triage_decision", "PENDING"),
+            "profile_id": booking_req.get("profile_id"), # Patient (Family Member)
+            "user_id": booking_req.get("user_id"),       # Account Owner
+            "case_id": booking_req.get("session_id"), # Case ID from frontend (or passed as session_id)
+            "triage_decision": "EMERGENCY" if booking_req.get("is_emergency") else booking_req.get("triage_decision", "PENDING"),
             "doctor_id": booking_req.get("doctor_id"),
-            "slot_id": booking_req.get("slot_id"), # [NEW]
+            "slot_id": booking_req.get("slot_id"),
             "appointment_time": booking_req.get("appointment_time"),
             "consultation_mode": booking_req.get("consultation_mode"),
             "patient_name": booking_req.get("patient_name"),
             "patient_age": booking_req.get("patient_age"),
-            "patient_gender": booking_req.get("patient_gender")
+            "patient_gender": booking_req.get("patient_gender"),
+            "pre_doctor_consultation_summary_id": booking_req.get("pre_doctor_consultation_summary_id") # [NEW]
         }
         
         # Invoke Subgraph
         result = await doctor_consultation_graph.ainvoke(fake_state)
         return result
+    except Exception as e:
+        print(f"Booking Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         print(f"Booking Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -415,14 +453,22 @@ async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Opt
         target_id = profile_id or patient_id
         
         # Fetch from multiple V1.0 collections
+        # Fetch from multiple V1.0 collections
         summaries = firebase_service.get_records("case_ai_patient_summaries", target_id, case_id)
+        doctor_summaries = firebase_service.get_records("case_pre_doctor_summaries", target_id, case_id)
+        legacy_summaries = firebase_service.get_records("pre_doctor_consultation_summaries", target_id, case_id)
+        
+        # [NEW] Fetch Completed Consultation Data
+        case_prescriptions = firebase_service.get_records("case_prescriptions", target_id, case_id)
+        case_remarks = firebase_service.get_records("case_doctor_remarks", target_id, case_id)
+        
         prescriptions = firebase_service.get_records("prescriptions", target_id, case_id)
         lab_reports = firebase_service.get_records("lab_reports", target_id, case_id)
         
         # Compatibility: Allow fetching old 'medical_records' too if needed, or just merge
         # For V1.0 migration, we prioritize the new ones.
         
-        all_records = summaries + prescriptions + lab_reports
+        all_records = summaries + doctor_summaries + legacy_summaries + case_prescriptions + case_remarks + prescriptions + lab_reports
         
         # Sort by created_at desc
         all_records.sort(key=lambda x: x.get("created_at", ""), reverse=True)
@@ -432,31 +478,116 @@ async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Opt
         print(f"Get Records Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/get_case")
+async def get_case_endpoint(case_id: str):
+    """
+    Retrieves a single case by ID.
+    Used for status synchronization.
+    """
+    try:
+        case = firebase_service.get_case(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail="Case not found")
+        return case
+    except Exception as e:
+        print(f"Get Case Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/upload_record")
 async def upload_record_endpoint(record_data: dict):
     """
     Saves a new medical record to Firebase.
-    Input: { "patient_id": "...", "type": "...", "data": { ... } }
+    Input: { "patient_id": "...", "type": "...", "data": { ... }, "case_id": "..." }
     """
     try:
         patient_id = record_data.get("patient_id")
         record_type = record_data.get("type", "general")
         data_payload = record_data.get("data", {})
+        case_id = record_data.get("case_id") # [NEW]
         
         if not patient_id:
              raise HTTPException(status_code=400, detail="patient_id is required")
 
-        new_record = {
-            "record_id": str(uuid.uuid4()),
-            "patient_id": patient_id,
-            "case_id": f"MR-{uuid.uuid4().hex[:6].upper()}",
-            "type": record_type,
-            "data": data_payload,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        
-        firebase_service.save_record("medical_records", new_record)
-        return {"status": "success", "record_id": new_record["record_id"]}
+        # [SCHEMA CHANGE] Link to Case ID
+        # Validation: If case_id is None/Empty, generate a fallback "MR-" but ideally frontend should pass it.
+        final_case_id = case_id if case_id else f"MR-{uuid.uuid4().hex[:6].upper()}"
+
+        # [NEW] Common Metadata (Title/Doctor) - Extract from 'data' payload if present
+        # Frontend should send these inside 'data'
+        doc_name = data_payload.get("doctor") or data_payload.get("doctor_name") or "Unknown Doctor"
+        record_title = data_payload.get("title") or ("Prescription" if record_type == "PRESCRIPTION" else "Medical Record")
+
+        # [NEW] Split Collections Logic
+        if record_type == "PRESCRIPTION":
+            saved_ids = []
+            
+            # 1. Save Prescriptions (Medicines)
+            if data_payload.get("medicines"):
+                med_record = {
+                    "record_id": str(uuid.uuid4()),
+                    "patient_id": patient_id,
+                    "case_id": final_case_id,
+                    "type": "PRESCRIPTION_MEDICINES",
+                    "data": { 
+                        "medicines": data_payload["medicines"], 
+                        "timestamp": data_payload.get("timestamp"),
+                        "doctor": doc_name, # [FIX] Persist Doctor
+                        "title": "Prescription" # [FIX] Persist Title
+                    },
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                rid = firebase_service.save_record("case_prescriptions", med_record)
+                if rid:
+                    saved_ids.append(rid)
+
+            # 2. Save Doctor Remarks (Notes & Advice)
+            if data_payload.get("remarks") or data_payload.get("advice"):
+                notes_record = {
+                    "record_id": str(uuid.uuid4()),
+                    "patient_id": patient_id,
+                    "case_id": final_case_id,
+                    "type": "DOCTOR_REMARKS",
+                    "data": { 
+                        "remarks": data_payload.get("remarks"), 
+                        "advice": data_payload.get("advice"),
+                        "timestamp": data_payload.get("timestamp"),
+                         "doctor": doc_name, # [FIX] Persist Doctor
+                        "title": "Clinical Notes" # [FIX] Persist Title
+                    },
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                rid = firebase_service.save_record("case_doctor_remarks", notes_record)
+                if rid:
+                    saved_ids.append(rid)
+            
+            if not saved_ids:
+                 print("DEBUG: No medicines or remarks found in payload.")
+                 # Don't error out, maybe they just clicked submit empty?
+                 # But let's return success with warning
+                 return {"status": "success", "message": "No data to save", "generated_ids": []}
+
+            return {"status": "success", "generated_ids": saved_ids, "message": "Saved to separate collections"}
+
+        else:
+            # Default / Fallback for other types (e.g., generic medical records)
+            new_record = {
+                "record_id": str(uuid.uuid4()),
+                "patient_id": patient_id,
+                "case_id": final_case_id,
+                "type": record_type,
+                "data": {
+                    **data_payload,
+                    "doctor": doc_name, # [FIX]
+                    "title": record_title # [FIX]
+                },
+                "created_at": datetime.utcnow().isoformat()
+            }
+            
+            rid = firebase_service.save_record("medical_records", new_record)
+            if not rid:
+                raise HTTPException(status_code=500, detail="Database Save Failed")
+                
+            return {"status": "success", "record_id": new_record["record_id"]}
     except Exception as e:
         print(f"Upload Record Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -484,14 +615,66 @@ async def get_location_endpoint(lat: float, lon: float):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/get_appointments")
-async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id: Optional[str] = None):
+async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id: Optional[str] = None, user_id: Optional[str] = None):
     try:
-        print(f"DEBUG get_appointments: doctor_id={doctor_id}, patient_id={patient_id}")
-        result = firebase_service.get_appointments(doctor_id, patient_id)
+        print(f"DEBUG get_appointments: doctor_id={doctor_id}, patient_id={patient_id}, user_id={user_id}")
+        result = firebase_service.get_appointments(doctor_id, patient_id, user_id)
         print(f"DEBUG get_appointments: returning {len(result)} appointments")
         return result
     except Exception as e:
         print(f"Get Appointments Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/get_patients")
+async def get_patients_endpoint(doctor_id: str):
+    """
+    Retrieves a list of unique patients for a doctor based on their appointments.
+    """
+    try:
+        # 1. Get all appointments for this doctor
+        appointments = firebase_service.get_appointments(doctor_id=doctor_id)
+        
+        # 2. Extract Unique Patients
+        patients_map = {}
+        for apt in appointments:
+            # 1. Resolve Patient ID
+            # Priority: profile_id (V1) > patient_snapshot.id > patient_id (Legacy)
+            snapshot = apt.get("patient_snapshot", {})
+            pid = apt.get("profile_id") or snapshot.get("profile_id") or snapshot.get("id") or apt.get("patient_id")
+            
+            if not pid:
+                continue
+                
+            # If already exists, maybe update 'lastVisit' if this apt is newer
+            # For now, just ensure we have the patient details
+            if pid not in patients_map:
+                # 2. Resolve Patient Details
+                name =  apt.get("patient_name") or snapshot.get("name") or "Unknown"
+                age = apt.get("patient_age") or snapshot.get("age") or "?"
+                gender = apt.get("patient_gender") or snapshot.get("gender") or "?"
+                
+                patients_map[pid] = {
+                    "id": pid,
+                    "name": name,
+                    "age": age,
+                    "gender": gender,
+                    "lastVisit": apt.get("appointment_time") or apt.get("slot_time") or "Recently",
+                    "condition": apt.get("reason") or "Routine Checkup",
+                    "risk": "Medium",
+                    "type": "Active",
+                    "status": apt.get("status", "SCHEDULED"),
+                    "caseId": apt.get("case_id"),
+                    "appointmentId": apt.get("id")
+                }
+            else:
+                 # Update status if this appointment is more recent or critical?
+                 if apt.get("status") == "APPOINTMENT_IN_PROGRESS":
+                     patients_map[pid]["status"] = "In Progress"
+        
+        return list(patients_map.values())
+
+    except Exception as e:
+        print(f"Get Patients Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/debug/firebase_status")
@@ -513,8 +696,20 @@ async def get_patients_endpoint(doctor_id: str):
 @app.get("/get_emergencies")
 async def get_emergencies_endpoint():
     try:
-        return firebase_service.get_emergencies()
+        raw_emergencies = firebase_service.get_emergencies()
+        # [FIX] Force filter in main.py to ensure completed cases are removed
+        emergencies = []
+        for e in raw_emergencies:
+            # Check top-level status or nested appointment status
+            status = e.get("status") or e.get("appointment_details", {}).get("status")
+            if status not in ["CONSULTATION_ENDED", "COMPLETED"]:
+                emergencies.append(e)
+            else:
+                 print(f"DEBUG MAIN: Filtered out {e.get('id')} with status {status}")
+                 
+        return emergencies
     except Exception as e:
+        # [FORCE RELOAD 4]
         print(f"Get Emergencies Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -559,6 +754,41 @@ async def get_doctor_endpoint(doctor_id: str):
         return doctor
     except Exception as e:
         print(f"Get Doctor Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/update_doctor")
+async def update_doctor_endpoint(doctor_data: dict):
+    """
+    Updates doctor profile data.
+    Input: { "doctor_id": "...", "data": { ... } }
+    """
+    try:
+        doctor_id = doctor_data.get("doctor_id")
+        updates = doctor_data.get("data", {})
+        
+        if not doctor_id:
+             raise HTTPException(status_code=400, detail="doctor_id is required")
+
+        success = firebase_service.update_doctor(doctor_id, updates)
+        if success:
+            return {"status": "success", "message": "Doctor profile updated"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update doctor profile")
+    except Exception as e:
+        print(f"Update Doctor Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/update_case_status")
+async def update_case_status_endpoint(case_id: str, status: str):
+    """
+    Updates the status of a case and ensures timestamps are current.
+    """
+    try:
+        print(f"DEBUG: Updating case {case_id} status to {status}")
+        result = firebase_service.update_case_status(case_id, status)
+        return result
+    except Exception as e:
+        print(f"Update Case Status Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/create_slot")
@@ -681,12 +911,13 @@ async def create_slots_batch_endpoint(req: BatchSlotRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/get_slots")
-async def get_slots_endpoint(doctor_id: str):
+async def get_slots_endpoint(doctor_id: str, status: Optional[str] = "AVAILABLE"):
     """
-    Returns available slots for a doctor.
+    Returns slots for a doctor. Defaults to "AVAILABLE".
+    Pass status="ALL" to get booked/expired slots too.
     """
     try:
-        slots = firebase_service.get_doctor_slots(doctor_id)
+        slots = firebase_service.get_doctor_slots(doctor_id, status=status)
         return {"slots": slots}
     except Exception as e:
         print(f"Get Slots Error: {e}")
@@ -706,6 +937,24 @@ async def get_appointments_endpoint(doctor_id: Optional[str] = None, patient_id:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/update_appointment_status")
+async def update_appointment_status_endpoint(appointment_id: str, status: str):
+    """
+    Updates the status of an appointment (e.g. to APPOINTMENT_IN_PROGRESS).
+    """
+    try:
+        print(f"DEBUG: Updating appointment {appointment_id} status to {status}")
+        success = firebase_service.update_record("appointments", appointment_id, {"status": status})
+        
+        if success:
+            return {"status": "success", "message": "Appointment status updated"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update appointment in Firebase")
+    except Exception as e:
+        print(f"Update Appointment Status Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8003, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8004, reload=True)
