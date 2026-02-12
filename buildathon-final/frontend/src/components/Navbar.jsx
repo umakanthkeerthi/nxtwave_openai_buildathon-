@@ -42,9 +42,9 @@ const Navbar = () => {
                 </Link>
 
                 <div className="desktop-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                    <NavItem to="/patient/pharmacy" icon={<Pill size={18} />} label="Pharmacy" />
                     <NavItem to="/patient/medical-files" icon={<Activity size={18} />} label="Medical Files" />
                     <NavItem to="/patient/consult" icon={<Stethoscope size={18} />} label="Consult Doctor" />
-                    <NavItem to="/patient/pharmacy" icon={<Pill size={18} />} label="Pharmacy" />
                     <NavItem to="/patient/medications" icon={<Activity size={18} />} label="Medications" />
                 </div>
 
@@ -92,9 +92,9 @@ const Navbar = () => {
 
             {/* Mobile Bottom Navigation */}
             <div className="mobile-nav">
+                <NavItem to="/patient/pharmacy" icon={<Pill size={20} />} label="Pharmacy" />
                 <NavItem to="/patient/medical-files" icon={<Activity size={20} />} label="Files" />
                 <NavItem to="/patient/consult" icon={<Stethoscope size={20} />} label="Consult" />
-                <NavItem to="/patient/pharmacy" icon={<Pill size={20} />} label="Pharmacy" />
                 <NavItem to="/patient/medications" icon={<Activity size={20} />} label="Meds" />
             </div>
         </>
