@@ -25,22 +25,16 @@ from chromadb.utils import embedding_functions
 
 @app.on_event("startup")
 async def startup_event():
-    print("⬇️ STARTUP: Pre-loading ChromaDB Embedding Model...")
+    print("⬇️ STARTUP: Pre-loading ChromaDB Embedding Model (FastEmbed)...")
     try:
-        # Check if local model exists (for Render caching)
-        local_model_path = os.path.join(settings.project_root, "app", "models", "all-MiniLM-L6-v2")
-        if os.path.exists(local_model_path):
-             print(f"📂 Loading embedding model from LOCAL CACHE: {local_model_path}")
-             ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=local_model_path)
-        else:
-             print("☁️ Local model not found. Downloading from HuggingFace...")
-             ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-
-        # Run dummy inference to ensure weights are loaded
+        # Load lightweight FastEmbed model (uses ONNX, no PyTorch)
+        # It downloads a small ~22MB quantized model automatically
+        from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
+        ef = ONNXMiniLM_L6_V2()
         ef(["test"])
-        print("✅ STARTUP: Model loaded successfully.")
+        print("✅ STARTUP: FastEmbed Model loaded successfully.")
     except Exception as e:
-        print(f"⚠️ STARTUP WARNING: Model load failed (will retry on first request): {e}")
+        print(f"⚠️ STARTUP WARNING: FastEmbed load failed: {e}")
 async def root():
     return {"status": "ok", "message": "Agentic Doctor Backend Running"}
 

@@ -14,4 +14,4 @@ python-multipart
 scikit-learn
 firebase-admin
 Pillow
-sentence-transformers
+fastembed

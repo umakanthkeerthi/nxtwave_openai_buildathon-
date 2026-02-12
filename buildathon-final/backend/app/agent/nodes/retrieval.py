@@ -9,21 +9,11 @@ from app.core.config import settings
 # Initialize Clients
 chroma_client = chromadb.PersistentClient(path=settings.DB_PATH)
 
-# [FIX] Use local model path if available
-from chromadb.utils import embedding_functions
-local_model_path = os.path.join(settings.project_root, "app", "models", "all-MiniLM-L6-v2")
+# [FIX] Switch to ONNX/FastEmbed for lightweight execution
+from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
 
-if os.path.exists(local_model_path):
-    print(f"📂 Using LOCAL embedding model from: {local_model_path}")
-    # We must instantiate SentenceTransformer directly to use local path
-    # Chroma's wrapper doesn't support 'path' easily in older versions, 
-    # but we can trick it or just letting it use cache if we moved it there.
-    # Actually, the cleanest way is a custom EF or relying on cache.
-    # Let's try pointing to the absolute path string as the model_name
-    ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=local_model_path)
-else:
-    print("☁️ Using DEFAULT embedding model (downloading...)")
-    ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+print("⚡ Using FastEmbed (ONNX) for embeddings...")
+ef = ONNXMiniLM_L6_V2()
 
 col_rules = chroma_client.get_collection("decision_rules", embedding_function=ef)
 col_summaries = chroma_client.get_collection("protocol_summaries", embedding_function=ef)
