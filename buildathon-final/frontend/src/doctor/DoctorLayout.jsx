@@ -22,16 +22,28 @@ const DoctorLayout = () => {
     // Fetch Doctor Profile
     useEffect(() => {
         const fetchDoctorProfile = async () => {
-            if (currentUser && currentUser.doctor_id) {
+            if (currentUser) {
                 try {
-                    const response = await fetch(`${import.meta.env.VITE_API_URL}/get_doctor?doctor_id=${currentUser.doctor_id}`);
+                    // Use doctor_id if available, otherwise fallback to UID
+                    const doctorId = currentUser.doctor_id || currentUser.uid;
+                    console.log("DoctorLayout: Fetching profile for doctor_id:", doctorId);
+
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/get_doctor?doctor_id=${doctorId}`);
+                    console.log("DoctorLayout: Response status:", response.status);
+
                     if (response.ok) {
                         const data = await response.json();
+                        console.log("DoctorLayout: Profile data received:", data);
                         setDoctorProfile(data);
+                    } else {
+                        const errorText = await response.text();
+                        console.error("DoctorLayout: Failed to fetch profile. Status:", response.status, "Error:", errorText);
                     }
                 } catch (error) {
-                    console.error("Error fetching doctor profile:", error);
+                    console.error("DoctorLayout: Error fetching doctor profile:", error);
                 }
+            } else {
+                console.log("DoctorLayout: No currentUser available yet");
             }
         };
         fetchDoctorProfile();

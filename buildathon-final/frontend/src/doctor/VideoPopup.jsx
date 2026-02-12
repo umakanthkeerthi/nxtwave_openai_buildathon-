@@ -12,9 +12,8 @@ const VideoPopup = ({ onClose, caseId }) => {
     // Popup dimensions and position state
     const [size, setSize] = useState({ width: 800, height: 600 });
     const [position, setPosition] = useState({ x: window.innerWidth / 2 - 400, y: window.innerHeight / 2 - 300 });
-    const [isMinimized, setIsMinimized] = useState(false);
-    const [showDebug, setShowDebug] = useState(true); // [DEBUG]
-    const zpRef = useRef(null); // [FIX] Restore zpRef
+    const [isMinimized, setIsMinized] = useState(false);
+    const zpRef = useRef(null);
 
 
     // Initial log
@@ -162,15 +161,6 @@ const VideoPopup = ({ onClose, caseId }) => {
                 border: '1px solid #334155'
             }}
         >
-            {/* [DEBUG] Overlay */}
-            {showDebug && (
-                <div style={{ position: 'absolute', top: 50, left: 10, background: 'red', color: 'white', zIndex: 1000000, padding: 10 }}>
-                    DEBUG:
-                    <br />CaseID: {caseId || "UNDEFINED"}
-                    <br />Size: {size.width}x{size.height}
-                    <button onClick={() => setShowDebug(false)}>Hide</button>
-                </div>
-            )}
 
             {/* Header */}
             <div

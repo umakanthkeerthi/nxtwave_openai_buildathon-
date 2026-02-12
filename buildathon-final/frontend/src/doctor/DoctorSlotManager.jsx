@@ -37,6 +37,14 @@ const DoctorSlotManager = () => {
     const [timeGap, setTimeGap] = useState(0); // NEW
     const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
 
+    // Toast notification state
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000); // Auto-dismiss after 4 seconds
+    };
+
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     const toggleDay = (day) => {
@@ -106,15 +114,15 @@ const DoctorSlotManager = () => {
 
             if (response.ok) {
                 const res = await response.json();
-                alert(`Success! Created ${res.slots_created} slots.`);
+                showToast(`${res.slots_created} slots generated successfully!`, 'success');
                 fetchSlots();
                 setShowBatch(false);
             } else {
-                alert("Failed to create batch slots.");
+                showToast('Failed to create batch slots', 'error');
             }
         } catch (e) {
             console.error("Batch create failed", e);
-            alert("Error creating slots");
+            showToast('Error creating slots', 'error');
         } finally {
             setLoading(false);
         }
@@ -613,6 +621,66 @@ const DoctorSlotManager = () => {
 
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        style={{
+                            position: 'fixed',
+                            top: '2rem',
+                            right: '2rem',
+                            zIndex: 9999,
+                            background: toast.type === 'success' ? '#10b981' : '#ef4444',
+                            color: 'white',
+                            padding: '1rem 1.5rem',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            minWidth: '300px',
+                            maxWidth: '500px'
+                        }}
+                    >
+                        <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }}>
+                            {toast.type === 'success' ? '✓' : '✕'}
+                        </div>
+                        <div style={{ flex: 1, fontSize: '0.95rem', fontWeight: '500' }}>
+                            {toast.message}
+                        </div>
+                        <button
+                            onClick={() => setToast(null)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'white',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                opacity: 0.8,
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <X size={18} />
+                        </button>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

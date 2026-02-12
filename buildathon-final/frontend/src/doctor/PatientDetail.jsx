@@ -31,6 +31,14 @@ const PatientDetail = () => {
     const [submitting, setSubmitting] = useState(false);
     const [isPrescriptionSubmitted, setIsPrescriptionSubmitted] = useState(false); // [NEW] Track prescription submission
 
+    // Toast notification state
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
+
     // [NEW] Sync Status from Backend
     useEffect(() => {
         const syncStatus = async () => {
@@ -101,7 +109,7 @@ const PatientDetail = () => {
             });
 
             if (response.ok) {
-                alert("Consultation saved successfully!");
+                showToast('Consultation saved successfully!', 'success');
                 // navigate('/doctor/patients'); // [FIX] Stay on page
             } else {
                 // [FIX] Detailed Error Handling
@@ -110,14 +118,14 @@ const PatientDetail = () => {
                 console.error("Upload failed:", response.status, errorData);
 
                 if (response.status === 500) {
-                    alert(`Server Error (500): ${errorMessage}\n\nThis might be a temporary server issue or a network problem.`);
+                    showToast(`Server Error: ${errorMessage}`, 'error');
                 } else {
-                    alert(`Error: ${errorMessage}`);
+                    showToast(`Error: ${errorMessage}`, 'error');
                 }
             }
         } catch (error) {
             console.error("Submit network error:", error);
-            alert("Network Error: Unable to reach the server.\n\nPlease check your internet connection and try again.");
+            showToast('Network error. Please check your connection and try again.', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -412,6 +420,61 @@ const PatientDetail = () => {
                     caseId={patientData?.caseId}
                 />
             )}
+
+            {/* Toast Notification */}
+            {toast && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: '2rem',
+                        right: '2rem',
+                        zIndex: 9999,
+                        background: toast.type === 'success' ? '#10b981' : '#ef4444',
+                        color: 'white',
+                        padding: '1rem 1.5rem',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        minWidth: '300px',
+                        maxWidth: '500px',
+                        animation: 'slideIn 0.3s ease-out'
+                    }}
+                >
+                    <div style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }}>
+                        {toast.type === 'success' ? '✓' : '✕'}
+                    </div>
+                    <div style={{ flex: 1, fontSize: '0.95rem', fontWeight: '500' }}>
+                        {toast.message}
+                    </div>
+                    <button
+                        onClick={() => setToast(null)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            opacity: 0.8,
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
@@ -665,7 +728,7 @@ const ConsultationMode = ({ records, onSubmit, submitting, patientData, isPrescr
                 timing: { morning: false, noon: false, evening: false, night: false }
             });
         } else {
-            alert("Please enter medicine name and dosage.");
+            showToast('Please enter medicine name and dosage.', 'error');
         }
     };
 
@@ -698,7 +761,7 @@ const ConsultationMode = ({ records, onSubmit, submitting, patientData, isPrescr
 
         setIsPrescriptionSubmitted(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        alert("Prescription submitted. You can now End the Consultation.");
+        showToast('Prescription submitted. You can now end the consultation.', 'success');
     };
 
     const handleSaveDraft = () => {

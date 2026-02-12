@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, MapPin, Clock, Video, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Clock, Video, AlertCircle, X } from 'lucide-react';
 import SymptomEvaluator from '../components/SymptomEvaluator';
 import DoctorGridCarousel from '../components/DoctorGridCarousel';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -31,6 +31,14 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
     // Booking Modal State
     const [isBookingOpen, setIsBookingOpen] = useState(false);
     const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+    // Toast notification state
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
 
     useEffect(() => {
         if (location.state?.type === 'emergency') {
@@ -101,7 +109,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
     const handleBookAppointment = () => {
         // [POLICY] Direct booking is not allowed. Must have AI Triage Summary.
         if (!location.state?.summary) {
-            alert("Please consult the AI Agent first to generate a medical case.");
+            showToast('Please consult the AI Agent first to generate a medical case.', 'error');
             navigate('/patient/chat');
             return;
         }
@@ -131,14 +139,14 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
             console.log("DEBUG: currentUser:", currentUser);
 
             if (!selectedProfile) {
-                alert("Error: No Patient Profile selected. Please go to Home and select a profile.");
+                showToast('No patient profile selected. Please go to Home and select a profile.', 'error');
                 return;
             }
 
             const profileId = selectedProfile.profile_id || selectedProfile.id;
             // Fallback only if profile is strictly missing (which we blocked above, but for safety)
             if (!profileId) {
-                alert("Error: Selected Profile has no ID.");
+                showToast('Selected profile has no ID.', 'error');
                 return;
             }
 
@@ -165,7 +173,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
             console.log("DEBUG: Sending Booking Payload:", bookingPayload);
 
             if (!bookingPayload.user_id) {
-                alert("Error: User ID is missing. Please try logging out and back in.");
+                showToast('User ID is missing. Please try logging out and back in.', 'error');
                 console.error("CRITICAL: user_id is null/undefined in booking payload", currentUser);
                 return;
             }
@@ -183,11 +191,11 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
             const result = await response.json();
             console.log("Booking Confirmed:", result);
 
-            // Optionally show success message or navigate
-            alert("Appointment booked successfully!");
+            // Show success toast
+            showToast('Appointment booked successfully!', 'success');
         } catch (error) {
             console.error("Booking error:", error);
-            alert("Failed to book appointment. Please try again.");
+            showToast('Failed to book appointment. Please try again.', 'error');
             throw error; // Re-throw so AppointmentBooking can handle it
         }
     };
@@ -423,6 +431,64 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                 mode={mode}
                 onConfirm={handleBookingConfirm}
             />
+
+            {/* Toast Notification */}
+            {toast && (
+                <motion.div
+                    initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    style={{
+                        position: 'fixed',
+                        top: '2rem',
+                        right: '2rem',
+                        zIndex: 9999,
+                        background: toast.type === 'success' ? '#10b981' : '#ef4444',
+                        color: 'white',
+                        padding: '1rem 1.5rem',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        minWidth: '300px',
+                        maxWidth: '500px'
+                    }}
+                >
+                    <div style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }}>
+                        {toast.type === 'success' ? '✓' : '✕'}
+                    </div>
+                    <div style={{ flex: 1, fontSize: '0.95rem', fontWeight: '500' }}>
+                        {toast.message}
+                    </div>
+                    <button
+                        onClick={() => setToast(null)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            opacity: 0.8,
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <X size={18} />
+                    </button>
+                </motion.div>
+            )}
         </div>
     );
 };
