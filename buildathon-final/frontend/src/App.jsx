@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import DomainRedirect from './components/DomainRedirect';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import ConsultDoctor from './pages/ConsultDoctor';
@@ -105,8 +106,8 @@ function App() {
                         <Route path="patients/:id" element={<PatientDetail />} />
                     </Route>
 
-                    {/* Redirect Root to Patient Home (Default User Flow) */}
-                    <Route path="/" element={<Navigate to="/patient" replace />} />
+                    {/* Redirect Root based on Domain */}
+                    <Route path="/" element={<DomainRedirect />} />
 
                     {/* PATIENT PORTAL ROUTES (PROTECTED) */}
                     <Route path="/patient" element={
