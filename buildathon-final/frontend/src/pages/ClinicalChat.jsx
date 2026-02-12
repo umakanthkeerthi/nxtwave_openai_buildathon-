@@ -226,12 +226,12 @@ const ClinicalChat = () => {
                 throw new Error(`Server Error ${response.status}: ${errorText}`);
             }
 
-            const text = await response.text();
+            const responseString = await response.text();
             let data;
             try {
-                data = JSON.parse(text);
+                data = JSON.parse(responseString);
             } catch (e) {
-                console.error("Failed to parse JSON response:", text);
+                console.error("Failed to parse JSON response:", responseString);
                 throw new Error("Invalid format received from server");
             }
 
