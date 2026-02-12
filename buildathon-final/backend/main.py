@@ -31,24 +31,12 @@ async def startup_event():
         local_model_path = os.path.join(settings.project_root, "app", "models", "all-MiniLM-L6-v2")
         if os.path.exists(local_model_path):
              print(f"📂 Loading embedding model from LOCAL CACHE: {local_model_path}")
-             # We set the internal model download path or load directly if using custom class
-             # For Chroma's default EF, we can't easily force a path unless we write a custom EF.
-             # So we will rely on SentenceTransformer's cache or use a custom EF.
-             
-             # BETTER APPROACH: Use the local path directly with SentenceTransformer
-             pass 
+             ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=local_model_path)
         else:
              print("☁️ Local model not found. Downloading from HuggingFace...")
+             ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 
-        # Initialize the EF (This triggers download/load)
-        # Note: Chroma's default EF uses cache. If we committed the cache, it works.
-        # But we committed to app/models. We need to tell Chroma to use that.
-        
-        # We will use a custom Function that points to our local path
-        # Actually, simpler: Set SENTENCE_TRANSFORMERS_HOME env var? No, that's global.
-        
-        # Let's just ensure it's loaded.
-        ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        # Run dummy inference to ensure weights are loaded
         ef(["test"])
         print("✅ STARTUP: Model loaded successfully.")
     except Exception as e:
