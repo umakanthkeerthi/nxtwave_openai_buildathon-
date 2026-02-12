@@ -120,13 +120,13 @@ const PatientSummary = () => {
     };
 
     return (
-        <div className="patient-summary-container">
+        <div className="ps-container">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="summary-card"
+                className="ps-card"
             >
-                <div className="summary-header">
+                <div className="ps-header">
                     <button
                         onClick={() => {
                             if (readOnly) {
@@ -136,22 +136,22 @@ const PatientSummary = () => {
                                 navigate(-1);
                             }
                         }}
-                        className="back-btn"
+                        className="ps-back-btn"
                     >
                         <ArrowLeft />
                     </button>
-                    <h1 className="page-title">Patient Summary</h1>
+                    <h1 className="ps-page-title">Patient Summary</h1>
                 </div>
 
-                <div className="assessment-section">
-                    <div className="assessment-header">
-                        <h3 className="assessment-title">
+                <div className="ps-assessment-section">
+                    <div className="ps-assessment-header">
+                        <h3 className="ps-assessment-title">
                             <FileText className="text-blue-600" size={20} />
                             Clinical Assessment
                         </h3>
-                        <div className="case-id-block">
-                            <span className="case-id-label">Case ID</span>
-                            <span className="case-id-value">{summary.caseId}</span>
+                        <div className="ps-case-id-block">
+                            <span className="ps-case-id-label">Case ID</span>
+                            <span className="ps-case-id-value">{summary.caseId}</span>
                         </div>
                     </div>
 
@@ -159,7 +159,7 @@ const PatientSummary = () => {
                     <div style={{ marginBottom: '1.5rem' }}>
                         <h4 style={{ fontWeight: '500', color: '#666', marginBottom: '0.5rem', margin: '0 0 0.5rem 0', fontSize: '1rem' }}>Triage Status</h4>
                         <span
-                            className="triage-badge"
+                            className="ps-triage-badge"
                             style={{
                                 backgroundColor: summary.color === 'Red' ? '#fee2e2' : '#dcfce7',
                                 color: summary.color === 'Red' ? '#991b1b' : '#166534',
@@ -171,37 +171,37 @@ const PatientSummary = () => {
                     </div>
 
                     {/* Clinical Details Grid 1 */}
-                    <div className="details-grid">
-                        <div className="detail-block">
+                    <div className="ps-details-grid">
+                        <div className="ps-detail-block">
                             <h4>Chief Complaints</h4>
                             <ul>
                                 {summary.chiefComplaints?.map((item, i) => <li key={i}>{item}</li>)}
                             </ul>
                         </div>
-                        <div className="detail-block">
+                        <div className="ps-detail-block">
                             <h4>Reported Symptoms</h4>
-                            <div className="tags-container">
+                            <div className="ps-tags-container">
                                 {summary.reportedSymptoms?.map((s, i) => (
-                                    <span key={i} className="tag">{s}</span>
+                                    <span key={i} className="ps-tag">{s}</span>
                                 ))}
                             </div>
                         </div>
                     </div>
 
                     {/* Clinical Details Grid 2 */}
-                    <div className="details-grid">
-                        <div className="detail-block">
+                    <div className="ps-details-grid">
+                        <div className="ps-detail-block">
                             <h4>Denied Symptoms</h4>
-                            <div className="tags-container">
+                            <div className="ps-tags-container">
                                 {summary.deniedSymptoms?.map((s, i) => (
-                                    <span key={i} className="tag denied">{s}</span>
+                                    <span key={i} className="ps-tag denied">{s}</span>
                                 ))}
                             </div>
                         </div>
-                        <div className="detail-block">
+                        <div className="ps-detail-block">
                             <h4 style={{ color: '#b91c1c' }}>Red Flags to watch for</h4>
                             {(Array.isArray(summary.redFlags) && summary.redFlags.length > 0) ? (
-                                <ul className="red-flags-list">
+                                <ul className="ps-red-flags-list">
                                     {summary.redFlags.map((flag, i) => <li key={i}>{flag}</li>)}
                                 </ul>
                             ) : (
@@ -212,7 +212,7 @@ const PatientSummary = () => {
 
                     <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px dashed #ddd' }}>
                         <h4 style={{ fontWeight: '500', color: '#666', margin: '0 0 0.5rem 0' }}>NHSRC Clinical Guidelines</h4>
-                        <p className="guidelines-box">{summary.guidelines}</p>
+                        <p className="ps-guidelines-box">{summary.guidelines}</p>
                     </div>
 
                     <div style={{ marginTop: '1.5rem' }}>
@@ -222,10 +222,10 @@ const PatientSummary = () => {
                 </div>
 
                 {!readOnly && (
-                    <div className="summary-actions">
+                    <div className="ps-summary-actions">
                         <button
                             onClick={handleSave}
-                            className="btn-secondary"
+                            className="ps-btn-secondary"
                         >
                             <Save size={18} />
                             Save to AI Summary Files and Exit
@@ -233,7 +233,7 @@ const PatientSummary = () => {
 
                         <button
                             onClick={handleConsult}
-                            className="btn-primary"
+                            className="ps-btn-primary"
                         >
                             <Stethoscope size={18} />
                             Consult Doctor
