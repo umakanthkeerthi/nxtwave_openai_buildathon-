@@ -15,8 +15,9 @@ from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
 print("⚡ Using FastEmbed (ONNX) for embeddings...")
 ef = ONNXMiniLM_L6_V2()
 
-col_rules = chroma_client.get_collection("decision_rules", embedding_function=ef)
-col_summaries = chroma_client.get_collection("protocol_summaries", embedding_function=ef)
+# [Safe Fix] Use new collection names to avoid conflict with old embeddings
+col_rules = chroma_client.get_or_create_collection("decision_rules_v2", embedding_function=ef)
+col_summaries = chroma_client.get_or_create_collection("protocol_summaries_v2", embedding_function=ef)
 
 def retrieval_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
