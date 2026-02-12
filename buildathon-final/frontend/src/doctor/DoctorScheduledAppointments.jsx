@@ -66,7 +66,7 @@ const DoctorScheduledAppointments = () => {
             try {
                 // Use mapped doctor_id if available, fallback to UID
                 const doctorId = currentUser.doctor_id || currentUser.uid;
-                const response = await fetch(`/get_appointments?doctor_id=${doctorId}`);
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_appointments?doctor_id=${doctorId}`);
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
 

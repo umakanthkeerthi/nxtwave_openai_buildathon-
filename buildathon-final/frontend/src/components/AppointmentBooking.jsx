@@ -16,7 +16,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
     React.useEffect(() => {
         if (isOpen && doctor?.id) {
             setLoadingSlots(true);
-            fetch(`/get_slots?doctor_id=${doctor.id}`)
+            fetch(`${import.meta.env.VITE_API_URL}/get_slots?doctor_id=${doctor.id}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.slots) {

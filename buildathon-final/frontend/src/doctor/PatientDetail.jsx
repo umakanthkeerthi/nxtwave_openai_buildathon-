@@ -59,7 +59,7 @@ const PatientDetail = () => {
             try {
                 // [FIX] Use derived caseId (from State OR URL)
                 const caseId = patientData.caseId;
-                let url = `/get_records?patient_id=${id || ''}`;
+                let url = `${import.meta.env.VITE_API_URL}/get_records?patient_id=${id || ''}`;
                 if (caseId) {
                     url += `&case_id=${caseId}`;
                 }
@@ -94,7 +94,7 @@ const PatientDetail = () => {
                 case_id: patientData?.caseId // [FIX] Link to Case
             };
 
-            const response = await fetch('/upload_record', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/upload_record`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

@@ -21,7 +21,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
             const fetchLocation = async () => {
                 try {
-                    const response = await fetch(`/get_location?lat=${MVP_LAT}&lon=${MVP_LON}`);
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/get_location?lat=${MVP_LAT}&lon=${MVP_LON}`);
                     const data = await response.json();
                     setAddress(data.display_name || "New Delhi (Bharat Mandapam)");
                 } catch (error) {

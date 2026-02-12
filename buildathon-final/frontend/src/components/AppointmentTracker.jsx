@@ -154,7 +154,7 @@ const AppointmentTracker = ({ caseId, doctorName, specialty, appointmentMode }) 
             }
 
             try {
-                const response = await fetch(`/get_case?case_id=${caseId}`);
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_case?case_id=${caseId}`);
                 if (response.ok) {
                     const caseData = await response.json();
 

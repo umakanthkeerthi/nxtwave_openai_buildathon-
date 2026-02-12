@@ -23,7 +23,7 @@ const DoctorEmergency = () => {
                 try {
                     // In a real app, we might have the full profile in context. 
                     // Here we fetch it to be sure we get the new lat/lon fields.
-                    const res = await fetch(`/get_doctor_profile?doctor_id=${currentUser.uid}`); // Hypothetical endpoint or reuse existing
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}/get_doctor_profile?doctor_id=${currentUser.uid}`); // Hypothetical endpoint or reuse existing
                     // For now, let's assume we can get it from a direct firestore fetch or if AuthContext has it.
                     // A safer bet without a new endpoint is to use the existing /get_doctors and filter, 
                     // OR just trust that we will add a specific endpoint or use the updated context.
@@ -33,7 +33,7 @@ const DoctorEmergency = () => {
                     // Let's assume for this step we will rely on a new fetch or just mock the hookup if the context isn't ready.
 
                     // Let's try to fetch specific doctor details
-                    const response = await fetch(`/get_doctors`); // This returns all, inefficient but works for now
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/get_doctors`); // This returns all, inefficient but works for now
                     const data = await response.json();
                     const me = data.doctors.find(d => d.doctor_id === currentUser.uid || d.id === currentUser.uid);
 
@@ -57,7 +57,7 @@ const DoctorEmergency = () => {
 
         const fetchEmergencies = async () => {
             try {
-                const response = await fetch(`/get_emergencies`);
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_emergencies`);
                 if (!response.ok) throw new Error('Failed to fetch emergencies');
                 const data = await response.json();
 

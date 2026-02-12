@@ -95,7 +95,7 @@ const HealthHero = () => {
             // Default to English hint for home page simple search
             formData.append("language_hint", "en");
 
-            const response = await fetch('/process_audio', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/process_audio`, {
                 method: 'POST',
                 body: formData
             });
