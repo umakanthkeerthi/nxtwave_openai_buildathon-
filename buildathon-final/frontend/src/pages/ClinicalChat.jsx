@@ -221,7 +221,20 @@ const ClinicalChat = () => {
                 })
             });
 
-            const data = await response.json();
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server Error ${response.status}: ${errorText}`);
+            }
+
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error("Failed to parse JSON response:", text);
+                throw new Error("Invalid format received from server");
+            }
+
             setIsTyping(false); // STOP ANIMATION
 
             // Sticky Language Logic:
@@ -260,11 +273,6 @@ const ClinicalChat = () => {
         } catch (error) {
             console.error("Chat Error Details:", error);
             setIsTyping(false); // STOP ANIMATION ON ERROR
-            // Check if response is available
-            if (error.response) {
-                console.error("Response Status:", error.response.status);
-                console.error("Response Text:", await error.response.text());
-            }
             alert(`Chat Error: ${error.message}`);
             setMessages(prev => [...prev, { type: 'bot', text: `Sorry, I am having trouble connecting to the server. (${error.message})` }]);
         }

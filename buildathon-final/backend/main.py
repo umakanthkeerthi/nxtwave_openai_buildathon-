@@ -17,6 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Agentic Doctor Backend Running"}
+
 from datetime import datetime
 
 class ChatRequest(BaseModel):
@@ -34,7 +38,12 @@ class ChatResponse(BaseModel):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
-    print(f"DEBUG: Chat endpoint called. Target: '{req.target_language}', Message: '{req.message[:20]}...'", flush=True)
+    # Safe logging to prevent encoding crashes on Windows
+    try:
+        safe_msg = req.message[:20].encode('utf-8', 'ignore').decode('utf-8')
+        print(f"DEBUG: Chat endpoint called. Target: '{req.target_language}', Message: '{safe_msg}...'", flush=True)
+    except Exception as log_err:
+        print(f"DEBUG: Chat endpoint called (logging failed: {log_err})", flush=True)
     try:
         config = {"configurable": {"thread_id": req.session_id}}
         
