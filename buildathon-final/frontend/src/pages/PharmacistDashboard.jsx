@@ -20,7 +20,8 @@ const PharmacistDashboard = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await axios.get('http://localhost:8003/pharmacy/orders');
+            const apiUrl = import.meta.env.VITE_API_URL;
+            const res = await axios.get(`${apiUrl}/pharmacy/orders`);
             setOrders(res.data.orders || []);
             setLoading(false);
         } catch (error) {
@@ -31,7 +32,8 @@ const PharmacistDashboard = () => {
 
     const updateStatus = async (orderId, newStatus) => {
         try {
-            await axios.patch(`http://localhost:8003/pharmacy/orders/${orderId}`, { status: newStatus });
+            const apiUrl = import.meta.env.VITE_API_URL;
+            await axios.patch(`${apiUrl}/pharmacy/orders/${orderId}`, { status: newStatus });
             // Optimistic update
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         } catch (error) {
@@ -122,8 +124,8 @@ const OrderRow = ({ order, onUpdateStatus }) => (
                 <p className="text-sm text-gray-500">{order.created_at ? new Date(order.created_at).toLocaleString() : 'Recent'}</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'READY' ? 'bg-green-100 text-green-800' :
-                        'bg-blue-100 text-blue-800'
+                order.status === 'READY' ? 'bg-green-100 text-green-800' :
+                    'bg-blue-100 text-blue-800'
                 }`}>
                 {order.status}
             </span>

@@ -119,7 +119,8 @@ const NutritionAnalyzer = () => {
         if (!mealInput.trim()) return;
         setAnalyzing(true);
         try {
-            const res = await fetch('http://localhost:8003/analyze_meal', {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            const res = await fetch(`${apiUrl}/analyze_meal`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ description: mealInput })
@@ -150,7 +151,8 @@ const NutritionAnalyzer = () => {
 
     const fetchSuggestion = async (currentLogParams) => {
         try {
-            const res = await fetch('http://localhost:8003/get_nutrition_suggestion', {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            const res = await fetch(`${apiUrl}/get_nutrition_suggestion`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ profile, current_log: currentLogParams })

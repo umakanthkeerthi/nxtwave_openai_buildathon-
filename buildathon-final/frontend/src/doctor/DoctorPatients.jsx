@@ -29,7 +29,8 @@ const DoctorPatients = () => {
             console.log("DEBUG: Fetching patients for:", DOCTOR_ID);
 
             try {
-                const response = await fetch(`http://localhost:8004/get_patients?doctor_id=${DOCTOR_ID}`);
+                const apiUrl = import.meta.env.VITE_API_URL;
+                const response = await fetch(`${apiUrl}/get_patients?doctor_id=${DOCTOR_ID}`);
                 if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
                 console.log("DEBUG: DoctorPatients fetched:", data);

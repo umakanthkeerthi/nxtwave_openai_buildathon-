@@ -39,7 +39,8 @@ const DoctorProfile = () => {
             }
 
             try {
-                const res = await fetch(`http://localhost:8004/get_doctor?doctor_id=${currentUser.doctor_id}`);
+                const apiUrl = import.meta.env.VITE_API_URL;
+                const res = await fetch(`${apiUrl}/get_doctor?doctor_id=${currentUser.doctor_id}`);
                 if (res.ok) {
                     const data = await res.json();
 
@@ -89,7 +90,8 @@ const DoctorProfile = () => {
                 }
             };
 
-            const res = await fetch('http://localhost:8004/update_doctor', {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            const res = await fetch(`${apiUrl}/update_doctor`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

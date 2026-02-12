@@ -38,14 +38,14 @@
     }
 
     .doctools-grid {
-        grid-template-columns: 1fr;
-        /* Stack vertically on mobile */
-        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 columns on mobile */
+        gap: 0.75rem;
     }
 
     .insights-grid {
-        grid-template-columns: 1fr;
-        /* Stack vertically on mobile */
-        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 columns on mobile */
+        gap: 0.75rem;
     }
 }

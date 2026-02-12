@@ -36,7 +36,8 @@ const PatientDetail = () => {
         const syncStatus = async () => {
             if (patientData?.caseId) {
                 try {
-                    const res = await fetch(`http://localhost:8004/get_case?case_id=${patientData.caseId}`);
+                    const apiUrl = import.meta.env.VITE_API_URL;
+                    const res = await fetch(`${apiUrl}/get_case?case_id=${patientData.caseId}`);
                     if (res.ok) {
                         const caseDetails = await res.json();
                         console.log("Synced Case Status:", caseDetails.status);
@@ -215,8 +216,9 @@ const PatientDetail = () => {
             // 1. Update Case Status
             if (patientData?.caseId) {
                 console.log("Updating Case Status for:", patientData.caseId);
+                const apiUrl = import.meta.env.VITE_API_URL;
                 try {
-                    await fetch(`http://localhost:8004/update_case_status?case_id=${patientData.caseId}&status=APPOINTMENT_IN_PROGRESS`, {
+                    await fetch(`${apiUrl}/update_case_status?case_id=${patientData.caseId}&status=APPOINTMENT_IN_PROGRESS`, {
                         method: 'POST'
                     });
                     console.log("Case Status Updated");
@@ -230,8 +232,9 @@ const PatientDetail = () => {
             // 2. Update Appointment Status
             if (patientData?.appointmentId) {
                 console.log("Updating Appointment Status for:", patientData.appointmentId);
+                const apiUrl = import.meta.env.VITE_API_URL;
                 try {
-                    await fetch(`http://localhost:8004/update_appointment_status?appointment_id=${patientData.appointmentId}&status=APPOINTMENT_IN_PROGRESS`, {
+                    await fetch(`${apiUrl}/update_appointment_status?appointment_id=${patientData.appointmentId}&status=APPOINTMENT_IN_PROGRESS`, {
                         method: 'POST'
                     });
                     console.log("Appointment Status Updated");
@@ -253,14 +256,15 @@ const PatientDetail = () => {
         // --- ENDING CONSULTATION ---
         setIsVideoOpen(false);
         // 1. Update Case Status
+        const apiUrl = import.meta.env.VITE_API_URL;
         if (patientData?.caseId) {
-            await fetch(`http://localhost:8004/update_case_status?case_id=${patientData.caseId}&status=CONSULTATION_ENDED`, {
+            await fetch(`${apiUrl}/update_case_status?case_id=${patientData.caseId}&status=CONSULTATION_ENDED`, {
                 method: 'POST'
             });
         }
         // 2. Update Appointment Status
         if (patientData?.appointmentId) {
-            await fetch(`http://localhost:8004/update_appointment_status?appointment_id=${patientData.appointmentId}&status=CONSULTATION_ENDED`, {
+            await fetch(`${apiUrl}/update_appointment_status?appointment_id=${patientData.appointmentId}&status=CONSULTATION_ENDED`, {
                 method: 'POST'
             });
         }
@@ -682,8 +686,9 @@ const ConsultationMode = ({ records, onSubmit, submitting, patientData, isPrescr
         await onSubmit(data, "PRESCRIPTION");
 
         // 1. Update Case Status to Intermediate Step
+        const apiUrl = import.meta.env.VITE_API_URL;
         if (patientData?.caseId) {
-            await fetch(`http://localhost:8004/update_case_status?case_id=${patientData.caseId}&status=DOCTOR_NOTES_AND_PRESCRIPTION_READY`, {
+            await fetch(`${apiUrl}/update_case_status?case_id=${patientData.caseId}&status=DOCTOR_NOTES_AND_PRESCRIPTION_READY`, {
                 method: 'POST'
             });
         }

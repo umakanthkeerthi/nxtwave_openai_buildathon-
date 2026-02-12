@@ -25,6 +25,13 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -122,8 +129,34 @@ button {
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (min-width: 769px) {
   .mobile-nav {
     display: none !important;
+  }
+}
+
+/* Responsive Main Content Padding */
+.patient-main-content {
+  padding-top: 80px;
+  min-height: calc(100vh - 80px);
+  /* Ensure full height */
+}
+
+@media (max-width: 768px) {
+  .patient-main-content {
+    padding-top: 75px;
+    /* Ensure content is below 70px navbar */
   }
 }

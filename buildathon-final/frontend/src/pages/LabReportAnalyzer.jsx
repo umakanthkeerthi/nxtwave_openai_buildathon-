@@ -30,7 +30,8 @@ const LabReportAnalyzer = () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:8003/analyze_lab_report', {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            const response = await fetch(`${apiUrl}/analyze_lab_report`, {
                 method: 'POST',
                 body: formData,
             });

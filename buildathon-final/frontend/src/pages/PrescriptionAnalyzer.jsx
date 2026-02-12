@@ -30,7 +30,8 @@ const PrescriptionAnalyzer = () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:8003/analyze_prescription', {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            const response = await fetch(`${apiUrl}/analyze_prescription`, {
                 method: 'POST',
                 body: formData,
             });

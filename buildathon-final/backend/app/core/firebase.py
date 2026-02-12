@@ -13,10 +13,23 @@ class FirebaseService:
         self.db = None
         self.mock_mode = True
         
-        # Check for credentials
-        cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+        # Check for credentials in multiple locations
+        potential_paths = [
+            os.getenv("FIREBASE_CREDENTIALS_PATH"),
+            "serviceAccountKey.json",
+            "backend/serviceAccountKey.json",
+            "../serviceAccountKey.json",
+            "/etc/secrets/serviceAccountKey.json"
+        ]
         
-        if FIREBASE_AVAILABLE and cred_path and os.path.exists(cred_path):
+        cred_path = None
+        for p in potential_paths:
+            if p and os.path.exists(p):
+                cred_path = p
+                print(f"INFO: Found Firebase credentials at: {cred_path}")
+                break
+        
+        if FIREBASE_AVAILABLE and cred_path:
             try:
                 # [FIX] Check if already initialized to avoid "Default app already exists" error
                 if not firebase_admin._apps:

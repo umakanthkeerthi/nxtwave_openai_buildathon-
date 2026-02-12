@@ -47,7 +47,7 @@ const PatientVideoCall = ({ onClose, caseId }) => {
             sharedLinks: [
                 {
                     name: 'Copy Link',
-                    url: `http://localhost:5173/room/${roomID}`,
+                    url: `${window.location.origin}/room/${roomID}`,
                 },
             ],
             scenario: {

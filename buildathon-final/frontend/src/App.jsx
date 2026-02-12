@@ -12,6 +12,7 @@ import PatientSummary from './pages/PatientSummary';
 import EmergencyPage from './pages/EmergencyPage';
 import NotFound from './pages/NotFound';
 import Wellness from './pages/Wellness';
+import Medications from './pages/Medications';
 import PrescriptionAnalyzer from './pages/PrescriptionAnalyzer';
 import LabReportAnalyzer from './pages/LabReportAnalyzer';
 import NutritionAnalyzer from './pages/NutritionAnalyzer';
@@ -47,7 +48,7 @@ const PatientLayout = () => {
     return (
         <>
             <Navbar />
-            <main style={{ paddingTop: '80px' }}>
+            <main className="patient-main-content">
                 <Outlet />
             </main>
         </>
@@ -123,6 +124,7 @@ function App() {
                         <Route path="patient-summary" element={<PatientSummary />} />
                         <Route path="emergency" element={<EmergencyPage />} />
                         <Route path="wellness" element={<Wellness />} />
+                        <Route path="medications" element={<Medications />} />
                         <Route path="prescription-analyzer" element={<PrescriptionAnalyzer />} />
                         <Route path="lab-report-analyzer" element={<LabReportAnalyzer />} />
                         <Route path="nutrition" element={<NutritionAnalyzer />} />
