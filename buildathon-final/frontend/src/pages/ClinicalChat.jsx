@@ -66,7 +66,7 @@ const ClinicalChat = () => {
                     return;
                 }
 
-                const res = await fetch('/init_session');
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/init_session`);
                 const data = await res.json();
                 if (data.case_id) {
                     console.log("Initialized Session:", data.case_id);
@@ -164,7 +164,7 @@ const ClinicalChat = () => {
             // This ensures the backend knows we specifically want to hear "Telugu" if Telugu is selected.
             formData.append("target_language", language === 'Auto-detect' ? 'Auto' : language);
 
-            const response = await fetch('/process_audio', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/process_audio`, {
                 method: 'POST',
                 body: formData
             });
@@ -209,7 +209,7 @@ const ClinicalChat = () => {
 
         try {
             // Call Backend /chat
-            const response = await fetch('/chat', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -275,7 +275,7 @@ const ClinicalChat = () => {
             const msgsToProcess = completeHistory || messages;
             const history = msgsToProcess.map(m => ({ sender: m.type, text: m.text }));
 
-            const response = await fetch('/generate_summary', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/generate_summary`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
