@@ -857,6 +857,43 @@ class FirebaseService:
                 print(f"Firebase Update Order Error: {e}")
                 return False
 
+
+    def get_patient_medical_history(self, patient_id):
+        """
+        Retrieves the structured medical history for a patient.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Fetching Medical History for {patient_id}")
+            return {}
+        else:
+            try:
+                # We assume 1 history doc per patient, keyed by patient_id
+                doc_ref = self.db.collection("patient_medical_history").document(patient_id)
+                doc = doc_ref.get()
+                if doc.exists:
+                    return doc.to_dict()
+                return {}
+            except Exception as e:
+                print(f"Firebase History Fetch Error: {e}")
+                return {}
+
+    def update_patient_medical_history(self, patient_id, history_data):
+        """
+        Updates the structured medical history for a patient.
+        """
+        if self.mock_mode:
+            print(f"[MOCK FIREBASE] Updating Medical History for {patient_id}: {history_data}")
+            return True
+        else:
+            try:
+                doc_ref = self.db.collection("patient_medical_history").document(patient_id)
+                doc_ref.set(history_data, merge=True)
+                return True
+            except Exception as e:
+                print(f"Firebase History Update Error: {e}")
+                return False
+
 # Singleton Instance
 firebase_service = FirebaseService()
+
 

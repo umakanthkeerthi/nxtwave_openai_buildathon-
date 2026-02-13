@@ -1,10 +1,11 @@
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional
 from langchain_core.messages import HumanMessage
 from app.agent.graph import agent_graph
 import uuid
+from app.agent.nodes.medical_history import medical_history_node
 
 app = FastAPI(title="Agentic Doctor V2")
 
@@ -907,17 +908,102 @@ async def update_doctor_endpoint(doctor_data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/update_case_status")
-async def update_case_status_endpoint(case_id: str, status: str):
+async def update_case_status_endpoint(case_id: str, status: str, background_tasks: BackgroundTasks):
     """
     Updates the status of a case and ensures timestamps are current.
     """
     try:
         print(f"DEBUG: Updating case {case_id} status to {status}")
         result = firebase_service.update_case_status(case_id, status)
+        
+        # [NEW] Trigger Medical History Agent
+        if status == "CONSULTATION_ENDED":
+             print(f"DEBUG: Triggering Medical History Agent for Case {case_id}")
+             background_tasks.add_task(run_medical_history_agent, case_id)
+             
         return result
     except Exception as e:
         print(f"Update Case Status Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+async def run_medical_history_agent(case_id: str):
+    try:
+        print(f"BG TASK: Starting Medical History Update for {case_id}")
+        
+        # 1. Get Case to find Patient ID
+        case_data = firebase_service.get_case(case_id)
+        if not case_data:
+             print("BG TASK ERROR: Case not found")
+             return
+             
+        patient_id = case_data.get("patient_id")
+        if not patient_id:
+             print("BG TASK ERROR: No patient_id in case")
+             return
+
+        # 2. Fetch Consultation Records
+        # We need Doctor Remarks and Prescriptions
+        # We can reuse get_records but filter locally or query directly if we had better filters
+        # Let's use get_records since it aggregates everything for a case
+        records = firebase_service.get_records("all", case_id=case_id) # 'all' is a special flag or we just call get_records logic
+        # Wait, get_records takes a collection name.
+        # Let's call the endpoints helpers or firebase service directly
+        
+        remarks_list = firebase_service.get_records("case_doctor_remarks", case_id=case_id)
+        prescriptions_list = firebase_service.get_records("case_prescriptions", case_id=case_id)
+        
+        # Take the most recent one if multiple (which implies updates)
+        latest_remarks = remarks_list[0].get("data", {}) if remarks_list else {}
+        # Prescriptions might be multiple distinct ones or one list? Usually one record per consult submission
+        # Let's pass the whole list just in case
+        
+        # 3. Get Existing History
+        existing_history = firebase_service.get_patient_medical_history(patient_id)
+        
+        # 4. Construct Agent State
+        # [NEW] Extract Date for History
+        consultation_date = case_data.get("updated_at") or case_data.get("created_at") or datetime.utcnow().isoformat()
+        
+        state = {
+            "patient_medical_history": existing_history,
+            "current_consultation_data": {
+                "remarks": latest_remarks,
+                "prescriptions": prescriptions_list,
+                "consultation_date": consultation_date # [NEW] Pass Date
+            }
+        }
+        
+        # 5. Invoke Agent
+        output = medical_history_node(state)
+        updated_history = output.get("updated_patient_history")
+        
+        if updated_history:
+            # 6. Save
+            firebase_service.update_patient_medical_history(patient_id, updated_history)
+            print(f"BG TASK SUCCESS: History updated for patient {patient_id}")
+        else:
+            print("BG TASK WARNING: Agent returned no update.")
+            
+    except Exception as e:
+        print(f"BG TASK CRITICAL FAILURE: {e}")
+
+
+
+@app.get("/get_patient_history")
+async def get_patient_history_endpoint(patient_id: str):
+    """
+    Retrieves the structured medical history for a patient.
+    """
+    try:
+        if not patient_id:
+            raise HTTPException(status_code=400, detail="patient_id is required")
+            
+        history = firebase_service.get_patient_medical_history(patient_id)
+        return history
+    except Exception as e:
+        print(f"Get History Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/create_slot")
 async def create_slot_endpoint(slot_data: dict):

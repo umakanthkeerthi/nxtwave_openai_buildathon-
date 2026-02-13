@@ -31,6 +31,11 @@ const PatientDetail = () => {
     const [submitting, setSubmitting] = useState(false);
     const [isPrescriptionSubmitted, setIsPrescriptionSubmitted] = useState(false); // [NEW] Track prescription submission
 
+    // Medical History Agent State
+    const [historyData, setHistoryData] = useState(null);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+
+
     // Toast notification state
     const [toast, setToast] = useState(null);
 
@@ -60,6 +65,29 @@ const PatientDetail = () => {
         };
         syncStatus();
     }, [patientData?.caseId]);
+
+    // [NEW] Fetch Medical History when Tab Active
+    useEffect(() => {
+        if (activeTab === 'History' && (id || patientData.id)) {
+            const fetchHistory = async () => {
+                setLoadingHistory(true);
+                try {
+                    const pid = id || patientData.id; // prefer URL param id
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}/get_patient_history?patient_id=${pid}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setHistoryData(data);
+                    }
+                } catch (e) {
+                    console.error("History Fetch Error:", e);
+                } finally {
+                    setLoadingHistory(false);
+                }
+            };
+            fetchHistory();
+        }
+    }, [activeTab, id, patientData.id]);
+
 
     // Fetch Records
     React.useEffect(() => {
@@ -405,11 +433,14 @@ const PatientDetail = () => {
                     setIsPrescriptionSubmitted={setIsPrescriptionSubmitted}
                     consultationStatus={consultationStatus}
                 />
+            ) : activeTab === 'History' ? (
+                <PatientHistoryView history={historyData} loading={loadingHistory} />
             ) : (
                 <div style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', background: 'white', borderRadius: '12px', border: '1px dashed #e2e8f0' }}>
                     Content for {activeTab} will appear here.
                 </div>
             )}
+
 
             {/* Action Bar REMOVED per user request */}
             {/* Video Popup */}
@@ -1078,7 +1109,7 @@ const SummaryModal = ({ data, onClose }) => {
                         <div style={{ background: '#fff1f2', padding: '1.5rem', borderRadius: '12px', border: '1px solid #ffe4e6' }}>
                             <h4 style={{ margin: '0 0 0.5rem 0', color: '#be123c', textTransform: 'uppercase', fontSize: '0.85rem' }}>Severity Level</h4>
                             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#881337', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                {assessment.severity || "Unknown"}
+                                {assessment.severity || (assessment.severity_score ? (assessment.severity_score >= 70 ? "High" : (assessment.severity_score >= 40 ? "Medium" : "Low")) : "Unknown")}
                                 {assessment.severity_score && <span style={{ fontSize: '0.9rem', background: 'white', padding: '2px 8px', borderRadius: '12px', border: '1px solid #fecdd3' }}>Score: {assessment.severity_score}</span>}
                             </div>
                         </div>
@@ -1186,6 +1217,111 @@ const SummaryModal = ({ data, onClose }) => {
 
             </div>
 
+
+        </div>
+    );
+};
+
+
+const PatientHistoryView = ({ history, loading }) => {
+    if (loading) {
+        return (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>
+                <div className="animate-spin" style={{ width: '24px', height: '24px', border: '3px solid #cbd5e1', borderTop: '3px solid #0f766e', borderRadius: '50%', margin: '0 auto 1rem' }}></div>
+                Loading medical history...
+            </div>
+        );
+    }
+
+    if (!history || Object.keys(history).length === 0) {
+        return (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', background: 'white', borderRadius: '12px', border: '1px dashed #e2e8f0' }}>
+                <FileText size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                <p>No structured medical history available yet.</p>
+                <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Complete a consultation to generate history.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+            {/* Chronic Conditions */}
+            <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ color: '#0f766e', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                    <Activity size={20} /> Chronic Conditions
+                </h3>
+                {history.chronic_conditions?.length > 0 ? (
+                    <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+                        {history.chronic_conditions.map((item, idx) => (
+                            <div key={idx} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', borderLeft: '4px solid #0f766e' }}>
+                                <div style={{ fontWeight: '600', color: '#334155' }}>{item.condition}</div>
+                                <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px' }}>Status: {item.status}</div>
+                                {item.diagnosed_date && <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Since: {item.diagnosed_date}</div>}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>No chronic conditions recorded.</div>
+                )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                {/* Allergies */}
+                <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0' }}>
+                    <h3 style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                        <AlertTriangle size={20} /> Allergies
+                    </h3>
+                    {history.allergies?.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {history.allergies.map((alg, idx) => (
+                                <span key={idx} style={{ background: '#fef2f2', color: '#991b1b', padding: '4px 12px', borderRadius: '20px', border: '1px solid #fee2e2', fontWeight: '500' }}>
+                                    {alg}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>No known allergies.</div>
+                    )}
+                </div>
+
+                {/* Surgical / Family History */}
+                <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0' }}>
+                    <h3 style={{ color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                        <FileText size={20} /> Other History
+                    </h3>
+                    <div style={{ marginBottom: '1rem' }}>
+                        <strong style={{ color: '#475569', display: 'block', marginBottom: '4px' }}>Surgical:</strong>
+                        {history.surgical_history?.length > 0 ? history.surgical_history.join(", ") : <span style={{ color: '#94a3b8' }}>None</span>}
+                    </div>
+                    <div>
+                        <strong style={{ color: '#475569', display: 'block', marginBottom: '4px' }}>Family:</strong>
+                        {history.family_history?.length > 0 ? history.family_history.join(", ") : <span style={{ color: '#94a3b8' }}>None</span>}
+                    </div>
+                </div>
+            </div>
+
+            {/* Past Visits / Acute Issues */}
+            <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                    <Clock size={20} /> Acute / Past Consultations
+                </h3>
+                {history.past_consultations?.length > 0 ? (
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                        {history.past_consultations.map((visit, idx) => (
+                            <div key={idx} style={{ display: 'flex', gap: '1rem', padding: '1rem', borderBottom: '1px dashed #e2e8f0' }}>
+                                <div style={{ minWidth: '100px', fontWeight: 'bold', color: '#64748b' }}>{visit.date || 'Unknown Date'}</div>
+                                <div>
+                                    <div style={{ fontWeight: '600', color: '#334155' }}>{visit.diagnosis}</div>
+                                    <div style={{ fontSize: '0.9rem', color: '#475569', marginTop: '4px' }}>{visit.doctor_notes}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>No past consultations recorded in history agent.</div>
+                )}
+            </div>
 
         </div>
     );
