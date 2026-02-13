@@ -42,7 +42,7 @@ const MedicalFiles = () => {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
 
     // Fetch Records
-    const fetchRecords = () => {
+    const fetchRecords = async () => {
         const targetId = selectedProfile?.id || currentUser?.uid || selectedProfile?.profile_id;
         if (targetId) {
             console.log("DEBUG: Fetching records for:", targetId);
@@ -53,7 +53,7 @@ const MedicalFiles = () => {
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                     return res.json();
                 })
-                .then(data => {
+                .then(async data => {
                     console.log("DEBUG: Records fetched:", data?.records?.length);
                     if (data.records) {
                         // Reset all categories
@@ -183,14 +183,46 @@ const MedicalFiles = () => {
                             }
                         });
 
-                        // Convert Map to Array for Display
-                        const folders = Object.values(casesMap).sort((a, b) => new Date(b.date) - new Date(a.date));
+                        // [NEW] Fetch case statuses for filtering
+                        const uniqueCaseIds = [...new Set(
+                            Object.keys(casesMap).filter(id => id && id !== "Unlinked")
+                        )];
+
+                        console.log("DEBUG: Fetching statuses for", uniqueCaseIds.length, "cases");
+                        const caseStatuses = {};
+
+                        await Promise.all(
+                            uniqueCaseIds.map(async (caseId) => {
+                                try {
+                                    const res = await fetch(`${import.meta.env.VITE_API_URL}/get_case?case_id=${caseId}`);
+                                    if (res.ok) {
+                                        const caseData = await res.json();
+                                        caseStatuses[caseId] = caseData.status;
+                                    }
+                                } catch (err) {
+                                    console.error(`Failed to fetch status for ${caseId}`, err);
+                                }
+                            })
+                        );
+
+                        console.log("DEBUG: Case statuses:", caseStatuses);
+
+                        // Convert Map to Array and Filter by Status
+                        const folders = Object.values(casesMap)
+                            .filter(folder => {
+                                // Only show completed consultations in Medical Files
+                                const status = caseStatuses[folder.caseId];
+                                return status === "CONSULTATION_ENDED" || status === "COMPLETED";
+                            })
+                            .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                        console.log("DEBUG: Filtered folders (completed only):", folders.length);
                         setConsultationFolders(folders);
 
                         setPrescriptions(newPrescriptions);
                         setReports(newReports);
                         setCertificates(newCertificates);
-                        setSummaries(newSummaries);
+                        setSummaries(newSummaries); // [KEEP] AI Summaries unfiltered
                     }
                 })
                 .catch(err => console.error("Failed to fetch records:", err));
