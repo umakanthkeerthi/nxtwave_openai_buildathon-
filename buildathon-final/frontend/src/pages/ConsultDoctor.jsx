@@ -64,7 +64,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                 }
 
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for emergency queries
 
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
@@ -369,33 +369,182 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                 </>
                             ) : (
                                 /* EMERGENCY LIST VIEW */
-                                <div className="emergency-list">
-                                    {emergencyDoctors.map(doctor => (
-                                        <motion.div variants={item} key={doctor.id} className="emergency-doctor-card">
-                                            <img src={doctor.image} alt={doctor.name} className="e-doc-img" />
-                                            <div className="e-doc-info">
-                                                <div className="e-doc-header">
-                                                    <h3>{doctor.name}</h3>
-                                                    <span className="e-doc-specialty">{doctor.specialty}</span>
-                                                </div>
-                                                <div className="e-doc-meta">
-                                                    <span className="meta-badge distance">
-                                                        <MapPin size={14} /> {doctor.distance} km away
-                                                    </span>
-                                                    <span className={`meta-badge time ${doctor.availableTime === "Available Now" ? "now" : ""}`}>
-                                                        <Clock size={14} /> {doctor.availableTime}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <button
-                                                className="btn-book-emergency"
-                                                onClick={() => handleEmergencyBook(doctor)}
+                                <>
+                                    {/* Emergency Alert Banner */}
+                                    <motion.div
+                                        variants={item}
+                                        style={{
+                                            background: '#fef2f2',
+                                            border: '1px solid #fecaca',
+                                            borderRadius: '12px',
+                                            padding: '1rem 1.25rem',
+                                            marginBottom: '1.5rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px'
+                                        }}
+                                    >
+                                        <div style={{
+                                            background: '#dc2626',
+                                            color: 'white',
+                                            padding: '8px',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <AlertCircle size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 style={{
+                                                margin: '0 0 4px 0',
+                                                color: '#991b1b',
+                                                fontSize: '1.1rem',
+                                                fontWeight: '600'
+                                            }}>
+                                                Emergency Care Finder
+                                            </h3>
+                                            <p style={{
+                                                margin: 0,
+                                                fontSize: '0.9rem',
+                                                color: '#7f1d1d'
+                                            }}>
+                                                Showing nearest available doctors for immediate in-person checkup.
+                                            </p>
+                                        </div>
+                                    </motion.div>
+
+                                    <div className="emergency-list">
+                                        {emergencyDoctors.map(doctor => (
+                                            <motion.div
+                                                variants={item}
+                                                key={doctor.id}
+                                                whileHover={{ scale: 1.01 }}
+                                                style={{
+                                                    background: 'white',
+                                                    border: '1px solid #e5e7eb',
+                                                    borderRadius: '12px',
+                                                    padding: '1.25rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '1rem',
+                                                    marginBottom: '1rem',
+                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                                    transition: 'all 0.2s ease'
+                                                }}
                                             >
-                                                Immediate Consult
-                                            </button>
-                                        </motion.div>
-                                    ))}
-                                </div>
+                                                {/* Doctor Avatar */}
+                                                <div style={{
+                                                    width: '60px',
+                                                    height: '60px',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    flexShrink: 0,
+                                                    background: '#f3f4f6'
+                                                }}>
+                                                    <img
+                                                        src={doctor.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=0ea5e9&color=fff&size=128`}
+                                                        alt={doctor.name}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'cover'
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                {/* Doctor Info */}
+                                                <div style={{ flex: 1 }}>
+                                                    <h4 style={{
+                                                        margin: '0 0 6px 0',
+                                                        fontSize: '1.05rem',
+                                                        fontWeight: '600',
+                                                        color: '#111827'
+                                                    }}>
+                                                        {doctor.name}
+                                                    </h4>
+
+                                                    {/* Metadata Badges */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        flexWrap: 'wrap'
+                                                    }}>
+                                                        {/* Distance Badge */}
+                                                        <span style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            fontSize: '0.85rem',
+                                                            color: '#059669',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            <MapPin size={14} />
+                                                            {doctor.distance} km away
+                                                        </span>
+
+                                                        {/* Availability Badge */}
+                                                        <span style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            fontSize: '0.85rem',
+                                                            color: doctor.availableTime === "Available Now" ? '#dc2626' : '#6b7280',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            <Clock size={14} />
+                                                            {doctor.availableTime || "Available Now"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Specialization Tag */}
+                                                <div style={{
+                                                    padding: '6px 12px',
+                                                    background: '#f3f4f6',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.85rem',
+                                                    color: '#4b5563',
+                                                    fontWeight: '500',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {doctor.specialization || doctor.specialty || "General"}
+                                                </div>
+
+                                                {/* Book Now Button (Red styled) */}
+                                                <button
+                                                    onClick={() => handleEmergencyBook(doctor)}
+                                                    style={{
+                                                        background: '#dc2626',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        padding: '10px 20px',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        whiteSpace: 'nowrap',
+                                                        transition: 'all 0.2s ease',
+                                                        boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.background = '#b91c1c';
+                                                        e.target.style.transform = 'translateY(-1px)';
+                                                        e.target.style.boxShadow = '0 4px 8px rgba(220, 38, 38, 0.3)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.background = '#dc2626';
+                                                        e.target.style.transform = 'translateY(0)';
+                                                        e.target.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
+                                                    }}
+                                                >
+                                                    Book Now
+                                                </button>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </>
                             )}
 
                         </div>

@@ -172,75 +172,69 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
 
                                 {/* Slot Selection */}
                                 <div style={{ padding: '1.5rem' }}>
-                                    {mode === 'standard' && (
+                                    {/* Slot Selection (shown for both standard and emergency) */}
+                                    {availableDates.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>No available slots found.</div>
+                                    ) : (
                                         <>
-                                            {availableDates.length === 0 ? (
-                                                <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>No available slots found.</div>
-                                            ) : (
-                                                <>
-                                                    <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Date</p>
-                                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '4px' }}>
-                                                        {availableDates.map((d, i) => (
-                                                            <button
-                                                                key={i}
-                                                                onClick={() => { setSelectedDate(i); setSelectedSlot(null); }}
-                                                                style={{
-                                                                    minWidth: '80px',
-                                                                    flex: 1,
-                                                                    padding: '0.8rem',
-                                                                    borderRadius: '12px',
-                                                                    border: selectedDate === i ? '2px solid var(--color-primary)' : '1px solid #eee',
-                                                                    backgroundColor: selectedDate === i ? 'rgba(7, 118, 89, 0.05)' : 'white',
-                                                                    textAlign: 'center',
-                                                                    cursor: 'pointer'
-                                                                }}
-                                                            >
-                                                                <span style={{ display: 'block', fontSize: '0.85rem', color: '#666' }}>{d.day}</span>
-                                                                <span style={{ display: 'block', fontWeight: 'bold', fontSize: '1.2rem' }}>{d.date}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
+                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Date</p>
+                                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '4px' }}>
+                                                {availableDates.map((d, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => { setSelectedDate(i); setSelectedSlot(null); }}
+                                                        style={{
+                                                            minWidth: '80px',
+                                                            flex: 1,
+                                                            padding: '0.8rem',
+                                                            borderRadius: '12px',
+                                                            border: selectedDate === i ? '2px solid var(--color-primary)' : '1px solid #eee',
+                                                            backgroundColor: selectedDate === i ? 'rgba(7, 118, 89, 0.05)' : 'white',
+                                                            textAlign: 'center',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <span style={{ display: 'block', fontSize: '0.85rem', color: '#666' }}>{d.day}</span>
+                                                        <span style={{ display: 'block', fontWeight: 'bold', fontSize: '1.2rem' }}>{d.date}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
 
-                                                    <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Time</p>
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
-                                                        {slotsByDate[availableDates[selectedDate].fullDate]?.slots.map((s, i) => (
-                                                            <button
-                                                                key={s.slot_id}
-                                                                onClick={() => setSelectedSlot(s)}
-                                                                style={{
-                                                                    padding: '0.6rem',
-                                                                    borderRadius: '8px',
-                                                                    border: selectedSlot?.slot_id === s.slot_id ? '1px solid var(--color-primary)' : '1px solid #ddd',
-                                                                    backgroundColor: selectedSlot?.slot_id === s.slot_id ? 'var(--color-primary)' : 'white',
-                                                                    color: selectedSlot?.slot_id === s.slot_id ? 'white' : '#333',
-                                                                    fontSize: '0.9rem',
-                                                                    cursor: 'pointer'
-                                                                }}
-                                                            >
-                                                                {s.label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            )}
+                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Time</p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
+                                                {slotsByDate[availableDates[selectedDate].fullDate]?.slots.map((s, i) => (
+                                                    <button
+                                                        key={s.slot_id}
+                                                        onClick={() => setSelectedSlot(s)}
+                                                        style={{
+                                                            padding: '0.6rem',
+                                                            borderRadius: '8px',
+                                                            border: selectedSlot?.slot_id === s.slot_id ? '1px solid var(--color-primary)' : '1px solid #ddd',
+                                                            backgroundColor: selectedSlot?.slot_id === s.slot_id ? 'var(--color-primary)' : 'white',
+                                                            color: selectedSlot?.slot_id === s.slot_id ? 'white' : '#333',
+                                                            fontSize: '0.9rem',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        {s.label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </>
                                     )}
 
+                                    {/* Emergency Badge (shown above slots) */}
                                     {mode === 'emergency' && (
-                                        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                        <div style={{ textAlign: 'center', padding: '1rem 0 0.5rem' }}>
                                             <div style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: '8px',
                                                 backgroundColor: '#fee2e2', color: '#dc2626',
                                                 padding: '0.5rem 1rem', borderRadius: '50px',
-                                                fontWeight: '600', marginBottom: '1rem'
+                                                fontWeight: '600', fontSize: '0.9rem'
                                             }}>
                                                 <Clock size={16} />
-                                                Next Available Slot: Today, {slots[0]}
+                                                Emergency Appointment
                                             </div>
-                                            <p style={{ color: '#666', lineHeight: '1.5' }}>
-                                                Confirming this will notify the clinic immediately.
-                                                <br />Please proceed to the clinic location.
-                                            </p>
                                         </div>
                                     )}
                                 </div>

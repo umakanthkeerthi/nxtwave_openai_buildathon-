@@ -25,16 +25,16 @@ from chromadb.utils import embedding_functions
 
 @app.on_event("startup")
 async def startup_event():
-    print("⬇️ STARTUP: Pre-loading ChromaDB Embedding Model (FastEmbed)...")
+    print("STARTUP: Pre-loading ChromaDB Embedding Model (FastEmbed)...")
     try:
         # Load lightweight FastEmbed model (uses ONNX, no PyTorch)
         # It downloads a small ~22MB quantized model automatically
         from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
         ef = ONNXMiniLM_L6_V2()
         ef(["test"])
-        print("✅ STARTUP: FastEmbed Model loaded successfully.")
+        print("STARTUP: FastEmbed Model loaded successfully.")
     except Exception as e:
-        print(f"⚠️ STARTUP WARNING: FastEmbed load failed: {e}")
+        print(f"STARTUP WARNING: FastEmbed load failed: {e}")
 async def root():
     return {"status": "ok", "message": "Agentic Doctor Backend Running"}
 
@@ -52,6 +52,11 @@ class ChatResponse(BaseModel):
     decision: Optional[str] = "PENDING"
     detected_language: Optional[str] = None
     summary_payload: Optional[dict] = None
+
+# Add explicit OPTIONS handler for CORS preflight
+@app.options("/chat")
+async def chat_options():
+    return {"status": "ok"}
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
@@ -743,14 +748,53 @@ async def get_patients_endpoint(doctor_id: str):
                 age = apt.get("patient_age") or snapshot.get("age") or "?"
                 gender = apt.get("patient_gender") or snapshot.get("gender") or "?"
                 
+                # 3. [FIXED] Calculate Real AI Risk from Severity Score
+                risk_level = "Medium"  # Default fallback
+                condition = apt.get("reason") or "Routine Checkup"
+                
+                case_id = apt.get("case_id")
+                if case_id:
+                    try:
+                        # Query pre_doctor_consultation_summaries by case_id
+                        # [FIX] Correct collection name found via debug
+                        summaries = firebase_service.db.collection("case_pre_doctor_summaries").where("case_id", "==", case_id).limit(1).stream()
+                        
+
+                        
+                        for summary_doc in summaries:
+                            summary_data = summary_doc.to_dict()
+                            
+                            # [FIX] Extract from nested 'assessment' object
+                            assessment = summary_data.get("assessment", {})
+                            severity_score = assessment.get("severity_score", 50)
+                            
+                            # Map severity score to risk level
+                            # High: 70-100, Medium: 40-69, Low: 0-39
+                            if severity_score >= 70:
+                                risk_level = "High"
+                            elif severity_score >= 40:
+                                risk_level = "Medium"
+                            else:
+                                risk_level = "Low"
+                            
+                            # [FIX] Extract symptoms from 'history' object
+                            history = summary_data.get("history", {})
+                            symptoms = history.get("symptoms", [])
+                            if symptoms:
+                                condition = ", ".join(symptoms[:2])  # First 2 symptoms
+                            break  # Only use first summary
+                    except Exception as e:
+                        print(f"Error fetching risk for case {case_id}: {e}")
+                        # Keep default "Medium" risk
+                
                 patients_map[pid] = {
                     "id": pid,
                     "name": name,
                     "age": age,
                     "gender": gender,
                     "lastVisit": apt.get("appointment_time") or apt.get("slot_time") or "Recently",
-                    "condition": apt.get("reason") or "Routine Checkup",
-                    "risk": "Medium",
+                    "condition": condition,
+                    "risk": risk_level,  # [FIXED] Now uses real AI risk analysis
                     "type": "Active",
                     "status": apt.get("status", "SCHEDULED"),
                     "caseId": apt.get("case_id"),

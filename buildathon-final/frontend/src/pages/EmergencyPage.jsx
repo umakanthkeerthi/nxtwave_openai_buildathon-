@@ -52,7 +52,12 @@ const EmergencyPage = () => {
                                             user_id: userId,
                                             // Ensure profile_id is also sent if backend expects it
                                             profile_id: patientId,
-                                            patient_summary: "EMERGENCY DETECTED",
+                                            patient_summary: {
+                                                triage_level: "Red",
+                                                clinical_guidelines: "EMERGENCY DETECTED - Immediate medical attention required",
+                                                symptoms_reported: summaryPayload?.symptoms_reported || ["Emergency symptoms"],
+                                                red_flags: ["Immediate attention required"]
+                                            },
                                             pre_doctor_consultation_summary: summaryPayload,
                                             case_id: caseId
                                         })
@@ -66,7 +71,7 @@ const EmergencyPage = () => {
                             const MVP_LAT = 28.6129;
                             const MVP_LON = 77.2295;
 
-                            navigate('/patient/consult/directory', {
+                            navigate('/patient/consult', {
                                 state: {
                                     type: 'emergency',
                                     userLocation: { lat: MVP_LAT, lon: MVP_LON },
