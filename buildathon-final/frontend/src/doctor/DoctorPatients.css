@@ -1,0 +1,322 @@
+/* Container adjustments */
+.patients-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+/* Header */
+.patients-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.patients-title h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.patients-title p {
+    margin: 4px 0 0 0;
+    color: #64748b;
+}
+
+.add-patient-btn {
+    background: #0f766e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* Search and Filter Section */
+.filters-container {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 10px 10px 40px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn.active {
+    border-color: #0f766e;
+    background: #f0fdfa;
+    color: #0f766e;
+}
+
+/* Table Styles */
+.patients-table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.patients-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.patients-table thead {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.patients-table th {
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.patients-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Patient Info Cell */
+.patient-info-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.patient-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #475569;
+}
+
+.patient-details-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.patient-sub-details {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* Status Badge */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-badge.emergency {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.status-badge.active {
+    background: #f0fdfa;
+    color: #0f766e;
+}
+
+/* Action Button */
+.view-btn {
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    color: #64748b;
+    cursor: pointer;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .patients-container {
+        padding: 1rem;
+    }
+
+    .patients-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .add-patient-btn {
+        width: 100%;
+    }
+
+    .filters-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    .filter-buttons {
+        overflow-x: auto;
+        padding-bottom: 5px;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-btn {
+        white-space: nowrap;
+    }
+
+    /* Card View for Table */
+    .patients-table thead {
+        display: none;
+    }
+
+    .patients-table,
+    .patients-table tbody,
+    .patients-table tr,
+    .patients-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .patients-table tr {
+        margin-bottom: 1rem;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .patients-table td {
+        padding: 0.5rem 0;
+        text-align: right;
+        /* Default align content right for key-value pair look */
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .patients-table td:last-child {
+        border-bottom: none;
+    }
+
+    /* Add labels */
+    .patients-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.85rem;
+        text-align: left;
+    }
+
+    /* Specific adjustments */
+
+    /* 1. Patient Info Row - Full width card header style */
+    .patients-table td:first-child {
+        display: flex;
+        justify-content: flex-start;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 0.5rem;
+    }
+
+    .patients-table td:first-child .patient-info-cell {
+        width: 100%;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .patients-table td:first-child .patient-details-text {
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    .patients-table td:first-child::before {
+        display: none;
+        /* Hide 'Patient Info' label */
+    }
+
+    /* 2. Action Button Row */
+    .patients-table td:last-child {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        justify-content: stretch;
+    }
+
+    .patients-table td:last-child .view-btn {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #f8fafc;
+        color: #0f766e;
+        border-color: #cbd5e1;
+        font-weight: 600;
+    }
+
+    .patients-table td:last-child::before {
+        display: none;
+    }
+}

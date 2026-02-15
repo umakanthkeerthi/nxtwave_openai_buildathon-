@@ -1,33 +1,36 @@
 import React from 'react';
 import { FileText, Stethoscope, Activity, Mic, Utensils } from 'lucide-react';
 import { motion } from 'framer-motion';
+
 import { useNavigate } from 'react-router-dom';
 import './HomeComponents.css'; // Shared styles
+import { useTranslation } from 'react-i18next';
 
 const DocAITools = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const tools = [
         {
             icon: <FileText size={20} />,
-            label: "Prescription Analyzer",
-            sub: "Upload & Understand",
+            label: t('doc_ai_tools.prescription.label'),
+            sub: t('doc_ai_tools.prescription.sub'),
             color: "#8b5cf6", // Violet
             bg: "#f3e8ff",
             path: '/patient/prescription-analyzer'
         },
         {
             icon: <Activity size={20} />,
-            label: "Lab Report Analyzer",
-            sub: "Analyze medical lab reports for key metrics and abnormalities.",
+            label: t('doc_ai_tools.lab_report.label'),
+            sub: t('doc_ai_tools.lab_report.sub'),
             color: "#06b6d4", // Cyan
             bg: "#cffafe",
             path: '/patient/lab-report-analyzer'
         },
         {
             icon: <Utensils size={20} />,
-            label: "Nutrition Analyzer",
-            sub: "AI Diet & Wellness Plan",
+            label: t('doc_ai_tools.nutrition.label'),
+            sub: t('doc_ai_tools.nutrition.sub'),
             color: "#84cc16", // Lime
             bg: "#ecfccb",
             path: '/patient/nutrition'
@@ -37,18 +40,18 @@ const DocAITools = () => {
     return (
         <div className="home-section-container">
             <h2 className="home-section-title">
-                DocAI Tools
+                {t('doc_ai_tools.title')}
             </h2>
             <div className="insights-grid">
                 {tools.map((item, index) => (
-                    <AiToolCard key={index} item={item} navigate={navigate} />
+                    <AiToolCard key={index} item={item} navigate={navigate} t={t} />
                 ))}
             </div>
         </div>
     );
 };
 
-const AiToolCard = ({ item, navigate }) => (
+const AiToolCard = ({ item, navigate, t }) => (
     <motion.div
         whileHover={{
             y: -5,
@@ -93,7 +96,7 @@ const AiToolCard = ({ item, navigate }) => (
                 borderRadius: '20px',
                 textTransform: 'uppercase'
             }}>
-                AI Powered
+                {t('doc_ai_tools.badge')}
             </div>
         </div>
 

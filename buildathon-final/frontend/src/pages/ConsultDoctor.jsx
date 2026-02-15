@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, MapPin, Clock, Video, AlertCircle, X } from 'lucide-react';
 import SymptomEvaluator from '../components/SymptomEvaluator';
 import DoctorGridCarousel from '../components/DoctorGridCarousel';
@@ -12,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 // Removed mock data import
 
 const ConsultDoctor = ({ view = 'doctors' }) => {
+    const { t } = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
     const { currentUser, selectedProfile } = useAuth();
@@ -84,7 +86,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                     image: d.image || 'https://via.placeholder.com/150',
                     // Use backend data if available, else defaults
                     distance: d.distance !== undefined ? d.distance : (Math.random() * 10).toFixed(1),
-                    availableTime: d.availableTime || "Check Availability"
+                    availableTime: d.availableTime || t('consult_doctor.emergency.check_availability')
                 }));
 
                 setAllDoctors(enrichedDocs);
@@ -200,8 +202,8 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
         }
     };
 
-    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading specialists...</div>;
-    if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>Error: {error}</div>;
+    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>{t('consult_doctor.loading')}</div>;
+    if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>{t('consult_doctor.error')} {error}</div>;
 
 
     // Emergency Data Preparation
@@ -235,8 +237,8 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
             {/* Left Sidebar */}
             {/* Left Sidebar (Desktop Only) */}
             <div className="left-sidebar desktop-only">
-                <SidebarItem label="Find Doctors" active={view === 'doctors'} to="/patient/consult" />
-                <SidebarItem label="My Appointments" active={view === 'appointments'} to="/patient/consult/my-appointments" />
+                <SidebarItem label={t('consult_doctor.sidebar.find_doctors')} active={view === 'doctors'} to="/patient/consult" />
+                <SidebarItem label={t('consult_doctor.sidebar.my_appointments')} active={view === 'appointments'} to="/patient/consult/my-appointments" />
             </div>
 
             {/* Mobile View Toggle */}
@@ -245,13 +247,13 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                     to="/patient/consult"
                     className={`mobile-toggle-btn ${view === 'doctors' ? 'active' : ''}`}
                 >
-                    Find Doctors
+                    {t('consult_doctor.sidebar.find_doctors')}
                 </Link>
                 <Link
                     to="/patient/consult/my-appointments"
                     className={`mobile-toggle-btn ${view === 'appointments' ? 'active' : ''}`}
                 >
-                    My Appointments
+                    {t('consult_doctor.sidebar.my_appointments')}
                 </Link>
             </div>
 
@@ -273,8 +275,8 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                             <AlertCircle size={24} />
                                         </div>
                                         <div>
-                                            <h2 style={{ margin: 0, color: '#991b1b', fontSize: '1.4rem' }}>Emergency Care Finder</h2>
-                                            <p style={{ margin: '4px 0 0 0', color: '#7f1d1d' }}>Showing nearest available doctors for immediate in-person checkup.</p>
+                                            <h2 style={{ margin: 0, color: '#991b1b', fontSize: '1.4rem' }}>{t('consult_doctor.emergency.title')}</h2>
+                                            <p style={{ margin: '4px 0 0 0', color: '#7f1d1d' }}>{t('consult_doctor.emergency.subtitle')}</p>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -285,7 +287,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                     variants={item}
                                     style={{ color: 'var(--color-primary)', marginBottom: '1.5rem', fontSize: '1.5rem' }}
                                 >
-                                    AI Clinical Agent Analysis
+                                    {t('consult_doctor.standard.ai_analysis')}
                                 </motion.h2>
                             )}
 
@@ -308,9 +310,9 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                         <Search size={16} />
                                     </div>
                                     <div>
-                                        <h4 style={{ margin: '0 0 4px 0', color: '#1e40af' }}>Matching Specialists for Case #{location.state.summary.caseId.slice(-6)}</h4>
+                                        <h4 style={{ margin: '0 0 4px 0', color: '#1e40af' }}>{t('consult_doctor.standard.matching_specialists')} #{location.state.summary.caseId.slice(-6)}</h4>
                                         <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e3a8a' }}>
-                                            Based on <b>{location.state.summary.chiefComplaints?.[0] || "your symptoms"}</b>, we are highlighting relevant specialists below.
+                                            {t('consult_doctor.standard.based_on')} <b>{location.state.summary.chiefComplaints?.[0] || t('consult_doctor.standard.your_symptoms')}</b>, {t('consult_doctor.standard.highlighting')}
                                         </p>
                                     </div>
                                 </motion.div>
@@ -329,10 +331,10 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                             className="btn-consult-cta"
                                         >
                                             <Video size={18} />
-                                            Book Appointment for Doctor Consultation
+                                            {t('consult_doctor.standard.book_appointment')}
                                         </button>
                                         <p style={{ textAlign: 'center', marginTop: '0.8rem', color: '#666', fontSize: '0.9rem' }}>
-                                            Use our AI Clinical Agent above to match with the right specialist.
+                                            {t('consult_doctor.standard.use_ai_agent')}
                                         </p>
                                     </motion.div>
 
@@ -341,7 +343,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                             <Search size={20} color="#666" style={{ marginRight: '10px' }} />
                                             <input
                                                 type="text"
-                                                placeholder="Search for doctors..."
+                                                placeholder={t('consult_doctor.standard.search_placeholder')}
                                                 className="search-input"
                                             />
                                         </div>
@@ -349,7 +351,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                             to="/patient/consult/directory"
                                             className="btn-view-directory"
                                         >
-                                            View Full Directory
+                                            {t('consult_doctor.standard.view_directory')}
                                         </Link>
                                     </motion.div>
                                 </>
@@ -358,13 +360,13 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                             {mode === 'standard' ? (
                                 <>
                                     <motion.div variants={item}>
-                                        <DoctorGridCarousel title="From Recent Consultations" doctors={alreadyConsulted} showAction={false} />
+                                        <DoctorGridCarousel title={t('consult_doctor.standard.recent_consultations')} doctors={alreadyConsulted} showAction={false} />
                                     </motion.div>
                                     <motion.div variants={item}>
-                                        <DoctorGridCarousel title="Doctors Near You" doctors={nearYou} showAction={false} />
+                                        <DoctorGridCarousel title={t('consult_doctor.standard.near_you')} doctors={nearYou} showAction={false} />
                                     </motion.div>
                                     <motion.div variants={item}>
-                                        <DoctorGridCarousel title="Other Top Rated Doctors" doctors={otherDoctors} showAction={false} />
+                                        <DoctorGridCarousel title={t('consult_doctor.standard.top_rated')} doctors={otherDoctors} showAction={false} />
                                     </motion.div>
                                 </>
                             ) : (
@@ -402,14 +404,14 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                                 fontSize: '1.1rem',
                                                 fontWeight: '600'
                                             }}>
-                                                Emergency Care Finder
+                                                {t('consult_doctor.emergency.title')}
                                             </h3>
                                             <p style={{
                                                 margin: 0,
                                                 fontSize: '0.9rem',
                                                 color: '#7f1d1d'
                                             }}>
-                                                Showing nearest available doctors for immediate in-person checkup.
+                                                {t('consult_doctor.emergency.subtitle')}
                                             </p>
                                         </div>
                                     </motion.div>
@@ -481,7 +483,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                                             fontWeight: '500'
                                                         }}>
                                                             <MapPin size={14} />
-                                                            {doctor.distance} km away
+                                                            {doctor.distance} {t('consult_doctor.emergency.distance')}
                                                         </span>
 
                                                         {/* Availability Badge */}
@@ -494,7 +496,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                                             fontWeight: '500'
                                                         }}>
                                                             <Clock size={14} />
-                                                            {doctor.availableTime || "Available Now"}
+                                                            {doctor.availableTime || t('consult_doctor.emergency.available_now')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -539,7 +541,7 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                                                         e.target.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
                                                     }}
                                                 >
-                                                    Book Now
+                                                    {t('doctor_card.book_now')}
                                                 </button>
                                             </motion.div>
                                         ))}
@@ -552,14 +554,14 @@ const ConsultDoctor = ({ view = 'doctors' }) => {
                         {/* Right Sidebar */}
                         {mode === 'standard' && (
                             <motion.div className="right-sidebar" variants={item}>
-                                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: '#333' }}>By Department</h3>
+                                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: '#333' }}>{t('consult_doctor.standard.by_department')}</h3>
                                 <div className="department-grid">
-                                    <DepartmentCard label="General" icon="🩺" />
-                                    <DepartmentCard label="Paediatrics" icon="👶" />
-                                    <DepartmentCard label="Gynaecology" icon="👩⚕️" />
-                                    <DepartmentCard label="Diabetology" icon="🩸" />
-                                    <DepartmentCard label="Cardiology" icon="❤️" />
-                                    <DepartmentCard label="Pulmonology" icon="🫁" />
+                                    <DepartmentCard label={t('consult_doctor.departments.general')} icon="🩺" />
+                                    <DepartmentCard label={t('consult_doctor.departments.paediatrics')} icon="👶" />
+                                    <DepartmentCard label={t('consult_doctor.departments.gynaecology')} icon="👩⚕️" />
+                                    <DepartmentCard label={t('consult_doctor.departments.diabetology')} icon="🩸" />
+                                    <DepartmentCard label={t('consult_doctor.departments.cardiology')} icon="❤️" />
+                                    <DepartmentCard label={t('consult_doctor.departments.pulmonology')} icon="🫁" />
                                 </div>
                             </motion.div>
                         )}

@@ -3,7 +3,11 @@ import { User, Activity, Stethoscope, Pill, Bell, Heart } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import ProfileModal from './ProfileModal';
 
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
+
 const Navbar = () => {
+    const { t } = useTranslation();
     const [isProfileOpen, setIsProfileOpen] = React.useState(false);
 
     return (
@@ -44,14 +48,15 @@ const Navbar = () => {
                 </Link>
 
                 <div className="desktop-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <NavItem to="/patient/pharmacy" icon={<Pill size={18} />} label="Pharmacy" />
-                    <NavItem to="/patient/medical-files" icon={<Activity size={18} />} label="Medical Files" />
-                    <NavItem to="/patient/consult" icon={<Stethoscope size={18} />} label="Consult Doctor" />
-                    <NavItem to="/patient/medications" icon={<Activity size={18} />} label="Medications" />
-                    <NavItem to="/patient/wellness" icon={<Heart size={18} />} label="Wellness" />
+                    <NavItem to="/patient/pharmacy" icon={<Pill size={18} />} label={t('navbar.pharmacy')} />
+                    <NavItem to="/patient/medical-files" icon={<Activity size={18} />} label={t('navbar.medical_files')} />
+                    <NavItem to="/patient/consult" icon={<Stethoscope size={18} />} label={t('navbar.consult_doctor')} />
+                    <NavItem to="/patient/medications" icon={<Activity size={18} />} label={t('navbar.medications')} />
+                    <NavItem to="/patient/wellness" icon={<Heart size={18} />} label={t('navbar.wellness')} />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <LanguageSwitcher />
                     <button style={{
                         position: 'relative',
                         color: 'var(--color-primary)',
@@ -95,11 +100,11 @@ const Navbar = () => {
 
             {/* Mobile Bottom Navigation */}
             <div className="mobile-nav">
-                <NavItem to="/patient/pharmacy" icon={<Pill size={20} />} label="Pharmacy" />
-                <NavItem to="/patient/medical-files" icon={<Activity size={20} />} label="Files" />
-                <NavItem to="/patient/consult" icon={<Stethoscope size={20} />} label="Consult" />
-                <NavItem to="/patient/medications" icon={<Activity size={20} />} label="Meds" />
-                <NavItem to="/patient/wellness" icon={<Heart size={20} />} label="Wellness" />
+                <NavItem to="/patient/pharmacy" icon={<Pill size={20} />} label={t('navbar.pharmacy')} />
+                <NavItem to="/patient/medical-files" icon={<Activity size={20} />} label={t('navbar.medical_files')} />
+                <NavItem to="/patient/consult" icon={<Stethoscope size={20} />} label={t('navbar.consult_doctor')} />
+                <NavItem to="/patient/medications" icon={<Activity size={20} />} label={t('navbar.medications')} />
+                <NavItem to="/patient/wellness" icon={<Heart size={20} />} label={t('navbar.wellness')} />
             </div>
         </>
     );

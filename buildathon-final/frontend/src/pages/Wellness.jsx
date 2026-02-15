@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Flame, Moon, Heart, Droplets, Info, TrendingUp, Award, Target, Zap } from 'lucide-react';
 import './Wellness.css';
+import { useTranslation } from 'react-i18next';
 
 const Wellness = () => {
+    const { t } = useTranslation();
     // --- STATE ---
     const [viewMode, setViewMode] = useState('week');
     const [waterCount, setWaterCount] = useState(3);
@@ -19,12 +21,12 @@ const Wellness = () => {
 
     // Achievement Badges
     const achievements = [
-        { id: 1, icon: '🏃', title: 'First Steps', desc: 'Complete 5,000 steps', unlocked: true },
-        { id: 2, icon: '💪', title: 'Week Warrior', desc: '7 day streak', unlocked: true },
-        { id: 3, icon: '🌟', title: 'Goal Crusher', desc: 'Hit 10K steps', unlocked: false },
-        { id: 4, icon: '😴', title: 'Sleep Master', desc: '8hrs for 5 days', unlocked: false },
-        { id: 5, icon: '💧', title: 'Hydration Hero', desc: '2L daily for week', unlocked: true },
-        { id: 6, icon: '🔥', title: 'On Fire', desc: '30 day streak', unlocked: false }
+        { id: 1, icon: '🏃', title: t('wellness.achievements.badges.first_steps.title'), desc: t('wellness.achievements.badges.first_steps.desc'), unlocked: true },
+        { id: 2, icon: '💪', title: t('wellness.achievements.badges.week_warrior.title'), desc: t('wellness.achievements.badges.week_warrior.desc'), unlocked: true },
+        { id: 3, icon: '🌟', title: t('wellness.achievements.badges.goal_crusher.title'), desc: t('wellness.achievements.badges.goal_crusher.desc'), unlocked: false },
+        { id: 4, icon: '😴', title: t('wellness.achievements.badges.sleep_master.title'), desc: t('wellness.achievements.badges.sleep_master.desc'), unlocked: false },
+        { id: 5, icon: '💧', title: t('wellness.achievements.badges.hydration_hero.title'), desc: t('wellness.achievements.badges.hydration_hero.desc'), unlocked: true },
+        { id: 6, icon: '🔥', title: t('wellness.achievements.badges.on_fire.title'), desc: t('wellness.achievements.badges.on_fire.desc'), unlocked: false }
     ];
 
     // Mock Data
@@ -95,8 +97,8 @@ const Wellness = () => {
         <div className="wellness-container">
             <header className="wellness-header">
                 <div>
-                    <h1 className="wellness-title">Your Wellness Dashboard</h1>
-                    <p className="wellness-subtitle">Track, improve, and celebrate your health journey</p>
+                    <h1 className="wellness-title">{t('wellness.title')}</h1>
+                    <p className="wellness-subtitle">{t('wellness.subtitle')}</p>
                 </div>
                 <div className="wellness-date">
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -119,28 +121,28 @@ const Wellness = () => {
                         <div className="summary-stats">
                             <div className="summary-stat">
                                 <div className="stat-value">{weeklyStats.avgSteps.toLocaleString()}</div>
-                                <div className="stat-label">Avg Steps</div>
+                                <div className="stat-label">{t('wellness.weekly_summary.avg_steps')}</div>
                                 <div className={`stat-change ${weeklyStats.stepsChange > 0 ? 'positive' : 'negative'}`}>
                                     {weeklyStats.stepsChange > 0 ? '↑' : '↓'} {Math.abs(weeklyStats.stepsChange)}%
                                 </div>
                             </div>
                             <div className="summary-stat">
                                 <div className="stat-value">{weeklyStats.avgSleep}h</div>
-                                <div className="stat-label">Avg Sleep</div>
+                                <div className="stat-label">{t('wellness.weekly_summary.avg_sleep')}</div>
                                 <div className={`stat-change ${weeklyStats.sleepChange > 0 ? 'positive' : 'negative'}`}>
                                     {weeklyStats.sleepChange > 0 ? '↑' : '↓'} {Math.abs(weeklyStats.sleepChange)}%
                                 </div>
                             </div>
                             <div className="summary-stat">
                                 <div className="stat-value">{weeklyStats.totalCalories}</div>
-                                <div className="stat-label">Calories Burned</div>
+                                <div className="stat-label">{t('wellness.weekly_summary.calories_burned')}</div>
                                 <div className={`stat-change ${weeklyStats.caloriesChange > 0 ? 'positive' : 'negative'}`}>
                                     {weeklyStats.caloriesChange > 0 ? '↑' : '↓'} {Math.abs(weeklyStats.caloriesChange)}%
                                 </div>
                             </div>
                             <div className="summary-stat">
                                 <div className="stat-value">{weeklyStats.activeMinutes}</div>
-                                <div className="stat-label">Active Minutes</div>
+                                <div className="stat-label">{t('wellness.weekly_summary.active_minutes')}</div>
                                 <div className={`stat-change ${weeklyStats.activeChange > 0 ? '↑' : '↓'} ${weeklyStats.activeChange > 0 ? 'positive' : 'negative'}`}>
                                     {weeklyStats.activeChange > 0 ? '↑' : '↓'} {Math.abs(weeklyStats.activeChange)}%
                                 </div>
@@ -157,7 +159,7 @@ const Wellness = () => {
                                     <div className="card-icon steps-icon-bg">
                                         <Flame size={20} />
                                     </div>
-                                    <span>Activity</span>
+                                    <span>{t('wellness.activity.title')}</span>
                                 </div>
                                 <TrendingUp size={18} color="#34c759" />
                             </div>
@@ -181,7 +183,7 @@ const Wellness = () => {
                             </div>
 
                             <div className="calories-burned">
-                                🔥 {caloriesBurned} kcal burned
+                                🔥 {caloriesBurned} {t('wellness.activity.burned')}
                             </div>
                         </div>
 
@@ -192,9 +194,9 @@ const Wellness = () => {
                                     <div className="card-icon sleep-icon-bg">
                                         <Moon size={20} />
                                     </div>
-                                    <span>Sleep Analysis</span>
+                                    <span>{t('wellness.sleep.title')}</span>
                                 </div>
-                                <div className="sleep-quality">Good Quality</div>
+                                <div className="sleep-quality">{t('wellness.sleep.quality')}</div>
                             </div>
 
                             <div className="sleep-stats">
@@ -207,13 +209,13 @@ const Wellness = () => {
                                         className={`toggle-btn ${viewMode === 'week' ? 'active' : ''}`}
                                         onClick={() => setViewMode('week')}
                                     >
-                                        Week
+                                        {t('wellness.sleep.week')}
                                     </button>
                                     <button
                                         className={`toggle-btn ${viewMode === 'month' ? 'active' : ''}`}
                                         onClick={() => setViewMode('month')}
                                     >
-                                        Month
+                                        {t('wellness.sleep.month')}
                                     </button>
                                 </div>
                             </div>
@@ -249,9 +251,9 @@ const Wellness = () => {
                                         <div className="card-icon heart-icon-bg">
                                             <Heart size={20} fill="currentColor" />
                                         </div>
-                                        <span>Heart Rate</span>
+                                        <span>{t('wellness.vitals.heart_rate')}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Live</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>{t('wellness.vitals.live')}</div>
                                 </div>
                                 <div className="heart-rate-display">
                                     <span className="bpm-value">{heartRate}</span>
@@ -276,7 +278,7 @@ const Wellness = () => {
                                         <div className="water-icon-bg">
                                             <Droplets size={16} fill="currentColor" />
                                         </div>
-                                        <span>Hydration</span>
+                                        <span>{t('wellness.vitals.hydration')}</span>
                                     </div>
                                     <div style={{ fontSize: '0.9rem', color: '#0a84ff', fontWeight: 'bold' }}>
                                         {waterCount * 250}ml
@@ -302,7 +304,7 @@ const Wellness = () => {
                     <div className="achievements-section" style={{ marginTop: 0 }}>
                         <h2 className="section-title">
                             <Award size={24} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                            Achievements
+                            {t('wellness.achievements.title')}
                         </h2>
                         <div className="achievements-grid">
                             {achievements.map(badge => (
@@ -324,9 +326,9 @@ const Wellness = () => {
                     <div className="wellness-card stats-showcase">
                         <div className="showcase-header">
                             <div className="showcase-tabs">
-                                <div className="tab active">Monthly Tracker</div>
+                                <div className="tab active">{t('wellness.sidebar.monthly_tracker')}</div>
                                 {/* <div className="tab">Leaderboard</div> */}
-                                <div className="tab">Badges</div>
+                                <div className="tab">{t('wellness.sidebar.badges')}</div>
                             </div>
                             <div className="showcase-date-selector">
                                 <span>Feb 2026 ◀ ▶</span>
@@ -344,11 +346,11 @@ const Wellness = () => {
                         </div>
 
                         <div className="legend">
-                            <div className="legend-item"><span className="dot missed"></span> Missed</div>
-                            <div className="legend-item"><span className="dot achieved"></span> Achieved</div>
-                            <div className="legend-item"><span className="dot holiday"></span> Holiday</div>
-                            <div className="legend-item"><span className="dot paused"></span> Paused</div>
-                            <div className="legend-item"><span className="dot freeze"></span> 🔥 Freeze</div>
+                            <div className="legend-item"><span className="dot missed"></span> {t('wellness.sidebar.legend.missed')}</div>
+                            <div className="legend-item"><span className="dot achieved"></span> {t('wellness.sidebar.legend.achieved')}</div>
+                            <div className="legend-item"><span className="dot holiday"></span> {t('wellness.sidebar.legend.holiday')}</div>
+                            <div className="legend-item"><span className="dot paused"></span> {t('wellness.sidebar.legend.paused')}</div>
+                            <div className="legend-item"><span className="dot freeze"></span> 🔥 {t('wellness.sidebar.legend.freeze')}</div>
                         </div>
 
                         <div className="stats-badges">

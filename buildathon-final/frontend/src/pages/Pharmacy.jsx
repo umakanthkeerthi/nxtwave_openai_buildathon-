@@ -1,5 +1,6 @@
 ﻿
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ShoppingCart, MapPin, Navigation, ArrowLeft, Search, Plus, Minus, Pill, X } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -89,6 +90,7 @@ const AutoFitBounds = ({ pharmacies, userLocation }) => {
 };
 
 const Pharmacy = () => {
+    const { t } = useTranslation();
     const [cart, setCart] = React.useState([]);
     const [isCartOpen, setIsCartOpen] = React.useState(false);
     const [isCartAnimating, setIsCartAnimating] = React.useState(false);
@@ -554,7 +556,7 @@ const Pharmacy = () => {
                                 <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#0f766e', margin: 0 }}>
                                     {selectedPharmacy.name}
                                 </h1>
-                                <p style={{ color: '#64748b', margin: 0 }}> medicines available</p>
+                                <p style={{ color: '#64748b', margin: 0 }}> {t('pharmacy.medicines_available')}</p>
                             </div>
                         </div>
 
@@ -590,7 +592,7 @@ const Pharmacy = () => {
                             <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={20} />
                             <input
                                 type="text"
-                                placeholder="Search medicines..."
+                                placeholder={t('pharmacy.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 style={{
@@ -612,7 +614,7 @@ const Pharmacy = () => {
                                         fontWeight: '500', whiteSpace: 'nowrap'
                                     }}
                                 >
-                                    {cat}
+                                    {cat === 'All' ? t('pharmacy.categories.all') : (cat === 'Orders' ? t('pharmacy.categories.orders') : t('pharmacy.categories.prescription'))}
                                 </button>
                             ))}
                         </div>
@@ -621,9 +623,9 @@ const Pharmacy = () => {
                     {/* Content View: Products or Orders */}
                     {selectedCategory === 'Orders' ? (
                         <div style={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', background: 'white', padding: '1rem' }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#0f766e' }}>My Orders</h2>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#0f766e' }}>{t('pharmacy.orders.title')}</h2>
                             {orders.length === 0 ? (
-                                <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>No orders yet.</p>
+                                <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>{t('pharmacy.orders.empty')}</p>
                             ) : isMobile ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     {orders.map(order => (
@@ -653,11 +655,11 @@ const Pharmacy = () => {
                                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                                         <thead>
                                             <tr style={{ borderBottom: '2px solid #f1f5f9', color: '#64748b', textAlign: 'left' }}>
-                                                <th style={{ padding: '12px' }}>Order ID</th>
-                                                <th style={{ padding: '12px' }}>Date</th>
-                                                <th style={{ padding: '12px' }}>Items</th>
-                                                <th style={{ padding: '12px' }}>Total</th>
-                                                <th style={{ padding: '12px' }}>Status</th>
+                                                <th style={{ padding: '12px' }}>{t('pharmacy.orders.id')}</th>
+                                                <th style={{ padding: '12px' }}>{t('pharmacy.orders.date')}</th>
+                                                <th style={{ padding: '12px' }}>{t('pharmacy.orders.items')}</th>
+                                                <th style={{ padding: '12px' }}>{t('pharmacy.orders.total')}</th>
+                                                <th style={{ padding: '12px' }}>{t('pharmacy.orders.status')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -684,7 +686,7 @@ const Pharmacy = () => {
                         </div>
                     ) : (
                         loading ? (
-                            <div style={{ textAlign: 'center', padding: '4rem' }}>Loading medicines...</div>
+                            <div style={{ textAlign: 'center', padding: '4rem' }}>{t('pharmacy.loading')}</div>
                         ) : isMobile ? (
                             /* Mobile Card Layout */
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -710,8 +712,8 @@ const Pharmacy = () => {
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                             <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#64748b' }}>
-                                                <span>Batch: {product.batchNo || 'N/A'}</span>
-                                                <span>Exp: {product.expiryDate || 'N/A'}</span>
+                                                <span>{t('pharmacy.product.batch')}: {product.batchNo || 'N/A'}</span>
+                                                <span>{t('pharmacy.product.expiry')}: {product.expiryDate || 'N/A'}</span>
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9' }}>
@@ -725,7 +727,7 @@ const Pharmacy = () => {
                                                     alignItems: 'center', gap: '4px', fontSize: '0.9rem'
                                                 }}
                                             >
-                                                <Plus size={16} /> Add
+                                                <Plus size={16} /> {t('pharmacy.product.add_to_cart')}
                                             </button>
                                         </div>
                                     </motion.div>
@@ -737,11 +739,11 @@ const Pharmacy = () => {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                                     <thead>
                                         <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>Medicine Name</th>
-                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>Batch No</th>
-                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>Expiry Date</th>
-                                            <th style={{ padding: '16px', textAlign: 'right', fontWeight: '600' }}>Price / Unit</th>
-                                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600' }}>Actions</th>
+                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>{t('pharmacy.product.name')}</th>
+                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>{t('pharmacy.product.batch')}</th>
+                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>{t('pharmacy.product.expiry')}</th>
+                                            <th style={{ padding: '16px', textAlign: 'right', fontWeight: '600' }}>{t('pharmacy.product.price')}</th>
+                                            <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600' }}>{t('pharmacy.product.actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -776,7 +778,7 @@ const Pharmacy = () => {
                                                             fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px'
                                                         }}
                                                     >
-                                                        <Plus size={16} /> Add to Cart
+                                                        <Plus size={16} /> {t('pharmacy.product.add_to_cart')}
                                                     </button>
                                                 </td>
                                             </motion.tr>

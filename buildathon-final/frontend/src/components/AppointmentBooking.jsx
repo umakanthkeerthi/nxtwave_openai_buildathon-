@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Clock, MapPin, CheckCircle, Video } from 'lucide-react';
 
 const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConfirm }) => {
+    const { t } = useTranslation();
     const [selectedDate, setSelectedDate] = useState(0);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [step, setStep] = useState('selection'); // 'selection' | 'success'
@@ -105,7 +107,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
             }, 2000);
         } catch (e) {
             console.error(e);
-            showToast('Booking failed. Please try again.', 'error');
+            showToast(t('appointment_booking.booking_failed'), 'error');
         } finally {
             setIsLoading(false);
         }
@@ -115,7 +117,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
     if (loadingSlots && isOpen) {
         return (
             <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px' }}>Loading Available Slots...</div>
+                <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px' }}>{t('consult_doctor.loading')}</div>
             </div>
         );
     }
@@ -150,7 +152,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                                 }}>
                                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>
-                                        {mode === 'emergency' ? '🚨 Immediate Consult' : 'Book Appointment'}
+                                        {mode === 'emergency' ? t('appointment_booking.title_emergency') : t('appointment_booking.title_standard')}
                                     </h3>
                                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                                         <X size={24} color="#666" />
@@ -165,7 +167,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                         <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{doctor.specialty}</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', marginTop: '4px', color: '#555' }}>
                                             {mode === 'emergency' ? <MapPin size={14} /> : <Video size={14} />}
-                                            {mode === 'emergency' ? `${doctor.distance} km away` : 'Video Consultation'}
+                                            {mode === 'emergency' ? `${doctor.distance} ${t('appointment_booking.km_away')}` : t('appointment_booking.video_consultation')}
                                         </div>
                                     </div>
                                 </div>
@@ -174,10 +176,10 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                 <div style={{ padding: '1.5rem' }}>
                                     {/* Slot Selection (shown for both standard and emergency) */}
                                     {availableDates.length === 0 ? (
-                                        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>No available slots found.</div>
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>{t('appointment_booking.no_slots')}</div>
                                     ) : (
                                         <>
-                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Date</p>
+                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>{t('appointment_booking.select_date')}</p>
                                             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '4px' }}>
                                                 {availableDates.map((d, i) => (
                                                     <button
@@ -200,7 +202,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                                 ))}
                                             </div>
 
-                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>Select Time</p>
+                                            <p style={{ fontWeight: '600', marginBottom: '1rem' }}>{t('appointment_booking.select_time')}</p>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
                                                 {slotsByDate[availableDates[selectedDate].fullDate]?.slots.map((s, i) => (
                                                     <button
@@ -233,7 +235,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                                 fontWeight: '600', fontSize: '0.9rem'
                                             }}>
                                                 <Clock size={16} />
-                                                Emergency Appointment
+                                                {t('doctor_appointments.status.emergency')}
                                             </div>
                                         </div>
                                     )}
@@ -258,7 +260,7 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                             boxShadow: mode === 'emergency' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : '0 4px 12px rgba(7, 118, 89, 0.3)'
                                         }}
                                     >
-                                        {isLoading ? "Booking..." : (mode === 'emergency' ? 'Confirm Immediate Consult' : 'Confirm Booking')}
+                                        {isLoading ? t('appointment_booking.booking_btn') : (mode === 'emergency' ? t('appointment_booking.confirm_emergency') : t('appointment_booking.confirm_standard'))}
                                     </button>
                                 </div>
                             </>
@@ -275,9 +277,9 @@ const AppointmentBooking = ({ isOpen, onClose, doctor, mode = 'standard', onConf
                                 >
                                     <CheckCircle size={40} />
                                 </motion.div>
-                                <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Booking Confirmed!</h3>
+                                <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{t('appointment_booking.booking_confirmed')}</h3>
                                 <p style={{ color: '#666', marginBottom: '2rem' }}>
-                                    Appointment with <b>{doctor.name}</b> has been scheduled.
+                                    {t('appointment_booking.booking_success_msg', { name: doctor.name })}
                                 </p>
                             </div>
                         )}

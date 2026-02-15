@@ -3,42 +3,44 @@ import { Calendar, FileText, Video, Bell, Pill, ChevronRight } from 'lucide-reac
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import './HomeComponents.css'; // Import shared styles
+import { useTranslation } from 'react-i18next';
 
 const DocTools = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const tools = [
         {
             icon: <Calendar size={20} />,
-            label: "Appointments",
-            sub: "Next: Tomorrow, 10:30 AM",
+            label: t('doc_tools.appointments.label'),
+            sub: t('doc_tools.appointments.sub'),
             color: "#3b82f6", // Blue
             bg: "#eff6ff",
-            path: '/consult/my-appointments'
+            path: '/patient/consult/my-appointments'
         },
         {
             icon: <FileText size={20} />,
-            label: "Reports",
-            sub: "1 new report uploaded",
+            label: t('doc_tools.reports.label'),
+            sub: t('doc_tools.reports.sub'),
             color: "#8b5cf6", // Purple
             bg: "#f5f3ff",
-            path: '/health-records' // Assuming path
+            path: '/patient/medical-files'
         },
         {
             icon: <Pill size={20} />,
-            label: "Medications",
-            sub: "Take Paracetamol at 9 PM",
+            label: t('doc_tools.medications.label'),
+            sub: t('doc_tools.medications.sub'),
             color: "#10b981", // Green
             bg: "#ecfdf5",
-            path: '/medicines' // Assuming path
+            path: '/patient/medications'
         },
         {
             icon: <Video size={20} />,
-            label: "Consult Doctor",
-            sub: "12 Doctors online now",
+            label: t('doc_tools.consult.label'),
+            sub: t('doc_tools.consult.sub'),
             color: "#6366f1", // Indigo
             bg: "#e0e7ff",
-            path: '/consult'
+            path: '/patient/consult'
         }
     ];
 

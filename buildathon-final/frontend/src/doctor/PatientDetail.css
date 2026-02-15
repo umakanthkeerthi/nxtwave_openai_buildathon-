@@ -1,0 +1,272 @@
+/* PatientDetail.css */
+
+.patient-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 4rem;
+}
+
+/* Identity Card */
+.patient-identity-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.patient-info-group {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.patient-avatar-large {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #475569;
+}
+
+.patient-actions-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.vitals-summary {
+    display: flex;
+    gap: 2rem;
+}
+
+/* Tabs */
+.tabs-container {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scroll on iOS */
+    padding-bottom: 5px;
+    /* Space for scrollbar */
+}
+
+.tab-btn {
+    padding: 12px 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Consultation Grid */
+.consultation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.consultation-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Notes Section */
+/* Notes Section */
+.clinical-notes-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    /* Reduced initial height */
+    height: auto;
+    /* Allow expansion */
+}
+
+.patient-advice-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    /* Reduced initial height */
+    height: auto;
+    /* Allow expansion */
+}
+
+.textarea-styled {
+    flex: 1;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    /* User can resize manually if needed */
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 150px;
+    /* Base height for text area */
+}
+
+/* Prescription Form */
+.prescription-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.med-row-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+}
+
+.med-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.input-styled {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.9rem;
+}
+
+.timing-container {
+    display: flex;
+    gap: 8px;
+}
+
+.timing-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* Actions Card */
+.actions-card {
+    background: #f0fdfa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #ccfbf1;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .patient-detail-container {
+        padding: 1rem;
+        padding-bottom: 6rem;
+        /* Extra space for bottom nav if any */
+    }
+
+    .patient-identity-card {
+        flex-direction: column;
+        align-items: stretch;
+        /* Full width children */
+        gap: 1.5rem;
+        padding: 1rem;
+    }
+
+    .patient-info-group {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .patient-avatar-large {
+        margin: 0 auto;
+        /* Center avatar */
+    }
+
+    .patient-actions-group {
+        align-items: center;
+        width: 100%;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 1rem;
+    }
+
+    .vitals-summary {
+        width: 100%;
+        justify-content: space-around;
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .consultation-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 14px !important;
+    }
+
+    /* Tabs */
+    .tabs-container {
+        gap: 2rem;
+        /* More space to scroll */
+    }
+
+    /* Grid Stack */
+    .consultation-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .clinical-notes-container,
+    .patient-advice-container {
+        height: auto;
+        min-height: 250px;
+    }
+
+    /* Form Rows */
+    .med-row-1,
+    .med-row-2 {
+        grid-template-columns: 1fr;
+    }
+
+    /* Timing Toggles 2x2 */
+    .timing-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Footer/Submit Buttons */
+    .actions-card .submit-actions {
+        flex-direction: column;
+    }
+}

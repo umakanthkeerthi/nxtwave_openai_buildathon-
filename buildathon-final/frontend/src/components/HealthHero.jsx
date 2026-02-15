@@ -10,8 +10,10 @@ import { useAuth } from '../context/AuthContext';
 import AudioConfirmationModal from './AudioConfirmationModal';
 
 import './HealthHero.css';
+import { useTranslation } from 'react-i18next';
 
 const HealthHero = () => {
+    const { t } = useTranslation();
     const [input, setInput] = useState('');
     const navigate = useNavigate();
     const { currentUser, selectedProfile } = useAuth();
@@ -138,30 +140,30 @@ const HealthHero = () => {
                                 transition={{ duration: 0.5 }}
                             >
                                 <h1 className="hero-greeting">
-                                    Good afternoon, {firstName} <span style={{ fontSize: '1.5rem' }}>👋</span>
+                                    {t('health_hero.greeting', { name: firstName })} <span style={{ fontSize: '1.5rem' }}>👋</span>
                                 </h1>
                                 <p className="hero-subtitle">
-                                    You're doing well today. All vitals look stable.
+                                    {t('health_hero.subtitle')}
                                 </p>
                             </motion.div>
 
                             <div className="hero-stats-row">
                                 <GlassCard
                                     icon={<Heart size={20} />}
-                                    title="Heart Rate"
-                                    value="Normal (72 bpm)"
+                                    title={t('health_hero.stats.heart_rate')}
+                                    value={t('health_hero.stats.heart_rate_val')}
                                     delay={0.1}
                                 />
                                 <GlassCard
                                     icon={<Clock size={20} />}
-                                    title="Last Check"
-                                    value="2 days ago"
+                                    title={t('health_hero.stats.last_check')}
+                                    value={t('health_hero.stats.last_check_val')}
                                     delay={0.2}
                                 />
                                 <GlassCard
                                     icon={<FileText size={20} />}
-                                    title="Pending Reports"
-                                    value="1 New Report"
+                                    title={t('health_hero.stats.pending_reports')}
+                                    value={t('health_hero.stats.pending_reports_val')}
                                     delay={0.3}
                                     isAlert
                                 />
@@ -187,8 +189,8 @@ const HealthHero = () => {
                             <Sparkles size={24} />
                         </div>
                         <div className="action-title">
-                            <h3>How can I help you today?</h3>
-                            <p>I can analyze symptoms, review reports, or track medications.</p>
+                            <h3>{t('health_hero.action_card.title')}</h3>
+                            <p>{t('health_hero.action_card.subtitle')}</p>
                         </div>
                     </div>
 
@@ -206,7 +208,7 @@ const HealthHero = () => {
 
                         <input
                             className="hero-search-input"
-                            placeholder={isRecording ? "Listening..." : "Type a symptom or use voice..."}
+                            placeholder={isRecording ? t('health_hero.action_card.listening') : t('health_hero.action_card.search_placeholder')}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -221,27 +223,27 @@ const HealthHero = () => {
                     <div className="quick-chips">
                         <Chip
                             icon={<Thermometer size={16} />}
-                            label="I have a fever"
+                            label={t('health_hero.chips.fever')}
                             type="fever"
-                            onClick={() => handleChipClick("I have a fever, can you check my symptoms?")}
+                            onClick={() => handleChipClick(t('health_hero.chip_actions.fever'))}
                         />
                         <Chip
                             icon={<Heart size={16} />}
-                            label="Chest pain"
+                            label={t('health_hero.chips.chest_pain')}
                             type="chest"
-                            onClick={() => handleChipClick("I am experiencing chest pain.")}
+                            onClick={() => handleChipClick(t('health_hero.chip_actions.chest'))}
                         />
                         <Chip
                             icon={<FileBarChart size={16} />}
-                            label="Explain report"
+                            label={t('health_hero.chips.explain_report')}
                             type="report"
-                            onClick={() => handleChipClick("Can you explain my latest lab report?")}
+                            onClick={() => handleChipClick(t('health_hero.chip_actions.report'))}
                         />
                         <Chip
                             icon={<Pill size={16} />}
-                            label="Medication info"
+                            label={t('health_hero.chips.med_info')}
                             type="meds"
-                            onClick={() => handleChipClick("Show me information about my current medications.")}
+                            onClick={() => handleChipClick(t('health_hero.chip_actions.meds'))}
                         />
                     </div>
                 </motion.div>
@@ -286,14 +288,10 @@ const Chip = ({ icon, label, type, onClick }) => (
 );
 
 const DidYouKnowCard = () => {
+    const { t } = useTranslation();
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    const facts = [
-        { text: "Staying hydrated can reduce headaches by up to 40%.", icon: "💧" },
-        { text: "Walking 30 mins a day lowers heart disease risk.", icon: "❤️" },
-        { text: "7 hours of sleep improves memory retention.", icon: "🧠" },
-        { text: "Vitamin D from sunlight boosts immune health.", icon: "☀️" }
-    ];
+    const facts = t('health_hero.did_you_know.facts', { returnObjects: true });
 
     const nextFact = () => {
         setCurrentIndex((prev) => (prev + 1) % facts.length);
@@ -313,22 +311,22 @@ const DidYouKnowCard = () => {
             <div className="dyk-header">
                 <div className="dyk-title">
                     <Lightbulb size={18} className="dyk-icon" />
-                    <span>WELLNESS</span>
+                    <span>{t('health_hero.did_you_know.wellness')}</span>
                 </div>
                 <div className="dyk-nav">
                     <ChevronLeft size={16} onClick={prevFact} style={{ cursor: 'pointer' }} />
                     <ChevronRight size={16} onClick={nextFact} style={{ cursor: 'pointer' }} />
                 </div>
             </div>
-            <h4 className="dyk-heading">Did You Know?</h4>
+            <h4 className="dyk-heading">{t('health_hero.did_you_know.title')}</h4>
             <div style={{ minHeight: '60px' }}>
                 <p className="dyk-text">
-                    {facts[currentIndex].text} <span style={{ fontSize: '1rem' }}>{facts[currentIndex].icon}</span>
+                    {facts[currentIndex] || "Stay Healthy!"}
                 </p>
             </div>
             <div className="dyk-footer">
                 <button className="dyk-helpful">
-                    <Heart size={14} /> Helpful?
+                    <Heart size={14} /> {t('health_hero.did_you_know.helpful')}
                 </button>
                 <div className="dyk-dots">
                     {facts.map((_, index) => (

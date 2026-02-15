@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,6 +14,7 @@ import UploadRecordModal from '../components/UploadRecordModal';
 import FileViewerModal from '../components/FileViewerModal';
 
 const MedicalFiles = () => {
+    const { t } = useTranslation();
     const location = useLocation();
     // [FIX] Initialize state from navigation props if available
     const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'records');
@@ -268,11 +270,11 @@ const MedicalFiles = () => {
 
     // Tab Configuration
     const tabs = [
-        { id: 'records', label: 'Medical Files', icon: <Folder size={20} /> },
-        { id: 'prescriptions', label: 'Prescriptions', icon: <Pill size={20} /> },
-        { id: 'reports', label: 'Lab Reports', icon: <Activity size={20} /> },
-        { id: 'summaries', label: 'AI Summaries', icon: <Sparkles size={20} /> },
-        { id: 'certificates', label: 'Certificates', icon: <FileCheck size={20} /> },
+        { id: 'records', label: t('medical_files.tab_titles.records'), icon: <Folder size={20} /> },
+        { id: 'prescriptions', label: t('medical_files.tab_titles.prescriptions'), icon: <Pill size={20} /> },
+        { id: 'reports', label: t('medical_files.tab_titles.reports'), icon: <Activity size={20} /> },
+        { id: 'summaries', label: t('medical_files.tab_titles.summaries'), icon: <Sparkles size={20} /> },
+        { id: 'certificates', label: t('medical_files.tab_titles.certificates'), icon: <FileCheck size={20} /> },
     ];
 
     return (
@@ -293,7 +295,7 @@ const MedicalFiles = () => {
 
             {/* Main Content Area */}
             <div className="mr-content">
-                <HeaderSection activeTab={activeTab} onUploadClick={() => setIsUploadOpen(true)} />
+                <HeaderSection activeTab={activeTab} onUploadClick={() => setIsUploadOpen(true)} t={t} />
 
                 <div className="mr-content-body">
                     <AnimatePresence mode='wait'>
@@ -308,6 +310,7 @@ const MedicalFiles = () => {
                                 <ConsultationFoldersView
                                     folders={consultationFolders}
                                     onOpen={(folder) => { setSelectedCase(folder); setIsConsolidatedOpen(true); }}
+                                    t={t}
                                 />
                             )}
                             {activeTab === 'prescriptions' && (
@@ -318,11 +321,12 @@ const MedicalFiles = () => {
                                         setSelectedPrescription(file);
                                         setIsPrescriptionOpen(true);
                                     }}
+                                    t={t}
                                 />
                             )}
-                            {activeTab === 'reports' && <ReportsView reports={reports} onView={(file) => { setViewFile(file); setIsViewOpen(true); }} />}
-                            {activeTab === 'summaries' && <AISummariesView summaries={summaries} />}
-                            {activeTab === 'certificates' && <CertificatesView certificates={certificates} onView={(file) => { setViewFile(file); setIsViewOpen(true); }} />}
+                            {activeTab === 'reports' && <ReportsView reports={reports} onView={(file) => { setViewFile(file); setIsViewOpen(true); }} t={t} />}
+                            {activeTab === 'summaries' && <AISummariesView summaries={summaries} t={t} />}
+                            {activeTab === 'certificates' && <CertificatesView certificates={certificates} onView={(file) => { setViewFile(file); setIsViewOpen(true); }} t={t} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>
@@ -347,6 +351,7 @@ const MedicalFiles = () => {
                 isOpen={isConsolidatedOpen}
                 onClose={() => setIsConsolidatedOpen(false)}
                 data={selectedCase}
+                t={t}
             />
 
             {/* NEW Exclusive Prescription Modal */}
@@ -361,13 +366,13 @@ const MedicalFiles = () => {
 
 // --- SUB COMPONENTS ---
 
-const HeaderSection = ({ activeTab, onUploadClick }) => {
+const HeaderSection = ({ activeTab, onUploadClick, t }) => {
     const titles = {
-        records: { title: 'Medical Files', sub: 'Comprehensive view of all your consultations.' },
-        prescriptions: { title: 'Prescriptions', sub: 'View and download your digital prescriptions.' },
-        reports: { title: 'Lab Reports', sub: 'Detailed analysis reports from your diagnostics.' },
-        summaries: { title: 'AI Health Summaries', sub: 'Smart insights and simplified explanations of your health.' },
-        certificates: { title: 'Certificates', sub: 'Medical fitness and leave certificates.' }
+        records: { title: t('medical_files.tab_titles.records'), sub: t('medical_files.tab_subtitles.records') },
+        prescriptions: { title: t('medical_files.tab_titles.prescriptions'), sub: t('medical_files.tab_subtitles.prescriptions') },
+        reports: { title: t('medical_files.tab_titles.reports'), sub: t('medical_files.tab_subtitles.reports') },
+        summaries: { title: t('medical_files.tab_titles.summaries'), sub: t('medical_files.tab_subtitles.summaries') },
+        certificates: { title: t('medical_files.tab_titles.certificates'), sub: t('medical_files.tab_subtitles.certificates') }
     };
     const info = titles[activeTab] || titles.records;
     return (
@@ -378,21 +383,21 @@ const HeaderSection = ({ activeTab, onUploadClick }) => {
             </div>
             <button className="btn-add-record" onClick={onUploadClick}>
                 <Plus size={20} />
-                <span>Upload New</span>
+                <span>{t('medical_files.upload_new')}</span>
             </button>
         </div>
     );
 };
 
 // [NEW] Consultation Folders View (The "Smart View")
-const ConsultationFoldersView = ({ folders, onOpen }) => {
+const ConsultationFoldersView = ({ folders, onOpen, t }) => {
     console.log("DEBUG: Rendering Folders View. Count:", folders.length);
     return (
         <div className="files-grid">
             {folders.length === 0 ? (
                 <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '3rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '12px' }}>
                     <Folder size={48} style={{ opacity: 0.3, marginBottom: '1rem', margin: '0 auto', display: 'block' }} />
-                    <p style={{ margin: 0 }}>No consultation records found.</p>
+                    <p style={{ margin: 0 }}>{t('medical_files.empty_states.records')}</p>
                 </div>
             ) : (
                 folders.map(folder => (
@@ -410,9 +415,9 @@ const ConsultationFoldersView = ({ folders, onOpen }) => {
                                 <span className="meta-chip">Case: {folder.caseId ? folder.caseId.slice(0, 8) : "N/A"}...</span>
                             </div>
                             <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '6px', display: 'flex', gap: '8px' }}>
-                                {folder.prescription && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Pill size={12} /> Rx</span>}
-                                {folder.summary && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Sparkles size={12} /> AI</span>}
-                                {folder.remarks && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><FileText size={12} /> Notes</span>}
+                                {folder.prescription && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Pill size={12} /> {t('medical_files.card.rx')}</span>}
+                                {folder.summary && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Sparkles size={12} /> {t('medical_files.card.ai')}</span>}
+                                {folder.remarks && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><FileText size={12} /> {t('medical_files.card.notes')}</span>}
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', color: '#cbd5e1' }}>
@@ -426,7 +431,7 @@ const ConsultationFoldersView = ({ folders, onOpen }) => {
 };
 
 // [NEW] Consolidated Modal
-const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
+const ConsolidatedRecordModal = ({ isOpen, onClose, data, t }) => {
     if (!isOpen || !data) return null;
 
     const { summary, prescription, remarks, reports } = data;
@@ -446,7 +451,7 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                 {/* Header */}
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
                     <div>
-                        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.25rem' }}>Consultation Record</h2>
+                        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.25rem' }}>{t('medical_files.modal.consultation_record')}</h2>
                         <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px' }}>
                             {data.date} • {data.doctor} • {data.caseId}
                         </div>
@@ -465,13 +470,13 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                                 {clinicalNotes && (
                                     <div style={{ marginBottom: '1rem' }}>
-                                        <div style={{ fontWeight: '600', color: '#334155', marginBottom: '4px', fontSize: '0.9rem' }}>OBSERVATIONS</div>
+                                        <div style={{ fontWeight: '600', color: '#334155', marginBottom: '4px', fontSize: '0.9rem' }}>{t('medical_files.modal.observations')}</div>
                                         <div style={{ whiteSpace: 'pre-wrap', color: '#475569' }}>{clinicalNotes}</div>
                                     </div>
                                 )}
                                 {advice && (
                                     <div>
-                                        <div style={{ fontWeight: '600', color: '#0f766e', marginBottom: '4px', fontSize: '0.9rem' }}>ADVICE TO PATIENT</div>
+                                        <div style={{ fontWeight: '600', color: '#0f766e', marginBottom: '4px', fontSize: '0.9rem' }}>{t('medical_files.modal.advice')}</div>
                                         <div style={{ whiteSpace: 'pre-wrap', color: '#1e293b' }}>{advice}</div>
                                     </div>
                                 )}
@@ -482,16 +487,16 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                     {/* 2. Prescription */}
                     {medicines.length > 0 && (
                         <div className="section-block">
-                            <h3 className="section-title"><Pill size={18} /> Prescription</h3>
+                            <h3 className="section-title"><Pill size={18} /> {t('medical_files.modal.prescription')}</h3>
                             <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                                     <thead style={{ background: '#f1f5f9' }}>
                                         <tr>
-                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>Medicine</th>
-                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>Dosage</th>
-                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>Frequency</th>
-                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>Duration</th>
-                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>Instruction</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>{t('medical_files.modal.medicine')}</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>{t('medical_files.modal.dosage')}</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>{t('medical_files.modal.frequency')}</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>{t('medical_files.modal.duration')}</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#475569' }}>{t('medical_files.modal.instruction')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -519,13 +524,13 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                             <div style={{ background: '#fffbeb', padding: '1rem', borderRadius: '8px', border: '1px solid #fcd34d' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                                     <div>
-                                        <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 'bold' }}>TRIAGE LEVEL</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 'bold' }}>{t('medical_files.modal.triage_level')}</div>
                                         <div style={{ fontSize: '1.1rem', fontWeight: '600', color: summary.color === 'RED' ? '#dc2626' : '#16a34a' }}>
                                             {summary.triage}
                                         </div>
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 'bold' }}>PRIMARY CONCERN</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 'bold' }}>{t('medical_files.modal.primary_concern')}</div>
 
                                         {/* Show Chief Complaints if available */}
                                         {summary.chiefComplaints && summary.chiefComplaints.length > 0 ? (
@@ -537,7 +542,7 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                                 </div>
 
                                 <div style={{ marginBottom: '1rem' }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 'bold' }}>REPORTED SYMPTOMS</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 'bold' }}>{t('medical_files.modal.reported_symptoms')}</div>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
                                         {summary.reportedSymptoms && summary.reportedSymptoms.length > 0 ? summary.reportedSymptoms.map((s, i) => (
                                             <span key={i} style={{ background: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.85rem', border: '1px solid #fcd34d' }}>{s}</span>
@@ -548,7 +553,7 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                                 {/* [NEW] Denied Symptoms */}
                                 {summary.deniedSymptoms && summary.deniedSymptoms.length > 0 && (
                                     <div style={{ marginBottom: '1rem' }}>
-                                        <div style={{ fontSize: '0.8rem', color: '#4b5563', fontWeight: 'bold' }}>DENIED SYMPTOMS</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#4b5563', fontWeight: 'bold' }}>{t('medical_files.modal.denied_symptoms')}</div>
                                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
                                             {summary.deniedSymptoms.map((s, i) => (
                                                 <span key={i} style={{ background: '#f3f4f6', color: '#6b7280', padding: '2px 8px', borderRadius: '12px', fontSize: '0.85rem', border: '1px solid #e5e7eb' }}>{s}</span>
@@ -560,7 +565,7 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                                 {/* [NEW] Red Flags */}
                                 {summary.redFlags && summary.redFlags.length > 0 && (
                                     <div style={{ marginBottom: '1rem' }}>
-                                        <div style={{ fontSize: '0.8rem', color: '#991b1b', fontWeight: 'bold' }}>RED FLAGS</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#991b1b', fontWeight: 'bold' }}>{t('medical_files.modal.red_flags')}</div>
                                         <ul style={{ margin: '4px 0 0 0', paddingLeft: '1.2rem', color: '#b91c1c', fontSize: '0.9rem' }}>
                                             {summary.redFlags.map((flag, i) => (
                                                 <li key={i}>{flag}</li>
@@ -572,7 +577,7 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
                                 {/* [NEW] Guidelines */}
                                 {summary.guidelines && (
                                     <div>
-                                        <div style={{ fontSize: '0.8rem', color: '#0f766e', fontWeight: 'bold' }}>CLINICAL GUIDELINES</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#0f766e', fontWeight: 'bold' }}>{t('medical_files.modal.clinical_guidelines')}</div>
                                         <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#334155', whiteSpace: 'pre-wrap' }}>{summary.guidelines}</p>
                                     </div>
                                 )}
@@ -586,7 +591,7 @@ const ConsolidatedRecordModal = ({ isOpen, onClose, data }) => {
 };
 
 
-const PrescriptionsView = ({ prescriptions, onView, onDetailView }) => {
+const PrescriptionsView = ({ prescriptions, onView, onDetailView, t }) => {
     return (
         <div className="files-grid">
             {prescriptions.map((px) => (
@@ -633,7 +638,7 @@ const PrescriptionsView = ({ prescriptions, onView, onDetailView }) => {
                                 }
                             }}>
                                 <Eye size={18} />
-                                View
+                                {t('medical_files.card.view')}
                             </button>
                         </div>
                         <div style={{
@@ -647,7 +652,7 @@ const PrescriptionsView = ({ prescriptions, onView, onDetailView }) => {
                             justifyContent: 'space-between'
                         }}>
                             <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                                Linked Case: <span style={{ color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '500' }}>{px.caseId ? px.caseId.slice(0, 8) : 'N/A'}...</span>
+                                {t('medical_files.card.linked_case')}: <span style={{ color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '500' }}>{px.caseId ? px.caseId.slice(0, 8) : 'N/A'}...</span>
                             </div>
                         </div>
                     </div>
@@ -657,7 +662,7 @@ const PrescriptionsView = ({ prescriptions, onView, onDetailView }) => {
     );
 };
 
-const ReportsView = ({ reports, onView }) => {
+const ReportsView = ({ reports, onView, t }) => {
     const [filter, setFilter] = useState('All');
     const displayReports = filter === 'All' ? reports : reports.filter(r => {
         if (filter === 'X-Ray') return r.type === 'X-Ray' || r.type === 'Scan';
@@ -673,7 +678,7 @@ const ReportsView = ({ reports, onView }) => {
                         className={`filter-pill ${filter === f ? 'active' : ''}`}
                         onClick={() => setFilter(f)}
                     >
-                        {f === 'X-Ray' ? 'X-Ray & Scans' : f + (f === 'All' ? '' : ' Reports')}
+                        {f === 'X-Ray' ? t('medical_files.filters.xray') : (f === 'All' ? t('medical_files.filters.all') : t('medical_files.filters.lab'))}
                     </button>
                 ))}
             </div>
@@ -709,7 +714,7 @@ const ReportsView = ({ reports, onView }) => {
                             }
                         }}>
                             <Download size={18} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} />
-                            View
+                            {t('medical_files.card.download')}
                         </button>
                     </div>
                 ))}
@@ -718,14 +723,14 @@ const ReportsView = ({ reports, onView }) => {
     );
 };
 
-const AISummariesView = ({ summaries }) => {
+const AISummariesView = ({ summaries, t }) => {
     const navigate = useNavigate();
 
     return (
         <div className="files-grid">
             {summaries.length === 0 ? (
                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
-                    No summaries generated yet. Complete a consultation to see AI insights here.
+                    {t('medical_files.empty_states.summaries')}
                 </div>
             ) : (
                 summaries.map((summary) => {
@@ -738,7 +743,7 @@ const AISummariesView = ({ summaries }) => {
                                     <Sparkles size={24} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                    <span className="ai-badge-premium">AI Generated</span>
+                                    <span className="ai-badge-premium">{t('medical_files.modal.ai_generated')}</span>
                                 </div>
                             </div>
 
@@ -783,7 +788,7 @@ const AISummariesView = ({ summaries }) => {
                                     }
                                 })}
                             >
-                                View Analysis <ChevronRight size={16} />
+                                {t('medical_files.modal.view_analysis')} <ChevronRight size={16} />
                             </button>
                         </div>
                     );
@@ -793,7 +798,7 @@ const AISummariesView = ({ summaries }) => {
     );
 };
 
-const CertificatesView = ({ certificates, onView }) => {
+const CertificatesView = ({ certificates, onView, t }) => {
     return (
         <div className="files-grid">
             {certificates.map((cert) => (
@@ -875,7 +880,7 @@ const PrescriptionDetailModal = ({ isOpen, onClose, data }) => {
                             }}
                             onClick={() => {
                                 onClose();
-                                navigate('/patient/medications', { state: { prescription: data } });
+                                navigate('/patient/medications');
                             }}
                         >
                             <Activity size={18} />

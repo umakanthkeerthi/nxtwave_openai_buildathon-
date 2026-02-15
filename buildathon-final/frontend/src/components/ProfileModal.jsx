@@ -1,10 +1,25 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, User, Activity, Droplet, Globe, LogOut, Repeat } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const ProfileModal = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
+
+    const { i18n } = useTranslation();
+
+    const languages = [
+        { code: 'en', name: 'English' },
+        { code: 'hi', name: 'Hindi' },
+        { code: 'te', name: 'Telugu' },
+        { code: 'gu', name: 'Gujarati' },
+        { code: 'mr', name: 'Marathi' },
+        { code: 'pa', name: 'Punjabi' },
+        { code: 'ta', name: 'Tamil' },
+        { code: 'kn', name: 'Kannada' }
+    ];
 
     const { currentUser, selectedProfile, logout } = useAuth();
     const navigate = useNavigate();
@@ -84,7 +99,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                         }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>My Profile</h3>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{t('profile_modal.title')}</h3>
                             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
                                 <X size={20} />
                             </button>
@@ -106,22 +121,22 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div>
-                                <h4 style={{ margin: 0, color: '#0f172a' }}>{profile.fullName || currentUser?.displayName || "User"}</h4>
+                                <h4 style={{ margin: 0, color: '#0f172a' }}>{profile.fullName || currentUser?.displayName || t('profile_modal.user_fallback')}</h4>
                                 <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{currentUser?.email}</span>
                             </div>
                         </div>
 
                         <div className="profile-details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <DetailItem icon={<Activity size={16} />} label="Age" value={profile.age || "--"} />
-                            <DetailItem icon={<Droplet size={16} />} label="Blood Group" value={profile.bloodGroup || "--"} />
-                            <DetailItem icon={<User size={16} />} label="Gender" value={profile.gender || "--"} />
-                            <DetailItem icon={<Globe size={16} />} label="Language" value="English" />
+                            <DetailItem icon={<Activity size={16} />} label={t('profile_modal.age')} value={profile.age || "--"} />
+                            <DetailItem icon={<Droplet size={16} />} label={t('profile_modal.blood_group')} value={profile.bloodGroup || "--"} />
+                            <DetailItem icon={<User size={16} />} label={t('profile_modal.gender')} value={profile.gender || "--"} />
+                            <DetailItem icon={<Globe size={16} />} label={t('profile_modal.language')} value={languages.find(l => l.code === i18n.language)?.name || "English"} />
                         </div>
 
                         <div style={{ marginBottom: '1.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#64748b', fontSize: '0.9rem' }}>
                                 <MapPin size={16} />
-                                <span>Current Location</span>
+                                <span>{t('profile_modal.current_location')}</span>
                             </div>
                             <div style={{
                                 padding: '0.8rem',
@@ -133,7 +148,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             }}>
                                 {loadingLocation ? (
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span className="loader-dot"></span> Locating...
+                                        <span className="loader-dot"></span> {t('profile_modal.locating')}
                                     </span>
                                 ) : address}
                             </div>
@@ -156,7 +171,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 gap: '0.5rem'
                             }}
                         >
-                            <LogOut size={18} /> Sign Out
+                            <LogOut size={18} /> {t('profile_modal.sign_out')}
                         </button>
 
                         <button
@@ -177,7 +192,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 gap: '0.5rem'
                             }}
                         >
-                            <Repeat size={18} /> Switch Profile
+                            <Repeat size={18} /> {t('profile_modal.switch_profile')}
                         </button>
                     </motion.div>
                 </>

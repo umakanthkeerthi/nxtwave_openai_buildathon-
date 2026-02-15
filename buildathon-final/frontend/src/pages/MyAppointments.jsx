@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Calendar, Clock, ChevronRight, User, MapPin, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppointmentTracker from '../components/AppointmentTracker';
@@ -7,6 +8,7 @@ import './MyAppointments.css';
 import { useAuth } from '../context/AuthContext';
 
 const MyAppointments = () => {
+    const { t } = useTranslation();
     const { currentUser, selectedProfile } = useAuth();
     const [selectedId, setSelectedId] = useState(null);
     const [appointments, setAppointments] = useState([]);
@@ -100,23 +102,23 @@ const MyAppointments = () => {
                         exit={{ opacity: 0, x: -20 }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className="appointments-title">Your Appointments</h2>
+                            <h2 className="appointments-title">{t('my_appointments.title')}</h2>
                             <button
                                 onClick={() => window.location.reload()}
                                 style={{ padding: '8px 16px', background: '#077659', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                             >
-                                Force Refresh
+                                {t('my_appointments.force_refresh')}
                             </button>
                         </div>
 
                         {loading ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                                Loading your appointments...
+                                {t('my_appointments.loading')}
                             </div>
                         ) : appointments.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No appointments yet</p>
-                                <p style={{ fontSize: '0.9rem' }}>Book your first appointment to get started!</p>
+                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{t('my_appointments.no_appointments')}</p>
+                                <p style={{ fontSize: '0.9rem' }}>{t('my_appointments.book_first')}</p>
                             </div>
                         ) : (
                             <div className="appointments-grid">
@@ -179,8 +181,8 @@ const MyAppointments = () => {
                                 <ArrowLeft size={20} />
                             </button>
                             <div>
-                                <h2 className="tracking-title">Appointment Tracking</h2>
-                                <p className="tracking-id">ID: #APT-2026-00{selectedId}</p>
+                                <h2 className="tracking-title">{t('my_appointments.tracking.title')}</h2>
+                                <p className="tracking-id">{t('my_appointments.tracking.id_prefix')} #APT-2026-00{selectedId}</p>
                             </div>
                         </div>
 

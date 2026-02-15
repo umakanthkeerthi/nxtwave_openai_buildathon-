@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mic, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import './SymptomEvaluator.css';
 
 const SymptomEvaluator = ({ variant = 'home', blinkTrigger }) => {
+    const { t } = useTranslation();
     const [language, setLanguage] = useState('Auto-detect');
     const [input, setInput] = useState('');
     const navigate = useNavigate();
@@ -28,9 +30,9 @@ const SymptomEvaluator = ({ variant = 'home', blinkTrigger }) => {
         <div className={`symptom-evaluator-container ${variant}`}>
             {variant === 'home' && (
                 <h2 className="symptom-title">
-                    👋Hey Karthik! <br />
+                    {t('symptom_evaluator.greeting', { name: 'Karthik' })} <br />
                     <span className="symptom-subtitle">
-                        How are you feeling today?
+                        {t('symptom_evaluator.subtitle')}
                     </span>
                 </h2>
             )}
@@ -42,21 +44,21 @@ const SymptomEvaluator = ({ variant = 'home', blinkTrigger }) => {
                 key={blinkTrigger}
             >
                 <div className="symptom-header">
-                    <h3 className="symptom-header-title">AI Clinical Agent</h3>
+                    <h3 className="symptom-header-title">{t('symptom_evaluator.title')}</h3>
 
                     <div className="language-selector-wrapper">
-                        <span className="language-label">Select Language:</span>
+                        <span className="language-label">{t('symptom_evaluator.select_language')}</span>
                         <select
                             className="language-select-input"
                             value={language}
                             onChange={(e) => setLanguage(e.target.value)}
                         >
-                            <option>✨ Auto-detect</option>
-                            <option>Hindi</option>
-                            <option>Tamil</option>
-                            <option>Telugu</option>
-                            <option>Kannada</option>
-                            <option>Malayalam</option>
+                            <option>{t('symptom_evaluator.languages.auto')}</option>
+                            <option>{t('symptom_evaluator.languages.hindi')}</option>
+                            <option>{t('symptom_evaluator.languages.tamil')}</option>
+                            <option>{t('symptom_evaluator.languages.telugu')}</option>
+                            <option>{t('symptom_evaluator.languages.kannada')}</option>
+                            <option>{t('symptom_evaluator.languages.malayalam')}</option>
                         </select>
                     </div>
                 </div>
@@ -73,7 +75,7 @@ const SymptomEvaluator = ({ variant = 'home', blinkTrigger }) => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleStartChat()}
-                            placeholder="Type a symptom (e.g., headache, fever)..."
+                            placeholder={t('symptom_evaluator.placeholder')}
                         />
                     </div>
 

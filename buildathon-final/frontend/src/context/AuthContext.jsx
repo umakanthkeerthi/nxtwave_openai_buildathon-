@@ -89,6 +89,18 @@ export function AuthProvider({ children }) {
                     }
 
 
+                    // [NEW] Fetch Doctor Profile if linked
+                    if (userData.doctor_id) {
+                        try {
+                            const docRef = doc(db, "doctors", userData.doctor_id);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                userData.doctorProfile = docSnap.data();
+                            }
+                        } catch (e) {
+                            console.error("AuthContext: Error fetching doctor profile", e);
+                        }
+                    }
 
                     // 2. Fetch Profiles Collection (V1.0 Schema)
                     const profilesRef = collection(db, "profiles");

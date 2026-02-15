@@ -1,0 +1,1054 @@
+{
+    "navbar": {
+        "pharmacy": "Pharmacy",
+        "medical_files": "Medical Files",
+        "consult_doctor": "Consult Doctor",
+        "medications": "Medications",
+        "wellness": "Wellness"
+    },
+    "coming_soon": {
+        "title": "Coming Soon",
+        "message": "This feature is currently under development. Stay tuned!",
+        "ok": "Okay"
+    },
+    "doctor_card": {
+        "experience": "{{years}} years experience",
+        "available_for": "Available for",
+        "online_consultation": "Online Consultation",
+        "view_details": "View Details",
+        "book_now": "Book Now"
+    },
+    "doctor_directory": {
+        "alert": {
+            "symptom_check": "Per hospital policy, you must complete a quick AI Symptom Check before booking.\n\nClick OK to start the AI Chat.",
+            "session_error": "Session Error: Please re-select your profile.",
+            "booked_success": "Appointment Booked Successfully!",
+            "book_fail": "Failed to book appointment on server."
+        },
+        "new_delhi_area": "(New Delhi Area)"
+    },
+    "dashboard": {
+        "welcome": "Welcome back",
+        "search_placeholder": "Search doctors, specialists, symptoms..."
+    },
+    "medications": {
+        "title": "Medications",
+        "subtitle": "Your daily medicine reminders",
+        "filter_banner": "Showing medications from Case ID",
+        "view_all": "View all medications",
+        "no_medications": "No medications found",
+        "clear_filter_hint": "Try clearing the filter to see all.",
+        "all_cleared_hint": "Everything looks good/cleared!",
+        "tabs": {
+            "active": "Active",
+            "completed": "Completed"
+        },
+        "case_id": "CASE ID",
+        "doctor_advice": "Doctor's Advice",
+        "card": {
+            "days_left": "{{count}} Days Left",
+            "completed": "Completed",
+            "prescribed_by": "Prescribed by",
+            "completed_today": "Dose Taken Today",
+            "course_completed": "Course Completed",
+            "view_rx": "View Rx",
+            "reorder": "Re-order",
+            "mark_taken": "Mark as Taken",
+            "undo": "Undo",
+            "next_dose": "Next Dose: Tomorrow",
+            "day_progress": "Day {{current}} of {{total}}",
+            "schedule": {
+                "morning": "Morn",
+                "noon": "Noon",
+                "evening": "Eve",
+                "night": "Night"
+            }
+        }
+    },
+    "my_appointments": {
+        "title": "Your Appointments",
+        "force_refresh": "Force Refresh",
+        "loading": "Loading your appointments...",
+        "no_appointments": "No appointments yet",
+        "book_first": "Book your first appointment to get started!",
+        "tracking": {
+            "title": "Appointment Tracking",
+            "id_prefix": "ID:"
+        },
+        "status": {
+            "scheduled": "Scheduled",
+            "completed": "Completed",
+            "in_progress": "In Progress"
+        }
+    },
+    "medical_files": {
+        "upload_new": "Upload New",
+        "tab_titles": {
+            "records": "Medical Files",
+            "prescriptions": "Prescriptions",
+            "reports": "Lab Reports",
+            "summaries": "AI Health Summaries",
+            "certificates": "Certificates"
+        },
+        "tab_subtitles": {
+            "records": "Comprehensive view of all your consultations.",
+            "prescriptions": "View and download your digital prescriptions.",
+            "reports": "Detailed analysis reports from your diagnostics.",
+            "summaries": "Smart insights and simplified explanations of your health.",
+            "certificates": "Medical fitness and leave certificates."
+        },
+        "empty_states": {
+            "records": "No consultation records found.",
+            "reports": "No reports found.",
+            "summaries": "No summaries generated yet. Complete a consultation to see AI insights here.",
+            "certificates": "No certificates available."
+        },
+        "card": {
+            "rx": "Rx",
+            "ai": "AI",
+            "notes": "Notes",
+            "view": "View",
+            "download": "View",
+            "view_certificate": "View Certificate",
+            "issued": "Issued",
+            "issuer": "Issuer",
+            "linked_case": "Linked Case"
+        },
+        "modal": {
+            "consultation_record": "Consultation Record",
+            "clinical_notes": "Clinical Notes",
+            "observations": "OBSERVATIONS",
+            "advice": "ADVICE TO PATIENT",
+            "prescription": "Prescription",
+            "medicine": "Medicine",
+            "dosage": "Dosage",
+            "frequency": "Frequency",
+            "duration": "Duration",
+            "instruction": "Instruction",
+            "ai_summary": "AI Summary",
+            "triage_level": "TRIAGE LEVEL",
+            "primary_concern": "PRIMARY CONCERN",
+            "reported_symptoms": "REPORTED SYMPTOMS",
+            "denied_symptoms": "DENIED SYMPTOMS",
+            "red_flags": "RED FLAGS",
+            "clinical_guidelines": "CLINICAL GUIDELINES",
+            "view_analysis": "View Analysis",
+            "ai_generated": "AI Generated"
+        },
+        "filters": {
+            "all": "All",
+            "lab": "Lab Reports",
+            "xray": "X-Ray & Scans"
+        }
+    },
+    "consult_doctor": {
+        "sidebar": {
+            "find_doctors": "Find Doctors",
+            "my_appointments": "My Appointments"
+        },
+        "emergency": {
+            "title": "Emergency Care Finder",
+            "subtitle": "Showing nearest available doctors for immediate in-person checkup.",
+            "immediate_consult": "Immediate Consult",
+            "distance": "km away",
+            "check_availability": "Check Availability",
+            "available_now": "Available Now"
+        },
+        "standard": {
+            "ai_analysis": "AI Clinical Agent Analysis",
+            "matching_specialists": "Matching Specialists for Case",
+            "based_on": "Based on",
+            "highlighting": "we are highlighting relevant specialists below.",
+            "your_symptoms": "your symptoms",
+            "book_appointment": "Book Appointment for Doctor Consultation",
+            "use_ai_agent": "Use our AI Clinical Agent above to match with the right specialist.",
+            "search_placeholder": "Search for doctors...",
+            "view_directory": "View Full Directory",
+            "recent_consultations": "From Recent Consultations",
+            "near_you": "Doctors Near You",
+            "top_rated": "Other Top Rated Doctors",
+            "by_department": "By Department"
+        },
+        "departments": {
+            "general": "General",
+            "paediatrics": "Paediatrics",
+            "gynaecology": "Gynaecology",
+            "diabetology": "Diabetology",
+            "cardiology": "Cardiology",
+            "pulmonology": "Pulmonology"
+        },
+        "loading": "Loading specialists...",
+        "error": "Error: "
+    },
+    "wellness": {
+        "title": "Your Wellness Dashboard",
+        "subtitle": "Track, improve, and celebrate your health journey",
+        "weekly_summary": {
+            "title": "Weekly Summary",
+            "avg_steps": "Avg Steps",
+            "avg_sleep": "Avg Sleep",
+            "calories_burned": "Calories Burned",
+            "active_minutes": "Active Minutes"
+        },
+        "activity": {
+            "title": "Activity",
+            "burned": "kcal burned"
+        },
+        "sleep": {
+            "title": "Sleep Analysis",
+            "quality": "Good Quality",
+            "week": "Week",
+            "month": "Month"
+        },
+        "vitals": {
+            "heart_rate": "Heart Rate",
+            "live": "Live",
+            "bpm": "bpm",
+            "hydration": "Hydration"
+        },
+        "achievements": {
+            "title": "Achievements",
+            "badges": {
+                "first_steps": {
+                    "title": "First Steps",
+                    "desc": "Complete 5,000 steps"
+                },
+                "week_warrior": {
+                    "title": "Week Warrior",
+                    "desc": "7 day streak"
+                },
+                "goal_crusher": {
+                    "title": "Goal Crusher",
+                    "desc": "Hit 10K steps"
+                },
+                "sleep_master": {
+                    "title": "Sleep Master",
+                    "desc": "8hrs for 5 days"
+                },
+                "hydration_hero": {
+                    "title": "Hydration Hero",
+                    "desc": "2L daily for week"
+                },
+                "on_fire": {
+                    "title": "On Fire",
+                    "desc": "30 day streak"
+                }
+            }
+        },
+        "sidebar": {
+            "monthly_tracker": "Monthly Tracker",
+            "badges": "Badges",
+            "legend": {
+                "missed": "Missed",
+                "achieved": "Achieved",
+                "holiday": "Holiday",
+                "paused": "Paused",
+                "freeze": "Freeze"
+            }
+        }
+    },
+    "pharmacy": {
+        "title": "Pharmacy Locations",
+        "subtitle": "Find a DocAI pharmacy near you",
+        "map": {
+            "you_are_here": "You are here",
+            "away": "away"
+        },
+        "nearby_pharmacies": "Nearby Pharmacies",
+        "visit_store": "Visit Store",
+        "status": {
+            "open": "Open",
+            "closed": "Closed"
+        },
+        "search_placeholder": "Search medicines...",
+        "categories": {
+            "all": "All",
+            "prescription": "Prescription",
+            "orders": "Orders"
+        },
+        "medicines_available": "medicines available",
+        "loading": "Loading medicines...",
+        "product": {
+            "batch": "Batch",
+            "exp": "Exp",
+            "add": "Add",
+            "add_to_cart": "Add to Cart",
+            "price_unit": "Price / Unit",
+            "actions": "Actions",
+            "medicine_name": "Medicine Name",
+            "batch_no": "Batch No",
+            "expiry_date": "Expiry Date"
+        },
+        "cart": {
+            "title": "Your Cart",
+            "empty": "Your cart is empty.",
+            "total": "Total",
+            "place_order": "Place Order",
+            "processing": "Processing...",
+            "success": "Order Placed!",
+            "added_toast": "Added {{name}} to cart"
+        },
+        "orders": {
+            "title": "My Orders",
+            "no_orders": "No orders yet.",
+            "id": "Order ID",
+            "date": "Date",
+            "items": "Items",
+            "total": "Total",
+            "status": "Status",
+            "placed_toast": "Order placed successfully!",
+            "pending": "Pending"
+        },
+        "checkout": {
+            "enter_address": "Enter Delivery Address",
+            "address_placeholder": "Enter your full address here...",
+            "cancel": "Cancel",
+            "confirm": "Confirm Order",
+            "invalid_address": "Please enter a valid delivery address."
+        }
+    },
+    "health_hero": {
+        "greeting": "Good afternoon, {{name}}",
+        "subtitle": "You're doing well today. All vitals look stable.",
+        "stats": {
+            "heart_rate": "Heart Rate",
+            "heart_rate_val": "Normal (72 bpm)",
+            "last_check": "Last Check",
+            "last_check_val": "2 days ago",
+            "pending_reports": "Pending Reports",
+            "pending_reports_val": "1 New Report"
+        },
+        "action_card": {
+            "title": "How can I help you today?",
+            "subtitle": "I can analyze symptoms, review reports, or track medications.",
+            "search_placeholder": "Type a symptom or use voice...",
+            "listening": "Listening..."
+        },
+        "chips": {
+            "fever": "I have a fever",
+            "chest_pain": "Chest pain",
+            "explain_report": "Explain report",
+            "med_info": "Medication info"
+        },
+        "did_you_know": {
+            "title": "Did You Know?",
+            "wellness": "WELLNESS",
+            "helpful": "Helpful?",
+            "facts": [
+                "Staying hydrated can reduce headaches by up to 40%.",
+                "Walking 30 mins a day lowers heart disease risk.",
+                "7 hours of sleep improves memory retention.",
+                "Vitamin D from sunlight boosts immune health."
+            ]
+        },
+        "chip_actions": {
+            "fever": "I have a fever, can you check my symptoms?",
+            "chest": "I am experiencing chest pain.",
+            "report": "Can you explain my latest lab report?",
+            "meds": "Show me information about my current medications."
+        }
+    },
+    "doctor_appointments": {
+        "title": "Scheduled Appointments",
+        "subtitle": "Manage your appointments and availability",
+        "sync_calendar": "Sync Calendar",
+        "add_slot": "+ Add Slot",
+        "tabs": {
+            "today": "Today",
+            "upcoming": "Upcoming",
+            "past": "Past"
+        },
+        "no_appointments": "No appointments found for {{tab}}.",
+        "emergency_badge": "EMERGENCY",
+        "actions": {
+            "start_consult": "Start Consult",
+            "reschedule": "Reschedule"
+        },
+        "status": {
+            "critical": "Critical / Emergency",
+            "triage": "Triage: {{decision}}",
+            "general": "General Consultation",
+            "emergency": "Emergency",
+            "standard": "Standard"
+        }
+    },
+    "doctor_dashboard": {
+        "stats": {
+            "today_appts": "Today's Appointments",
+            "real_time": "Real-time",
+            "pending_consults": "Pending Consults",
+            "queue_active": "Queue active",
+            "ai_flagged": "AI Flagged",
+            "requires_attention": "Requires attention",
+            "critical_emergency": "Critical / Emergency",
+            "action_required": "Action required"
+        },
+        "schedule": {
+            "title": "Today's Schedule",
+            "squeeze_in": "Squeeze In +",
+            "end_emergency": "End Emergency",
+            "loading": "Loading schedule...",
+            "no_slots": "No slots scheduled for today.",
+            "sudden_deterioration": "SUDDEN DETORIATION - ICU 4"
+        },
+        "queue": {
+            "title": "Active Queue",
+            "live_badge": "Live from Database",
+            "loading": "Loading Appointments...",
+            "no_active": "No active appointments found for this doctor account.",
+            "view_case": "View Case",
+            "ai_insight": "AI Insight: {{flag}}"
+        },
+        "slots": {
+            "patient_appt": "Patient Appointment",
+            "available": "Available Slot"
+        }
+    },
+    "doctor_layout": {
+        "title": "DOC AI",
+        "pro_badge": "Pro",
+        "sidebar": {
+            "dashboard": "Dashboard",
+            "emergency_queue": "Emergency Queue",
+            "my_patients": "My Patients",
+            "scheduled_appts": "Scheduled Appointments",
+            "manage_slots": "Manage Slots",
+            "messages": "Messages",
+            "reports": "Reports",
+            "settings": "Settings & Profile",
+            "sign_out": "Sign Out"
+        },
+        "profile": {
+            "loading": "Dr. Loading...",
+            "specialist": "Specialist"
+        }
+    },
+    "doctor_emergency": {
+        "title": "Emergency Queue",
+        "live_badge": "LIVE",
+        "no_active": {
+            "title": "No Active Emergencies",
+            "desc": "You are currently monitoring for critical cases in your vicinity."
+        },
+        "trigger": "Trigger: \"{{reason}}\"",
+        "actions": {
+            "view_case": "View Case",
+            "case_accepted": "Case Accepted",
+            "redirecting": "Redirecting to map..."
+        },
+        "score": "Score {{score}}",
+        "types": {
+            "emergency_appt": "Emergency Appointment",
+            "critical_alert": "Critical Health Alert",
+            "direct_booking": "Direct Booking",
+            "ai_triage": "AI Triage"
+        }
+    },
+    "doctor_patients": {
+        "title": "My Patients",
+        "subtitle": "Manage patient records and medical history",
+        "add_new": "+ Add New Patient",
+        "search_placeholder": "Search by Name, ID or Condition...",
+        "filters": {
+            "all": "All",
+            "active": "Active",
+            "emergency": "Emergency",
+            "follow_up": "Follow-up",
+            "high_risk": "High Risk"
+        },
+        "table": {
+            "patient_info": "Patient Info",
+            "last_visit": "Last Visit",
+            "condition": "Condition",
+            "ai_risk": "AI Risk Analysis",
+            "status": "Status",
+            "view_details": "View Details"
+        },
+        "risk": {
+            "high": "High",
+            "medium": "Medium",
+            "low": "Low",
+            "suffix": "Risk"
+        },
+        "status": {
+            "completed": "Completed",
+            "in_progress": "In Progress",
+            "active": "Active",
+            "emergency": "Emergency"
+        },
+        "fallbacks": {
+            "recently": "Recently",
+            "under_observation": "Under Observation"
+        }
+    },
+    "patient_detail": {
+        "back_to_patients": "Back to Patients",
+        "identity": {
+            "id": "ID",
+            "yrs": "yrs",
+            "allergies": "Allergies"
+        },
+        "vitals": {
+            "blood_pressure": "Blood Pressure",
+            "heart_rate": "Heart Rate"
+        },
+        "actions": {
+            "start_consult": "Start Consultation",
+            "end_consult": "End Consultation",
+            "consult_ended": "Consultation Ended",
+            "finalize_submit": "Finalize & Submit Prescription",
+            "prescription_submitted": "Prescription Submitted",
+            "save_draft": "Save Consultation as Draft",
+            "consultation_completed": "Consultation Completed"
+        },
+        "tabs": {
+            "overview": "Overview",
+            "medical_files": "Medical Files",
+            "consultation": "Consultation",
+            "history": "History"
+        },
+        "content_placeholder": "Content for {{tab}} will appear here.",
+        "files_view": {
+            "loading": "Loading records...",
+            "pre_consult_summary": "Pre-Doctor Consultation Summary File",
+            "no_ai_summary": "No AI summaries found.",
+            "ai_insight": "AI Insight: {{reason}}",
+            "pre_consult_summary_type": "Pre-Consult Summary",
+            "ai_triage": "AI Triage",
+            "severity": "Severity: {{level}}",
+            "view_full": "View Full Details",
+            "prescriptions": "Prescriptions",
+            "medicines_prescribed": "{{count}} medicines prescribed.",
+            "lab_reports": "Lab Reports",
+            "no_lab_reports": "No lab reports found.",
+            "abnormal": "ABNORMAL"
+        },
+        "consultation_mode": {
+            "clinical_notes": "Clinical Notes",
+            "notes_placeholder": "Enter examination notes, symptoms, and diagnosis...",
+            "patient_advice": "Patient Advice & Instructions",
+            "advice_placeholder": "Enter advice for the patient (e.g., Diet restrictions, rest, follow-up plan, warning signs)...",
+            "prescribe_medicine": "Prescribe Medicine",
+            "placeholders": {
+                "med_name": "Medicine Name (e.g. Paracetamol)",
+                "dosage": "Dosage (500mg)",
+                "duration": "Duration (e.g. 5 days)",
+                "instruction": "Instruction (e.g. After Food)"
+            },
+            "timing": {
+                "morning": "Morning",
+                "noon": "Noon",
+                "evening": "Evening",
+                "night": "Night"
+            },
+            "add_medicine": "+ Add Medicine",
+            "no_medicines": "No medicines added yet."
+        },
+        "summary_modal": {
+            "title": "Pre-Doctor Consultation Summary",
+            "generated_on": "Generated on",
+            "likely_diagnosis": "Likely Diagnosis",
+            "under_evaluation": "Under Evaluation",
+            "severity_level": "Severity Level",
+            "score": "Score",
+            "clinical_reasoning": "Clinical Reasoning",
+            "reported_symptoms": "Reported Symptoms",
+            "none_recorded": "None recorded",
+            "denied_absent": "Denied / Absent",
+            "no_reasoning": "No additional reasoning provided.",
+            "vitals": "Vitals",
+            "no_vitals": "No specific vitals reported.",
+            "recommended_actions": "Recommended Actions",
+            "no_actions": "No actions listed.",
+            "red_flags": "Red Flags to Watch"
+        }
+    },
+    "doctor_profile": {
+        "loading": "Loading Profile...",
+        "title": "Profile & Availability",
+        "subtitle": "Manage your professional details and working hours",
+        "save_changes": "Save Changes",
+        "saving": "Saving...",
+        "professional_details": "Professional Details",
+        "fields": {
+            "full_name": "Full Name",
+            "specialty": "Specialty",
+            "experience": "Experience",
+            "fees": "Consultation Fees (₹)",
+            "about": "About"
+        },
+        "schedule": {
+            "title": "Weekly Schedule",
+            "available": "Available",
+            "off": "Off",
+            "to": "to",
+            "no_slots": "No slots available"
+        },
+        "days": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        },
+        "status": {
+            "title": "Current Status",
+            "online": "Online",
+            "offline": "Offline",
+            "emergency_mode": "Emergency Mode",
+            "accept_critical": "Accept critical cases"
+        },
+        "modes": {
+            "title": "Consultation Modes",
+            "video": "Video Consult",
+            "in_clinic": "In-Clinic"
+        }
+    },
+    "doctor_reports": {
+        "title": "Clinical Reports",
+        "subtitle": "Centralized inbox for patient diagnostic results",
+        "search_placeholder": "Search reports...",
+        "filters": "Filters",
+        "tabs": {
+            "all": "All Reports",
+            "to_review": "To Review",
+            "flagged": "Flagged (Abnormal)"
+        },
+        "table": {
+            "report_name": "REPORT NAME",
+            "patient": "PATIENT",
+            "date_received": "DATE RECIEVED",
+            "status": "STATUS",
+            "actions": "ACTIONS"
+        },
+        "types": {
+            "lab_report": "Lab Report",
+            "imaging": "Imaging",
+            "discharge_summary": "Discharge Summary",
+            "prescription": "Prescription",
+            "ai_triage": "AI Triage Summary",
+            "unknown": "Unknown"
+        },
+        "status": {
+            "pending": "Pending",
+            "reviewed": "Reviewed"
+        },
+        "actions": {
+            "review": "Review",
+            "preview": "Preview",
+            "download": "Download"
+        },
+        "no_summary": "No summary"
+    },
+    "doctor_messages": {
+        "title": "Messages",
+        "search_placeholder": "Search patients or staff...",
+        "filters": {
+            "all": "All",
+            "patient": "Patient",
+            "staff": "Staff"
+        },
+        "status": "Online",
+        "input_placeholder": "Type a message...",
+        "quick_replies": {
+            "rest": "Take rest",
+            "checkup": "Come for checkup",
+            "continue_meds": "Continue meds",
+            "looks_good": "Looks good"
+        }
+    },
+    "doctor_slot_manager": {
+        "title": "Manage Slots",
+        "subtitle": "Set your availability for patient consultations",
+        "tabs": {
+            "single_slot": "Single Slot",
+            "batch_generate": "Batch Generate"
+        },
+        "single_slot": {
+            "start_time": "Start Time",
+            "end_time": "End Time",
+            "add_slot": "Add Slot"
+        },
+        "batch": {
+            "title": "Weekly Schedule",
+            "date_range": "Date Range",
+            "to": "to",
+            "work_start": "Work Start",
+            "work_end": "Work End",
+            "break_start": "Break Start",
+            "break_end": "Break End",
+            "slot_duration": "Slot Duration (mins)",
+            "gap": "Gap Between Slots (mins)",
+            "working_days": "Working Days",
+            "generate": "Generate Slots",
+            "generating": "Generating...",
+            "minutes": "Minutes",
+            "hour": "1 Hour",
+            "no_gap": "No Gap"
+        },
+        "slots_list": {
+            "title": "Available Slots",
+            "loading": "Loading...",
+            "no_slots": "No slots for this date.",
+            "expired": "Expired",
+            "delete_tooltip": "Delete Slot"
+        },
+        "modal": {
+            "available_slots": "Available Slots",
+            "clear_all": "Clear All",
+            "no_slots": "No slots available for this day.",
+            "add_new": "Add New Slot",
+            "start": "Start",
+            "end": "End"
+        },
+        "alerts": {
+            "slot_created": "Slot Created!",
+            "create_failed": "Failed to create slot",
+            "error_creating": "Error creating slot",
+            "delete_confirm": "Are you sure you want to delete this slot?",
+            "delete_failed": "Failed to delete slot",
+            "error_deleting": "Error deleting slot",
+            "delete_all_confirm": "Are you sure you want to delete ALL {{count}} slots for this day?",
+            "delete_all_failed": "Failed to delete slots",
+            "error_deleting_all": "Error deleting slots",
+            "batch_success": "{{count}} slots generated successfully!",
+            "batch_failed": "Failed to create batch slots"
+        }
+    },
+    "audio_confirmation_modal": {
+        "title": "Verify Your Message (AI Repaired)",
+        "target_language": "Target Language:",
+        "detected": "Detected",
+        "selected": "(Selected)",
+        "cancel": "Cancel",
+        "confirm": "Confirm & Search",
+        "error_processing": "Could not transcribe audio. Please try again.",
+        "error_connection": "Failed to process audio. Please check your connection.",
+        "mic_error": "Could not access microphone."
+    },
+    "doc_tools": {
+        "appointments": {
+            "label": "Appointments",
+            "sub": "View & Schedule"
+        },
+        "reports": {
+            "label": "Health Records",
+            "sub": "Lab results & history"
+        },
+        "medications": {
+            "label": "Medications",
+            "sub": "Pill reminders & logs"
+        },
+        "consult": {
+            "label": "Consult Doctor",
+            "sub": "Start video/chat"
+        }
+    },
+    "doc_ai_tools": {
+        "title": "AI Health Assistants",
+        "badge": "AI TOOL",
+        "prescription": {
+            "label": "Prescription Analyzer",
+            "sub": "Upload & decode scripts"
+        },
+        "lab_report": {
+            "label": "Lab Report Analyzer",
+            "sub": "Understand results instantly"
+        },
+        "nutrition": {
+            "label": "Nutrition Guide",
+            "sub": "Diet plans & analysis"
+        }
+    },
+    "profile_modal": {
+        "title": "My Profile",
+        "user_fallback": "User",
+        "age": "Age",
+        "blood_group": "Blood Group",
+        "gender": "Gender",
+        "language": "Language",
+        "current_location": "Current Location",
+        "locating": "Locating...",
+        "sign_out": "Sign Out",
+        "switch_profile": "Switch Profile"
+    },
+    "appointment_booking": {
+        "title_emergency": "🚨 Immediate Consult",
+        "title_standard": "Book Appointment",
+        "video_consultation": "Video Consultation",
+        "km_away": "km away",
+        "select_date": "Select Date",
+        "no_slots": "No available slots found.",
+        "select_time": "Select Time",
+        "next_slot": "Next Available Slot: Today, {{time}}",
+        "emergency_confirm_text": "Confirming this will notify the clinic immediately. Please proceed to the clinic location.",
+        "booking_btn": "Booking...",
+        "confirm_emergency": "Confirm Immediate Consult",
+        "confirm_standard": "Confirm Booking",
+        "booking_confirmed": "Booking Confirmed!",
+        "booking_success_msg": "Appointment with {{name}} has been scheduled.",
+        "booking_failed": "Booking failed. Please try again."
+    },
+    "video_popup": {
+        "title": "Video Consultation",
+        "live": "LIVE",
+        "copy_link": "Copy Link",
+        "doctor": "Doctor"
+    },
+    "patient_summary": {
+        "title": "Patient Summary",
+        "clinical_assessment": "Clinical Assessment",
+        "case_id": "Case ID",
+        "triage_status": "Triage Status",
+        "guidelines": "NHSRC Clinical Guidelines",
+        "follow_up": "Follow Up",
+        "actions": {
+            "save_exit": "Save to AI Summary Files and Exit",
+            "consult_doctor": "Consult Doctor"
+        }
+    },
+    "lab_report_analyzer": {
+        "title": "Lab Report Analyzer",
+        "subtitle": "Upload your medical lab reports to get an instant AI summary and understanding of your key health metrics.",
+        "upload": {
+            "prompt": "Click to upload or drag and drop",
+            "formats": "JPG, PNG, GIF (max. 5MB)",
+            "preview": "Preview:"
+        },
+        "analyze_btn": "Analyze Report",
+        "analyzing": "Analyzing Report...",
+        "failed": "Analysis Failed",
+        "complete_title": "Analysis Complete",
+        "patient": "Patient",
+        "date": "Date",
+        "lab_name": "Lab Name",
+        "assessment_summary": "Assessment Summary",
+        "test_results": "Test Results",
+        "table": {
+            "test_name": "Test Name",
+            "result": "Result",
+            "ref_range": "Ref Range",
+            "status": "Status"
+        },
+        "no_specific_tests": "No specific tests identified.",
+        "save_records": "Save to Health Records",
+        "empty_state": "Upload a lab report image to see analysis here"
+    },
+    "emergency_page": {
+        "title": "Emergency Detected",
+        "description": "Based on your symptoms, immediate medical attention is recommended. Our AI advises against self-medication in this scenario.",
+        "actions": {
+            "consult_now": "Immediately Consult Doctor",
+            "cancel": "Cancel"
+        }
+    },
+    "medications_notifications": {
+        "enabled_tooltip": "Notifications Enabled",
+        "enable_tooltip": "Enable Notifications",
+        "not_supported": "This browser does not support desktop notifications",
+        "enabled_title": "DocAI Reminders Enabled",
+        "enabled_body": "You will now receive medication reminders on this device.",
+        "time_to_take": "Time to take {{medName}}",
+        "time_body": "It's time for your scheduled dose of {{medName}}."
+    },
+    "appointment_tracker": {
+        "steps": {
+            "1": {
+                "title": "Symptoms Captured",
+                "tag": "AI Verified"
+            },
+            "2": {
+                "title": "AI Triage Completed",
+                "tag": "AI Review"
+            },
+            "3": {
+                "title": "Doctor Assigned"
+            },
+            "4": {
+                "title": "Awaiting Doctor Review"
+            },
+            "5": {
+                "title": "Consultation in Progress"
+            },
+            "6": {
+                "title": "Doctor Notes & Prescription Ready"
+            },
+            "7": {
+                "title": "Labs / Follow-ups Scheduled"
+            },
+            "8": {
+                "title": "Care Plan Active"
+            }
+        },
+        "tags": {
+            "doctor_review": "Doctor Review"
+        },
+        "risk_level": "Risk Level:",
+        "risk_low": "Low",
+        "default_doctor": "Dr. Assigned",
+        "default_specialty": "Specialist",
+        "eta_suffix": "mins ETA",
+        "queue_message": "Your case is currently in queue for {{doctorName}} to conduct a thorough review. Since this is an {{mode}} consultation, please be prepared.",
+        "join_video": "Join Video Call",
+        "offline_message": "Doctor is interacting with you in offline",
+        "loading": "Loading tracking info..."
+    },
+    "prescription_analyzer": {
+        "title": "Prescription Analyzer",
+        "subtitle": "Upload a prescription to get an AI-powered summary of medicines and instructions.",
+        "upload_prompt": "Click to upload or drag and drop",
+        "file_types": "JPG, PNG, GIF (max. 5MB)",
+        "preview": "Preview:",
+        "analyzing": "Analyzing...",
+        "analyze_btn": "Analyze Prescription",
+        "analysis_failed": "Analysis Failed",
+        "error_generic": "Something went wrong. Please try again.",
+        "analysis_complete": "Analysis Complete",
+        "doctor_label": "Doctor",
+        "date_label": "Date",
+        "not_detected": "Not detected",
+        "medicines_header": "Medicines Identified",
+        "freq_label": "Freq:",
+        "dur_label": "Dur:",
+        "no_medicines": "No medicines clearly identified.",
+        "tests_header": "Recommended Tests",
+        "save_btn": "Save to Records",
+        "empty_state": "Upload a prescription to see analysis here"
+    },
+    "nutrition_analyzer": {
+        "title": "Nutrition Goal Setup",
+        "subtitle": "Let's build your personalized AI nutrition plan. Tell us a bit about yourself.",
+        "section": {
+            "basic": "Basic Profile",
+            "goals": "Goals & Lifestyle",
+            "preferences": "Food & Health Preferences"
+        },
+        "form": {
+            "age": "Age",
+            "gender": "Gender",
+            "height": "Height (cm)",
+            "weight": "Current Weight (kg)"
+        },
+        "nav": {
+            "next": "Next Step",
+            "back": "Back",
+            "complete": "Complete Setup"
+        },
+        "question": {
+            "goal": "What is your primary goal?",
+            "activity": "Activity Level",
+            "diet": "Diet Type",
+            "cuisines": "Cuisines (Select multiple)",
+            "meals_per_day": "Meals Per Day",
+            "allergies": "Allergies (Optional)",
+            "conditions": "Medical Conditions (Optional)"
+        },
+        "nudge_example": "You haven't logged lunch yet. Keeping it light?",
+        "dashboard": {
+            "todays_meals": "Today's Meals",
+            "cal_suffix": "of {{target}} Cal",
+            "smart_suggestion": "Smart Suggestion",
+            "suggestion_placeholder": "Your goal is {{target}} kcal. Start logging to get AI advice!",
+            "updates_hint": "Updates as you log meals",
+            "targets": "Daily Targets"
+        },
+        "score": {
+            "quality": "Meal Quality",
+            "protein": "Protein",
+            "fiber": "Fiber",
+            "balance": "Balance"
+        },
+        "macros": {
+            "calories": "Calories",
+            "protein": "Protein",
+            "carbs": "Carbs",
+            "fats": "Fats"
+        },
+        "loading": {
+            "title": "AI is crafting your plan...",
+            "subtitle": "Analyzing your profile and preferences."
+        },
+        "options": {
+            "goals": {
+                "fat_loss": "Fat Loss",
+                "lean_muscle_gain": "Lean Muscle Gain",
+                "bulking": "Bulking",
+                "maintenance": "Maintenance"
+            },
+            "activity": {
+                "sedentary": "Sedentary",
+                "sedentary_sub": "Desk job, little movement",
+                "light": "Light",
+                "light_sub": "Walking, yoga 1-2x/week",
+                "moderate": "Moderate",
+                "moderate_sub": "Gym/Sports 3-4x/week",
+                "high": "High",
+                "high_sub": "Intense sports, manual labor",
+                "athlete": "Athlete",
+                "athlete_sub": "Professional training"
+            },
+            "diet": {
+                "veg": "Veg",
+                "non_veg": "Non-Veg",
+                "eggitarian": "Eggitarian",
+                "vegan": "Vegan"
+            },
+            "meals": {
+                "3": "3",
+                "4": "4",
+                "flexible": "Flexible"
+            },
+            "allergies": {
+                "none": "None",
+                "nuts": "Nuts",
+                "lactose": "Lactose",
+                "gluten": "Gluten",
+                "soy": "Soy",
+                "shellfish": "Shellfish"
+            },
+            "cuisines": {
+                "south_indian": "South Indian",
+                "north_indian": "North Indian",
+                "continental": "Continental",
+                "asian": "Asian",
+                "mediterranean": "Mediterranean"
+            },
+            "conditions": {
+                "none": "None",
+                "diabetes": "Diabetes",
+                "thyroid": "Thyroid",
+                "high_bp": "High BP",
+                "pcos": "PCOS",
+                "cholesterol": "Cholesterol"
+            },
+            "meal_types": {
+                "breakfast": "Breakfast",
+                "lunch": "Lunch",
+                "dinner": "Dinner",
+                "snack": "Snack"
+            },
+            "ui": {
+                "select": "Select",
+                "cancel": "Cancel",
+                "add_meal": "Add Meal"
+            }
+        }
+    },
+    "symptom_evaluator": {
+        "greeting": "👋 Hey {{name}}!",
+        "subtitle": "How are you feeling today?",
+        "title": "AI Clinical Agent",
+        "select_language": "Select Language:",
+        "placeholder": "Type a symptom (e.g., headache, fever)...",
+        "languages": {
+            "auto": "✨ Auto-detect",
+            "hindi": "Hindi",
+            "tamil": "Tamil",
+            "telugu": "Telugu",
+            "kannada": "Kannada",
+            "malayalam": "Malayalam"
+        }
+    }
+}

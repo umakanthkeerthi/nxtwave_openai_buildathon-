@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Upload, FileText, Check, AlertCircle, Loader2, ArrowRight, Activity, Beaker } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import './LabReportAnalyzer.css';
 
 const LabReportAnalyzer = () => {
+    const { t } = useTranslation();
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [analyzing, setAnalyzing] = useState(false);
@@ -44,7 +46,7 @@ const LabReportAnalyzer = () => {
             setResult(data);
         } catch (err) {
             console.error(err);
-            setError(err.message || "Something went wrong. Please try again.");
+            setError(err.message || t('lab_report_analyzer.failed'));
         } finally {
             setAnalyzing(false);
         }
@@ -64,8 +66,8 @@ const LabReportAnalyzer = () => {
             <div className="lra-wrapper">
                 {/* Header */}
                 <div className="lra-header">
-                    <h1 className="lra-title">Lab Report Analyzer</h1>
-                    <p className="lra-subtitle">Upload your medical lab reports to get an instant AI summary and understanding of your key health metrics.</p>
+                    <h1 className="lra-title">{t('lab_report_analyzer.title')}</h1>
+                    <p className="lra-subtitle">{t('lab_report_analyzer.subtitle')}</p>
                 </div>
 
                 <div className="lra-grid">
@@ -84,8 +86,8 @@ const LabReportAnalyzer = () => {
                                         <Upload size={24} />
                                     </div>
                                     <div>
-                                        <p style={{ fontWeight: 600, color: '#064e3b' }}>Click to upload or drag and drop</p>
-                                        <p style={{ fontSize: '0.875rem', color: '#64748b' }}>JPG, PNG, GIF (max. 5MB)</p>
+                                        <p style={{ fontWeight: 600, color: '#064e3b' }}>{t('lab_report_analyzer.upload.prompt')}</p>
+                                        <p style={{ fontSize: '0.875rem', color: '#64748b' }}>{t('lab_report_analyzer.upload.formats')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -95,7 +97,7 @@ const LabReportAnalyzer = () => {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                 >
-                                    <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginTop: '1.5rem', marginBottom: '0.5rem' }}>Preview:</p>
+                                    <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginTop: '1.5rem', marginBottom: '0.5rem' }}>{t('lab_report_analyzer.upload.preview')}</p>
                                     <img src={preview} alt="Report Preview" className="lra-preview-img" />
 
                                     <button
@@ -106,12 +108,12 @@ const LabReportAnalyzer = () => {
                                         {analyzing ? (
                                             <>
                                                 <Loader2 size={20} className="animate-spin" />
-                                                Analyzing Report...
+                                                {t('lab_report_analyzer.analyzing')}
                                             </>
                                         ) : (
                                             <>
                                                 <Beaker size={20} />
-                                                Analyze Report
+                                                {t('lab_report_analyzer.analyze_btn')}
                                             </>
                                         )}
                                     </button>
@@ -126,7 +128,7 @@ const LabReportAnalyzer = () => {
                             <div className="lra-error-box">
                                 <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                                 <div>
-                                    <p style={{ fontWeight: 600 }}>Analysis Failed</p>
+                                    <p style={{ fontWeight: 600 }}>{t('lab_report_analyzer.failed')}</p>
                                     <p style={{ fontSize: '0.875rem' }}>{error}</p>
                                 </div>
                             </div>
@@ -141,22 +143,22 @@ const LabReportAnalyzer = () => {
                             >
                                 <div className="lra-result-header">
                                     <Check size={24} color="#10b981" />
-                                    <h2 className="lra-result-title">Analysis Complete</h2>
+                                    <h2 className="lra-result-title">{t('lab_report_analyzer.complete_title')}</h2>
                                 </div>
 
                                 <div className="lra-result-content">
                                     {/* Info Grid */}
                                     <div className="lra-info-grid">
                                         <div className="lra-info-box">
-                                            <p className="lra-label-xs">Patient</p>
+                                            <p className="lra-label-xs">{t('lab_report_analyzer.patient')}</p>
                                             <p className="lra-value">{result.patient_name || "N/A"}</p>
                                         </div>
                                         <div className="lra-info-box">
-                                            <p className="lra-label-xs">Date</p>
+                                            <p className="lra-label-xs">{t('lab_report_analyzer.date')}</p>
                                             <p className="lra-value">{result.date || "N/A"}</p>
                                         </div>
                                         <div className="lra-info-box">
-                                            <p className="lra-label-xs">Lab Name</p>
+                                            <p className="lra-label-xs">{t('lab_report_analyzer.lab_name')}</p>
                                             <p className="lra-value">{result.lab_name || "N/A"}</p>
                                         </div>
                                     </div>
@@ -164,7 +166,7 @@ const LabReportAnalyzer = () => {
                                     {/* Summary */}
                                     {result.summary && (
                                         <div className="lra-summary-box">
-                                            <h3 className="lra-summary-title">💡 Assessment Summary</h3>
+                                            <h3 className="lra-summary-title">💡 {t('lab_report_analyzer.assessment_summary')}</h3>
                                             <p className="lra-summary-text">{result.summary}</p>
                                         </div>
                                     )}
@@ -173,16 +175,16 @@ const LabReportAnalyzer = () => {
                                     <div>
                                         <h3 className="lra-section-title">
                                             <Activity size={20} className="text-emerald-600" />
-                                            Test Results
+                                            {t('lab_report_analyzer.test_results')}
                                         </h3>
                                         <div className="lra-table-container">
                                             <table className="lra-table">
                                                 <thead>
                                                     <tr>
-                                                        <th>Test Name</th>
-                                                        <th>Result</th>
-                                                        <th>Ref Range</th>
-                                                        <th>Status</th>
+                                                        <th>{t('lab_report_analyzer.table.test_name')}</th>
+                                                        <th>{t('lab_report_analyzer.table.result')}</th>
+                                                        <th>{t('lab_report_analyzer.table.ref_range')}</th>
+                                                        <th>{t('lab_report_analyzer.table.status')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -203,7 +205,7 @@ const LabReportAnalyzer = () => {
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8' }}>No specific tests identified.</td>
+                                                            <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8' }}>{t('lab_report_analyzer.no_specific_tests')}</td>
                                                         </tr>
                                                     )}
                                                 </tbody>
@@ -214,7 +216,7 @@ const LabReportAnalyzer = () => {
                                     {/* Action Button */}
                                     <div style={{ paddingTop: '1.5rem', marginTop: '1.5rem', borderTop: '1px solid #f0fdf4' }}>
                                         <button className="lra-btn-primary">
-                                            Save to Health Records <ArrowRight size={16} />
+                                            {t('lab_report_analyzer.save_records')} <ArrowRight size={16} />
                                         </button>
                                     </div>
                                 </div>
@@ -224,7 +226,7 @@ const LabReportAnalyzer = () => {
                         {!result && !analyzing && !error && (
                             <div className="lra-empty-state">
                                 <Activity size={48} style={{ opacity: 0.2, marginBottom: '1rem', color: '#059669' }} />
-                                <p>Upload a lab report image to see analysis here</p>
+                                <p>{t('lab_report_analyzer.empty_state')}</p>
                             </div>
                         )}
                     </div>

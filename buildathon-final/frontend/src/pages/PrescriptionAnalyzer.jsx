@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Upload, FileText, Check, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import './PrescriptionAnalyzer.css';
 
 const PrescriptionAnalyzer = () => {
+    const { t } = useTranslation();
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [analyzing, setAnalyzing] = useState(false);
@@ -44,7 +46,7 @@ const PrescriptionAnalyzer = () => {
             setResult(data);
         } catch (err) {
             console.error(err);
-            setError("Something went wrong. Please try again.");
+            setError(t('prescription_analyzer.error_generic') || "Something went wrong. Please try again.");
         } finally {
             setAnalyzing(false);
         }
@@ -55,8 +57,8 @@ const PrescriptionAnalyzer = () => {
             <div className="pa-wrapper">
                 {/* Header */}
                 <div className="pa-header">
-                    <h1 className="pa-title">Prescription Analyzer</h1>
-                    <p className="pa-subtitle">Upload a prescription to get an AI-powered summary of medicines and instructions.</p>
+                    <h1 className="pa-title">{t('prescription_analyzer.title')}</h1>
+                    <p className="pa-subtitle">{t('prescription_analyzer.subtitle')}</p>
                 </div>
 
                 <div className="pa-grid">
@@ -75,8 +77,8 @@ const PrescriptionAnalyzer = () => {
                                         <Upload size={24} />
                                     </div>
                                     <div>
-                                        <p style={{ fontWeight: 600, color: '#334155' }}>Click to upload or drag and drop</p>
-                                        <p style={{ fontSize: '0.875rem', color: '#64748b' }}>JPG, PNG, GIF (max. 5MB)</p>
+                                        <p style={{ fontWeight: 600, color: '#334155' }}>{t('prescription_analyzer.upload_prompt')}</p>
+                                        <p style={{ fontSize: '0.875rem', color: '#64748b' }}>{t('prescription_analyzer.file_types')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -86,7 +88,7 @@ const PrescriptionAnalyzer = () => {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                 >
-                                    <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginTop: '1.5rem', marginBottom: '0.5rem' }}>Preview:</p>
+                                    <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginTop: '1.5rem', marginBottom: '0.5rem' }}>{t('prescription_analyzer.preview')}</p>
                                     <img src={preview} alt="Prescription Preview" className="pa-preview-img" />
 
                                     <button
@@ -97,12 +99,12 @@ const PrescriptionAnalyzer = () => {
                                         {analyzing ? (
                                             <>
                                                 <Loader2 size={20} className="animate-spin" />
-                                                Analyzing...
+                                                {t('prescription_analyzer.analyzing')}
                                             </>
                                         ) : (
                                             <>
                                                 <FileText size={20} />
-                                                Analyze Prescription
+                                                {t('prescription_analyzer.analyze_btn')}
                                             </>
                                         )}
                                     </button>
@@ -117,7 +119,7 @@ const PrescriptionAnalyzer = () => {
                             <div className="pa-error-box">
                                 <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                                 <div>
-                                    <p style={{ fontWeight: 600 }}>Analysis Failed</p>
+                                    <p style={{ fontWeight: 600 }}>{t('prescription_analyzer.analysis_failed')}</p>
                                     <p style={{ fontSize: '0.875rem' }}>{error}</p>
                                 </div>
                             </div>
@@ -131,19 +133,19 @@ const PrescriptionAnalyzer = () => {
                             >
                                 <div className="pa-result-header">
                                     <Check size={20} color="#22c55e" />
-                                    <h2 className="pa-result-title">Analysis Complete</h2>
+                                    <h2 className="pa-result-title">{t('prescription_analyzer.analysis_complete')}</h2>
                                 </div>
 
                                 <div className="pa-result-content">
                                     {/* Patient/Doctor Info */}
                                     <div className="pa-info-grid">
                                         <div className="pa-info-box">
-                                            <p className="pa-label-xs">Doctor</p>
-                                            <p className="pa-value">{result.doctor_name || "Not detected"}</p>
+                                            <p className="pa-label-xs">{t('prescription_analyzer.doctor_label')}</p>
+                                            <p className="pa-value">{result.doctor_name || t('prescription_analyzer.not_detected')}</p>
                                         </div>
                                         <div className="pa-info-box">
-                                            <p className="pa-label-xs">Date</p>
-                                            <p className="pa-value">{result.date || "Not detected"}</p>
+                                            <p className="pa-label-xs">{t('prescription_analyzer.date_label')}</p>
+                                            <p className="pa-value">{result.date || t('prescription_analyzer.not_detected')}</p>
                                         </div>
                                     </div>
 
@@ -151,7 +153,7 @@ const PrescriptionAnalyzer = () => {
                                     <div>
                                         <h3 className="pa-section-title">
                                             <span className="pa-dot" style={{ backgroundColor: '#3b82f6' }}></span>
-                                            Medicines Identified
+                                            {t('prescription_analyzer.medicines_header')}
                                         </h3>
                                         <div>
                                             {result.medicines && result.medicines.length > 0 ? (
@@ -165,11 +167,11 @@ const PrescriptionAnalyzer = () => {
                                                         </div>
                                                         <div className="pa-med-chips">
                                                             <div className="pa-chip">
-                                                                <span style={{ color: '#94a3b8' }}>Freq:</span>
+                                                                <span style={{ color: '#94a3b8' }}>{t('prescription_analyzer.freq_label')}</span>
                                                                 {med.frequency}
                                                             </div>
                                                             <div className="pa-chip">
-                                                                <span style={{ color: '#94a3b8' }}>Dur:</span>
+                                                                <span style={{ color: '#94a3b8' }}>{t('prescription_analyzer.dur_label')}</span>
                                                                 {med.duration}
                                                             </div>
                                                         </div>
@@ -181,7 +183,7 @@ const PrescriptionAnalyzer = () => {
                                                     </div>
                                                 ))
                                             ) : (
-                                                <p style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.9rem' }}>No medicines clearly identified.</p>
+                                                <p style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.9rem' }}>{t('prescription_analyzer.no_medicines')}</p>
                                             )}
                                         </div>
                                     </div>
@@ -191,7 +193,7 @@ const PrescriptionAnalyzer = () => {
                                         <div style={{ marginTop: '1.5rem' }}>
                                             <h3 className="pa-section-title">
                                                 <span className="pa-dot" style={{ backgroundColor: '#a855f7' }}></span>
-                                                Recommended Tests
+                                                {t('prescription_analyzer.tests_header')}
                                             </h3>
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                                 {result.lab_tests_recommended.map((test, idx) => (
@@ -206,7 +208,7 @@ const PrescriptionAnalyzer = () => {
                                     {/* Action Button */}
                                     <div style={{ paddingTop: '1.5rem', marginTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
                                         <button className="pa-btn-primary" style={{ backgroundColor: '#0f172a', marginTop: 0 }}>
-                                            Save to Records <ArrowRight size={16} />
+                                            {t('prescription_analyzer.save_btn')} <ArrowRight size={16} />
                                         </button>
                                     </div>
                                 </div>
@@ -216,7 +218,7 @@ const PrescriptionAnalyzer = () => {
                         {!result && !analyzing && !error && (
                             <div className="pa-empty-state">
                                 <FileText size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                                <p>Upload a prescription to see analysis here</p>
+                                <p>{t('prescription_analyzer.empty_state')}</p>
                             </div>
                         )}
                     </div>

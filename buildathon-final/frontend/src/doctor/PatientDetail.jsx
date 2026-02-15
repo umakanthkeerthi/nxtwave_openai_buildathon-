@@ -124,8 +124,9 @@ const PatientDetail = () => {
                 type: recordType,
                 data: {
                     ...consultationData,
-                    doctor: currentUser?.displayName || "Unknown Doctor", // [FIX] Send Doctor Name
-                    title: recordType === "PRESCRIPTION" ? "Prescription" : "Consultation Record" // [FIX] Send Title
+                    doctor: currentUser?.doctorProfile?.name || currentUser?.displayName || "Unknown Doctor", // [FIX] Send Doctor Name
+                    title: recordType === "PRESCRIPTION" ? "Prescription" : "Consultation Record", // [FIX] Send Title
+                    doctorId: currentUser?.doctor_id // [NEW] Save Doctor ID for future reference
                 },
                 case_id: patientData?.caseId // [FIX] Link to Case
             };

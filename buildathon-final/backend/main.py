@@ -560,11 +560,12 @@ async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Opt
         
         prescriptions = firebase_service.get_records("prescriptions", target_id, case_id)
         lab_reports = firebase_service.get_records("lab_reports", target_id, case_id)
+        medication_logs = firebase_service.get_records("medication_logs", target_id, case_id)
         
         # Compatibility: Allow fetching old 'medical_records' too if needed, or just merge
         # For V1.0 migration, we prioritize the new ones.
         
-        all_records = summaries + doctor_summaries + legacy_summaries + case_prescriptions + case_remarks + prescriptions + lab_reports
+        all_records = summaries + doctor_summaries + legacy_summaries + case_prescriptions + case_remarks + prescriptions + lab_reports + medication_logs
         
         # Sort by created_at desc
         all_records.sort(key=lambda x: x.get("created_at", ""), reverse=True)
@@ -572,6 +573,42 @@ async def get_records_endpoint(patient_id: Optional[str] = None, profile_id: Opt
         return {"records": all_records}
     except Exception as e:
         print(f"Get Records Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/log_medication")
+async def log_medication_endpoint(log_data: dict):
+    """
+    Logs a medication as taken.
+    Input: { "patient_id": "...", "medicine_name": "...", "status": "TAKEN", ... }
+    """
+    try:
+        # Add timestamp if missing
+        if "timestamp" not in log_data:
+            from datetime import datetime
+            log_data["timestamp"] = datetime.utcnow().isoformat()
+            
+        doc_id = firebase_service.save_record("medication_logs", log_data)
+        if doc_id:
+            return {"status": "success", "id": doc_id}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save log")
+    except Exception as e:
+        print(f"Log Medication Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/delete_medication_log")
+async def delete_medication_log_endpoint(log_id: str):
+    """
+    Deletes a medication log (Undo action).
+    """
+    try:
+        success = firebase_service.delete_record("medication_logs", log_id)
+        if success:
+            return {"status": "success", "message": "Log deleted"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete log")
+    except Exception as e:
+        print(f"Delete Medication Log Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/get_case")

@@ -1,0 +1,40 @@
+.language-switcher-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(7, 118, 89, 0.05);
+    /* Tint of primary color */
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(7, 118, 89, 0.15);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--color-primary, #077659);
+}
+
+.language-switcher-container:hover {
+    background: rgba(7, 118, 89, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(7, 118, 89, 0.15);
+}
+
+.lang-icon {
+    color: currentColor;
+}
+
+.lang-select {
+    background: transparent;
+    border: none;
+    color: currentColor;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    font-family: inherit;
+    padding-right: 4px;
+}
+
+.lang-select option {
+    background: white;
+    color: #1a1a1a;
+}
